@@ -87,6 +87,24 @@
             background: #94a3b8;
         }
 
+        .status.connected {
+            color: #166534;
+            background: #ecfdf5;
+        }
+
+        .status.connected .status-dot {
+            background: #22c55e;
+        }
+
+        .status.recording {
+            color: #92400e;
+            background: #fffbeb;
+        }
+
+        .status.recording .status-dot {
+            background: #f59e0b;
+        }
+
         .modules {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -109,6 +127,75 @@
             margin: 0;
             color: #64748b;
             line-height: 1.5;
+        }
+
+        .sensor-panel {
+            margin-top: 32px;
+            background: #ffffff;
+            border: 1px solid #e1e5eb;
+            border-radius: 14px;
+            padding: 24px;
+        }
+
+        .sensor-panel h2 {
+            margin-top: 0;
+        }
+
+        .sensor-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .value-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 16px;
+        }
+
+        .value-label {
+            font-size: 12px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .value {
+            margin-top: 6px;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .value-unit {
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .movement-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .info-card {
+            padding: 14px 16px;
+            border-radius: 10px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+        }
+
+        .info-label {
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .info-value {
+            margin-top: 4px;
+            font-size: 18px;
+            font-weight: 600;
         }
 
         .connect {
@@ -143,6 +230,41 @@
             background: #1d4ed8;
         }
 
+        button:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        .serial-log {
+            margin-top: 32px;
+            background: #111827;
+            color: #d1d5db;
+            border-radius: 12px;
+            padding: 18px;
+        }
+
+        .serial-log h2 {
+            margin-top: 0;
+            color: #ffffff;
+            font-size: 18px;
+        }
+
+        #log {
+            height: 220px;
+            overflow-y: auto;
+            background: #020617;
+            border-radius: 8px;
+            padding: 12px;
+            font-family: Consolas, Monaco, monospace;
+            font-size: 12px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+
+        .log-line {
+            margin: 0;
+        }
+
         footer {
             max-width: 1200px;
             margin: 40px auto 0;
@@ -163,6 +285,10 @@
             .hero h1 {
                 font-size: 30px;
             }
+
+            .value {
+                font-size: 20px;
+            }
         }
     </style>
 </head>
@@ -176,9 +302,15 @@
     </div>
 </header>
 
+
 <main>
 
+    <!-- ================================================= -->
+    <!-- HEADER / STATUS -->
+    <!-- ================================================= -->
+
     <section class="hero">
+
         <h1>Sensor Lab</h1>
 
         <p>
@@ -186,41 +318,53 @@
             z wykorzystaniem sensora Gazela Spiner.
         </p>
 
-        <div class="status">
+        <div id="connectionStatus" class="status">
             <span class="status-dot"></span>
             Sensor disconnected
         </div>
+
     </section>
 
+
+    <!-- ================================================= -->
+    <!-- MODULES -->
+    <!-- ================================================= -->
 
     <section class="modules">
 
         <div class="module">
             <h2>LIVE SENSOR</h2>
+
             <p>
                 Dane z sensora w czasie rzeczywistym:
                 przyspieszenie, żyroskop, G oraz kąty.
             </p>
         </div>
 
+
         <div class="module">
             <h2>LIVE CHARTS</h2>
+
             <p>
                 Wizualizacja danych z czujnika
                 i parametrów ruchu.
             </p>
         </div>
 
+
         <div class="module">
             <h2>MOVEMENT PLAYER</h2>
+
             <p>
                 Odtwarzanie zapisanych ruchów
                 i obserwacja ich przebiegu w czasie.
             </p>
         </div>
 
+
         <div class="module">
             <h2>SESSION</h2>
+
             <p>
                 Rejestracja i organizacja danych
                 z kolejnych sesji pomiarowych.
@@ -229,6 +373,124 @@
 
     </section>
 
+
+    <!-- ================================================= -->
+    <!-- LIVE SENSOR -->
+    <!-- ================================================= -->
+
+    <section class="sensor-panel">
+
+        <h2>LIVE SENSOR</h2>
+
+        <div class="movement-info">
+
+            <div class="info-card">
+                <div class="info-label">
+                    Movement
+                </div>
+
+                <div id="movementValue" class="info-value">
+                    —
+                </div>
+            </div>
+
+
+            <div class="info-card">
+                <div class="info-label">
+                    Time
+                </div>
+
+                <div id="timeValue" class="info-value">
+                    —
+                </div>
+            </div>
+
+
+            <div class="info-card">
+                <div class="info-label">
+                    Samples received
+                </div>
+
+                <div id="sampleCount" class="info-value">
+                    0
+                </div>
+            </div>
+
+        </div>
+
+
+        <div class="sensor-grid">
+
+            <div class="value-card">
+                <div class="value-label">AX</div>
+                <div id="AX" class="value">—</div>
+                <div class="value-unit">g</div>
+            </div>
+
+
+            <div class="value-card">
+                <div class="value-label">AY</div>
+                <div id="AY" class="value">—</div>
+                <div class="value-unit">g</div>
+            </div>
+
+
+            <div class="value-card">
+                <div class="value-label">AZ</div>
+                <div id="AZ" class="value">—</div>
+                <div class="value-unit">g</div>
+            </div>
+
+
+            <div class="value-card">
+                <div class="value-label">G</div>
+                <div id="G" class="value">—</div>
+                <div class="value-unit">g</div>
+            </div>
+
+
+            <div class="value-card">
+                <div class="value-label">Angle</div>
+                <div id="Angle" class="value">—</div>
+                <div class="value-unit">°</div>
+            </div>
+
+
+            <div class="value-card">
+                <div class="value-label">GX</div>
+                <div id="GX" class="value">—</div>
+                <div class="value-unit">°/s</div>
+            </div>
+
+
+            <div class="value-card">
+                <div class="value-label">GY</div>
+                <div id="GY" class="value">—</div>
+                <div class="value-unit">°/s</div>
+            </div>
+
+
+            <div class="value-card">
+                <div class="value-label">GZ</div>
+                <div id="GZ" class="value">—</div>
+                <div class="value-unit">°/s</div>
+            </div>
+
+
+            <div class="value-card">
+                <div class="value-label">AngleY</div>
+                <div id="AngleY" class="value">—</div>
+                <div class="value-unit">°</div>
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- ================================================= -->
+    <!-- CONNECT SENSOR -->
+    <!-- ================================================= -->
 
     <section class="connect">
 
@@ -244,6 +506,21 @@
 
     </section>
 
+
+    <!-- ================================================= -->
+    <!-- SERIAL LOG -->
+    <!-- ================================================= -->
+
+    <section class="serial-log">
+
+        <h2>Serial Monitor</h2>
+
+        <div id="log">
+            Oczekiwanie na połączenie z sensorem...
+        </div>
+
+    </section>
+
 </main>
 
 
@@ -253,38 +530,571 @@
 
 
 <script>
-    const connectButton = document.getElementById("connectButton");
-    const statusText = document.querySelector(".status");
-    const statusDot = document.querySelector(".status-dot");
 
-    connectButton.addEventListener("click", async () => {
+    // =====================================================
+    // ELEMENTY INTERFEJSU
+    // =====================================================
 
-        if (!("serial" in navigator)) {
-            alert(
-                "Web Serial API nie jest dostępne w tej przeglądarce. " +
-                "Użyj Google Chrome lub Microsoft Edge."
-            );
+    const connectButton =
+        document.getElementById("connectButton");
+
+    const connectionStatus =
+        document.getElementById("connectionStatus");
+
+    const logElement =
+        document.getElementById("log");
+
+
+    // =====================================================
+    // ZMIENNE SERIAL
+    // =====================================================
+
+    let port = null;
+
+    let reader = null;
+
+    let keepReading = false;
+
+    let sampleCount = 0;
+
+    let textBuffer = "";
+
+
+    // =====================================================
+    // FUNKCJA LOGOWANIA
+    // =====================================================
+
+    function addLog(message) {
+
+        const line =
+            document.createElement("div");
+
+        line.className = "log-line";
+
+        line.textContent = message;
+
+        logElement.appendChild(line);
+
+        logElement.scrollTop =
+            logElement.scrollHeight;
+    }
+
+
+    // =====================================================
+    // STATUS
+    // =====================================================
+
+    function setConnectedStatus() {
+
+        connectionStatus.className =
+            "status connected";
+
+        connectionStatus.innerHTML =
+            '<span class="status-dot"></span>' +
+            'Sensor connected';
+
+        connectButton.textContent =
+            "Sensor połączony";
+
+        connectButton.disabled = true;
+    }
+
+
+    function setRecordingStatus() {
+
+        connectionStatus.className =
+            "status recording";
+
+        connectionStatus.innerHTML =
+            '<span class="status-dot"></span>' +
+            'Sensor recording';
+    }
+
+
+    // =====================================================
+    // AKTUALIZACJA WARTOŚCI NA EKRANIE
+    // =====================================================
+
+    function updateValue(id, value, decimals = 4) {
+
+        const element =
+            document.getElementById(id);
+
+        if (!element) {
             return;
         }
 
-        try {
-            const port = await navigator.serial.requestPort();
+        const number =
+            Number(value);
 
-            await port.open({
-                baudRate: 115200
-            });
-
-            statusText.innerHTML =
-                '<span class="status-dot"></span> Sensor connected';
-
-            statusDot.style.background = "#22c55e";
-
-            connectButton.textContent = "Sensor połączony";
-
-        } catch (error) {
-            console.error("Błąd połączenia z sensorem:", error);
+        if (!Number.isFinite(number)) {
+            element.textContent = "—";
+            return;
         }
-    });
+
+        element.textContent =
+            number.toFixed(decimals);
+    }
+
+
+    // =====================================================
+    // PARSOWANIE WIERSZA CSV
+    //
+    // Format v17.3:
+    //
+    // MOVEMENT,TIME_ms,AX,AY,AZ,G,Angle,GX,GY,GZ,AngleY
+    //
+    // =====================================================
+
+    function parseSensorData(line) {
+
+        const parts =
+            line.split(",");
+
+
+        // Musimy mieć dokładnie 11 pól:
+        //
+        // 0 MOVEMENT
+        // 1 TIME_ms
+        // 2 AX
+        // 3 AY
+        // 4 AZ
+        // 5 G
+        // 6 Angle
+        // 7 GX
+        // 8 GY
+        // 9 GZ
+        // 10 AngleY
+
+        if (parts.length !== 11) {
+            return false;
+        }
+
+
+        const movement =
+            Number(parts[0]);
+
+        const timeMs =
+            Number(parts[1]);
+
+
+        // Jeżeli pierwsze dwa pola
+        // nie są liczbami, nie jest to próbka.
+
+        if (
+            !Number.isFinite(movement) ||
+            !Number.isFinite(timeMs)
+        ) {
+            return false;
+        }
+
+
+        const AX = parts[2];
+        const AY = parts[3];
+        const AZ = parts[4];
+        const G = parts[5];
+        const Angle = parts[6];
+        const GX = parts[7];
+        const GY = parts[8];
+        const GZ = parts[9];
+        const AngleY = parts[10];
+
+
+        // Aktualizacja ekranu
+
+        document.getElementById(
+            "movementValue"
+        ).textContent =
+            movement;
+
+
+        document.getElementById(
+            "timeValue"
+        ).textContent =
+            timeMs + " ms";
+
+
+        updateValue("AX", AX, 4);
+        updateValue("AY", AY, 4);
+        updateValue("AZ", AZ, 4);
+        updateValue("G", G, 4);
+
+        updateValue("Angle", Angle, 2);
+
+        updateValue("GX", GX, 2);
+        updateValue("GY", GY, 2);
+        updateValue("GZ", GZ, 2);
+
+        updateValue("AngleY", AngleY, 2);
+
+
+        // Licznik próbek
+
+        sampleCount++;
+
+        document.getElementById(
+            "sampleCount"
+        ).textContent =
+            sampleCount;
+
+
+        return true;
+    }
+
+
+    // =====================================================
+    // OBSŁUGA POJEDYNCZEJ LINII
+    // =====================================================
+
+    function processLine(line) {
+
+        line = line.trim();
+
+
+        if (!line) {
+            return;
+        }
+
+
+        // Najpierw pokazujemy wszystko
+        // w Serial Monitorze.
+
+        addLog(line);
+
+
+        // =================================================
+        // READY
+        // =================================================
+
+        if (line === "READY") {
+
+            connectionStatus.className =
+                "status connected";
+
+            connectionStatus.innerHTML =
+                '<span class="status-dot"></span>' +
+                'Sensor ready';
+
+            return;
+        }
+
+
+        // =================================================
+        // START
+        // =================================================
+
+        if (line === "INFO,START") {
+
+            setRecordingStatus();
+
+            return;
+        }
+
+
+        // =================================================
+        // PRZYGOTOWANIE
+        // =================================================
+
+        if (line === "INFO,PREPARE") {
+
+            connectionStatus.className =
+                "status recording";
+
+            connectionStatus.innerHTML =
+                '<span class="status-dot"></span>' +
+                'Preparing...';
+
+            return;
+        }
+
+
+        // =================================================
+        // NOWY RUCH
+        // =================================================
+
+        if (line.startsWith("INFO,MOVEMENT_")) {
+
+            setRecordingStatus();
+
+            return;
+        }
+
+
+        // =================================================
+        // KONIEC RUCHU
+        // =================================================
+
+        if (
+            line.startsWith(
+                "INFO,WAIT_AFTER_MOVEMENT_"
+            )
+        ) {
+
+            return;
+        }
+
+
+        // =================================================
+        // KONIEC CAŁEGO NAGRANIA
+        // =================================================
+
+        if (line === "END,ALL_MOVEMENTS") {
+
+            connectionStatus.className =
+                "status connected";
+
+            connectionStatus.innerHTML =
+                '<span class="status-dot"></span>' +
+                'Recording complete';
+
+            return;
+        }
+
+
+        // =================================================
+        // BŁĄD IMU
+        // =================================================
+
+        if (line === "ERROR,IMU") {
+
+            connectionStatus.className =
+                "status";
+
+            connectionStatus.innerHTML =
+                '<span class="status-dot"></span>' +
+                'IMU error';
+
+            return;
+        }
+
+
+        // =================================================
+        // NAGŁÓWEK CSV
+        // =================================================
+
+        if (
+            line ===
+            "MOVEMENT,TIME_ms,AX,AY,AZ,G,Angle,GX,GY,GZ,AngleY"
+        ) {
+
+            addLog("CSV HEADER DETECTED");
+
+            return;
+        }
+
+
+        // =================================================
+        // PRÓBKA SENSOROWA
+        // =================================================
+
+        parseSensorData(line);
+    }
+
+
+    // =====================================================
+    // ODCZYT STRUMIENIA
+    // =====================================================
+
+    async function readSerialStream() {
+
+        const decoder =
+            new TextDecoder();
+
+        while (port && port.readable && keepReading) {
+
+            reader =
+                port.readable.getReader();
+
+            try {
+
+                while (true) {
+
+                    const { value, done } =
+                        await reader.read();
+
+
+                    if (done) {
+                        break;
+                    }
+
+
+                    if (!value) {
+                        continue;
+                    }
+
+
+                    textBuffer +=
+                        decoder.decode(
+                            value,
+                            { stream: true }
+                        );
+
+
+                    // Arduino wysyła linie zakończone
+                    // przez Serial.println()
+
+                    const lines =
+                        textBuffer.split(/\r?\n/);
+
+
+                    // Ostatni element może być
+                    // niepełną linią.
+
+                    textBuffer =
+                        lines.pop();
+
+
+                    for (const line of lines) {
+
+                        processLine(line);
+                    }
+                }
+
+            } catch (error) {
+
+                console.error(
+                    "Serial read error:",
+                    error
+                );
+
+                addLog(
+                    "ERROR: " +
+                    error.message
+                );
+
+            } finally {
+
+                reader.releaseLock();
+
+                reader = null;
+            }
+        }
+    }
+
+
+    // =====================================================
+    // POŁĄCZENIE Z ARDUINO
+    // =====================================================
+
+    connectButton.addEventListener(
+        "click",
+        async () => {
+
+            // Web Serial
+
+            if (!("serial" in navigator)) {
+
+                alert(
+                    "Web Serial API nie jest dostępne " +
+                    "w tej przeglądarce. " +
+                    "Użyj Google Chrome lub Microsoft Edge."
+                );
+
+                return;
+            }
+
+
+            try {
+
+                // Wybór portu
+
+                port =
+                    await navigator.serial.requestPort();
+
+
+                // Otwarcie portu
+
+                await port.open({
+                    baudRate: 115200
+                });
+
+
+                // Reset
+
+                sampleCount = 0;
+
+                textBuffer = "";
+
+                document.getElementById(
+                    "sampleCount"
+                ).textContent = "0";
+
+
+                // Status
+
+                setConnectedStatus();
+
+                addLog(
+                    "CONNECTED TO SERIAL PORT"
+                );
+
+                addLog(
+                    "BAUD RATE: 115200"
+                );
+
+
+                // Rozpoczęcie odczytu
+
+                keepReading = true;
+
+                readSerialStream();
+
+            } catch (error) {
+
+                console.error(
+                    "Błąd połączenia:",
+                    error
+                );
+
+                addLog(
+                    "CONNECTION ERROR: " +
+                    error.message
+                );
+            }
+        }
+    );
+
+
+    // =====================================================
+    // OBSŁUGA ODŁĄCZENIA URZĄDZENIA
+    // =====================================================
+
+    if ("serial" in navigator) {
+
+        navigator.serial.addEventListener(
+            "disconnect",
+            (event) => {
+
+                if (
+                    port &&
+                    event.target === port
+                ) {
+
+                    keepReading = false;
+
+                    connectionStatus.className =
+                        "status";
+
+                    connectionStatus.innerHTML =
+                        '<span class="status-dot"></span>' +
+                        'Sensor disconnected';
+
+                    connectButton.textContent =
+                        "Połącz sensor";
+
+                    connectButton.disabled =
+                        false;
+
+                    addLog(
+                        "SENSOR DISCONNECTED"
+                    );
+
+                    port = null;
+                }
+            }
+        );
+    }
+
 </script>
 
 </body>
