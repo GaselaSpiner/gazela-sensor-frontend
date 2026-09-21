@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Gazela Spiner Sensor Lab</title>
+
+    <meta
+        name="description"
+        content="Gazela Spiner Sensor Lab — środowisko do rejestracji, obserwacji i analizy ruchu rakiety tenisowej."
+    >
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f7f8fa;
+            color: #172033;
+        }
+
+        header {
+            background: #ffffff;
+            border-bottom: 1px solid #e1e5eb;
+            padding: 24px 32px;
+        }
+
+        .brand {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .brand-name {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .brand-subtitle {
+            margin-top: 5px;
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 32px;
+        }
+
+        .hero {
+            margin-bottom: 32px;
+        }
+
+        .hero h1 {
+            margin: 0;
+            font-size: 38px;
+        }
+
+        .hero p {
+            margin-top: 10px;
+            color: #64748b;
+            font-size: 17px;
+            line-height: 1.5;
+        }
+
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 20px;
+            padding: 8px 14px;
+            border-radius: 20px;
+            background: #eef2f7;
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        .status-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: #94a3b8;
+        }
+
+        .modules {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 20px;
+        }
+
+        .module {
+            background: #ffffff;
+            border: 1px solid #e1e5eb;
+            border-radius: 14px;
+            padding: 24px;
+        }
+
+        .module h2 {
+            margin: 0 0 10px;
+            font-size: 20px;
+        }
+
+        .module p {
+            margin: 0;
+            color: #64748b;
+            line-height: 1.5;
+        }
+
+        .connect {
+            margin-top: 32px;
+            padding: 24px;
+            background: #ffffff;
+            border: 1px solid #e1e5eb;
+            border-radius: 14px;
+        }
+
+        .connect h2 {
+            margin-top: 0;
+        }
+
+        .connect p {
+            color: #64748b;
+            line-height: 1.5;
+        }
+
+        button {
+            margin-top: 12px;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            background: #2563eb;
+            color: #ffffff;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        footer {
+            max-width: 1200px;
+            margin: 40px auto 0;
+            padding: 24px 32px;
+            color: #94a3b8;
+            font-size: 13px;
+        }
+
+        @media (max-width: 600px) {
+            header {
+                padding: 20px;
+            }
+
+            main {
+                padding: 30px 20px;
+            }
+
+            .hero h1 {
+                font-size: 30px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <div class="brand">
+        <div class="brand-name">GAZELA SPINER SENSOR</div>
+        <div class="brand-subtitle">Sensor Lab</div>
+    </div>
+</header>
+
+<main>
+
+    <section class="hero">
+        <h1>Sensor Lab</h1>
+
+        <p>
+            Środowisko do rejestracji, obserwacji i analizy ruchu rakiety
+            z wykorzystaniem sensora Gazela Spiner.
+        </p>
+
+        <div class="status">
+            <span class="status-dot"></span>
+            Sensor disconnected
+        </div>
+    </section>
+
+
+    <section class="modules">
+
+        <div class="module">
+            <h2>LIVE SENSOR</h2>
+            <p>
+                Dane z sensora w czasie rzeczywistym:
+                przyspieszenie, żyroskop, G oraz kąty.
+            </p>
+        </div>
+
+        <div class="module">
+            <h2>LIVE CHARTS</h2>
+            <p>
+                Wizualizacja danych z czujnika
+                i parametrów ruchu.
+            </p>
+        </div>
+
+        <div class="module">
+            <h2>MOVEMENT PLAYER</h2>
+            <p>
+                Odtwarzanie zapisanych ruchów
+                i obserwacja ich przebiegu w czasie.
+            </p>
+        </div>
+
+        <div class="module">
+            <h2>SESSION</h2>
+            <p>
+                Rejestracja i organizacja danych
+                z kolejnych sesji pomiarowych.
+            </p>
+        </div>
+
+    </section>
+
+
+    <section class="connect">
+
+        <h2>Connect Sensor</h2>
+
+        <p>
+            Połączenie z sensorem Gazela Spiner przez USB.
+        </p>
+
+        <button id="connectButton">
+            Połącz sensor
+        </button>
+
+    </section>
+
+</main>
+
+
+<footer>
+    GAZELA SPINER SENSOR · Sensor Lab
+</footer>
+
+
+<script>
+    const connectButton = document.getElementById("connectButton");
+    const statusText = document.querySelector(".status");
+    const statusDot = document.querySelector(".status-dot");
+
+    connectButton.addEventListener("click", async () => {
+
+        if (!("serial" in navigator)) {
+            alert(
+                "Web Serial API nie jest dostępne w tej przeglądarce. " +
+                "Użyj Google Chrome lub Microsoft Edge."
+            );
+            return;
+        }
+
+        try {
+            const port = await navigator.serial.requestPort();
+
+            await port.open({
+                baudRate: 115200
+            });
+
+            statusText.innerHTML =
+                '<span class="status-dot"></span> Sensor connected';
+
+            statusDot.style.background = "#22c55e";
+
+            connectButton.textContent = "Sensor połączony";
+
+        } catch (error) {
+            console.error("Błąd połączenia z sensorem:", error);
+        }
+    });
+</script>
+
+</body>
+</html>
