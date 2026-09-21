@@ -236,6 +236,96 @@
       background: #b91c1c;
     }
 
+    /* =========================================
+       SESSION / MOVEMENTS
+       ========================================= */
+
+    .session-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+
+    .session-badge {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 20px;
+      background: #eef2f7;
+      color: #555;
+      font-size: 12px;
+    }
+
+    .movement-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .movement-card {
+      border: 1px solid #e2e2e2;
+      border-radius: 10px;
+      padding: 18px;
+      background: #fafafa;
+    }
+
+    .movement-card.active {
+      border-color: #2563eb;
+      background: #f4f8ff;
+    }
+
+    .movement-card.completed {
+      border-color: #22a06b;
+      background: #f3fbf6;
+    }
+
+    .movement-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 12px;
+    }
+
+    .movement-title {
+      font-size: 17px;
+      font-weight: bold;
+    }
+
+    .movement-status {
+      font-size: 12px;
+      color: #777;
+    }
+
+    .movement-data {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .movement-data-item {
+      background: white;
+      border: 1px solid #e8e8e8;
+      border-radius: 7px;
+      padding: 10px;
+    }
+
+    .movement-data-label {
+      color: #888;
+      font-size: 11px;
+      margin-bottom: 4px;
+    }
+
+    .movement-data-value {
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    /* =========================================
+       SERIAL MONITOR
+       ========================================= */
+
     .serial-monitor {
       background: #172033;
       color: #dce3ef;
@@ -292,6 +382,7 @@
     }
 
     @media (max-width: 900px) {
+
       .modules {
         grid-template-columns: repeat(2, 1fr);
       }
@@ -300,12 +391,17 @@
         grid-template-columns: repeat(3, 1fr);
       }
 
+      .movement-data {
+        grid-template-columns: 1fr 1fr;
+      }
+
       .sensor-summary {
         grid-template-columns: 1fr;
       }
     }
 
     @media (max-width: 600px) {
+
       main {
         width: 92%;
         margin-top: 30px;
@@ -326,261 +422,587 @@
       header {
         padding: 20px 4%;
       }
+
+      .movement-data {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
 
+
 <body>
 
 <header>
+
   <h1>GAZELA SPINER SENSOR</h1>
-  <p>Sensor Lab</p>
+
+  <p>
+    Sensor Lab
+  </p>
+
 </header>
+
 
 <main>
 
+
+  <!-- =====================================================
+       HERO
+       ===================================================== -->
+
   <section class="hero">
-    <h2>Sensor Lab</h2>
+
+    <h2>
+      Sensor Lab
+    </h2>
 
     <p>
       Środowisko do rejestracji, obserwacji i analizy ruchu rakiety
       z wykorzystaniem sensora Gazela Spiner.
     </p>
 
+
     <div class="status">
-      <span id="statusDot" class="status-dot"></span>
-      <span id="statusText">Sensor not connected</span>
+
+      <span
+        id="statusDot"
+        class="status-dot">
+      </span>
+
+      <span id="statusText">
+        Sensor not connected
+      </span>
+
     </div>
+
   </section>
 
 
-  <!-- MODULES -->
+  <!-- =====================================================
+       MODULES
+       ===================================================== -->
 
   <section class="modules">
 
+
     <div class="module">
-      <h3>LIVE SENSOR</h3>
+
+      <h3>
+        LIVE SENSOR
+      </h3>
+
       <p>
         Dane z sensora w czasie rzeczywistym:
         przyspieszenie, żyroskop, G oraz kąty.
       </p>
+
     </div>
 
+
     <div class="module">
-      <h3>LIVE CHARTS</h3>
+
+      <h3>
+        LIVE CHARTS
+      </h3>
+
       <p>
         Wizualizacja danych z czujnika
         i parametrów ruchu.
       </p>
+
     </div>
 
+
     <div class="module">
-      <h3>MOVEMENT PLAYER</h3>
+
+      <h3>
+        MOVEMENT PLAYER
+      </h3>
+
       <p>
         Odtwarzanie zapisanych ruchów
         i obserwacja ich przebiegu w czasie.
       </p>
+
     </div>
 
+
     <div class="module">
-      <h3>SESSION</h3>
+
+      <h3>
+        SESSION
+      </h3>
+
       <p>
         Rejestracja i organizacja danych
         z kolejnych sesji pomiarowych.
       </p>
+
     </div>
+
 
   </section>
 
 
-  <!-- LIVE SENSOR -->
+  <!-- =====================================================
+       LIVE SENSOR
+       ===================================================== -->
 
   <section class="card">
 
-    <h2>LIVE SENSOR</h2>
+    <h2>
+      LIVE SENSOR
+    </h2>
 
     <div class="card-description">
       Dane odbierane bezpośrednio z Gazela Sensor v17.3.
     </div>
 
+
     <div class="sensor-summary">
 
-      <div class="summary-item">
-        <div class="summary-label">MOVEMENT</div>
-        <div id="movementValue" class="summary-value">—</div>
-      </div>
 
       <div class="summary-item">
-        <div class="summary-label">TIME</div>
-        <div id="timeValue" class="summary-value">—</div>
+
+        <div class="summary-label">
+          MOVEMENT
+        </div>
+
+        <div
+          id="movementValue"
+          class="summary-value">
+          —
+        </div>
+
       </div>
 
+
       <div class="summary-item">
-        <div class="summary-label">SAMPLES RECEIVED</div>
-        <div id="samplesValue" class="summary-value">0</div>
+
+        <div class="summary-label">
+          TIME
+        </div>
+
+        <div
+          id="timeValue"
+          class="summary-value">
+          —
+        </div>
+
       </div>
+
+
+      <div class="summary-item">
+
+        <div class="summary-label">
+          SAMPLES RECEIVED
+        </div>
+
+        <div
+          id="samplesValue"
+          class="summary-value">
+          0
+        </div>
+
+      </div>
+
 
     </div>
 
 
     <div class="values">
 
-      <div class="value-card">
-        <div class="value-name">AX</div>
-        <div id="ax" class="value-number">—</div>
-        <div class="value-unit">g</div>
-      </div>
 
       <div class="value-card">
-        <div class="value-name">AY</div>
-        <div id="ay" class="value-number">—</div>
-        <div class="value-unit">g</div>
+
+        <div class="value-name">
+          AX
+        </div>
+
+        <div
+          id="ax"
+          class="value-number">
+          —
+        </div>
+
+        <div class="value-unit">
+          g
+        </div>
+
       </div>
 
-      <div class="value-card">
-        <div class="value-name">AZ</div>
-        <div id="az" class="value-number">—</div>
-        <div class="value-unit">g</div>
-      </div>
 
       <div class="value-card">
-        <div class="value-name">G</div>
-        <div id="g" class="value-number">—</div>
-        <div class="value-unit">g</div>
+
+        <div class="value-name">
+          AY
+        </div>
+
+        <div
+          id="ay"
+          class="value-number">
+          —
+        </div>
+
+        <div class="value-unit">
+          g
+        </div>
+
       </div>
 
-      <div class="value-card">
-        <div class="value-name">ANGLE</div>
-        <div id="angle" class="value-number">—</div>
-        <div class="value-unit">°</div>
-      </div>
 
       <div class="value-card">
-        <div class="value-name">GX</div>
-        <div id="gx" class="value-number">—</div>
-        <div class="value-unit">°/s</div>
+
+        <div class="value-name">
+          AZ
+        </div>
+
+        <div
+          id="az"
+          class="value-number">
+          —
+        </div>
+
+        <div class="value-unit">
+          g
+        </div>
+
       </div>
 
-      <div class="value-card">
-        <div class="value-name">GY</div>
-        <div id="gy" class="value-number">—</div>
-        <div class="value-unit">°/s</div>
-      </div>
 
       <div class="value-card">
-        <div class="value-name">GZ</div>
-        <div id="gz" class="value-number">—</div>
-        <div class="value-unit">°/s</div>
+
+        <div class="value-name">
+          G
+        </div>
+
+        <div
+          id="g"
+          class="value-number">
+          —
+        </div>
+
+        <div class="value-unit">
+          g
+        </div>
+
       </div>
 
+
       <div class="value-card">
-        <div class="value-name">ANGLEY</div>
-        <div id="angley" class="value-number">—</div>
-        <div class="value-unit">°</div>
+
+        <div class="value-name">
+          ANGLE
+        </div>
+
+        <div
+          id="angle"
+          class="value-number">
+          —
+        </div>
+
+        <div class="value-unit">
+          °
+        </div>
+
       </div>
+
+
+      <div class="value-card">
+
+        <div class="value-name">
+          GX
+        </div>
+
+        <div
+          id="gx"
+          class="value-number">
+          —
+        </div>
+
+        <div class="value-unit">
+          °/s
+        </div>
+
+      </div>
+
+
+      <div class="value-card">
+
+        <div class="value-name">
+          GY
+        </div>
+
+        <div
+          id="gy"
+          class="value-number">
+          —
+        </div>
+
+        <div class="value-unit">
+          °/s
+        </div>
+
+      </div>
+
+
+      <div class="value-card">
+
+        <div class="value-name">
+          GZ
+        </div>
+
+        <div
+          id="gz"
+          class="value-number">
+          —
+        </div>
+
+        <div class="value-unit">
+          °/s
+        </div>
+
+      </div>
+
+
+      <div class="value-card">
+
+        <div class="value-name">
+          ANGLEY
+        </div>
+
+        <div
+          id="angley"
+          class="value-number">
+          —
+        </div>
+
+        <div class="value-unit">
+          °
+        </div>
+
+      </div>
+
 
     </div>
 
   </section>
 
 
-  <!-- CONNECT SENSOR -->
+  <!-- =====================================================
+       CONNECT SENSOR
+       ===================================================== -->
 
   <section class="card">
 
-    <h2>Connect Sensor</h2>
+    <h2>
+      Connect Sensor
+    </h2>
 
     <div class="card-description">
       Połączenie z sensorem Gazela Spiner przez USB.
     </div>
 
+
     <div class="controls">
+
 
       <button id="connectButton">
         Connect Sensor
       </button>
 
+
       <button
         id="disconnectButton"
         class="secondary"
         disabled>
+
         Disconnect
+
       </button>
+
 
       <button
         id="startButton"
         class="start"
         disabled>
+
         ▶ START MEASUREMENT
+
       </button>
+
 
       <button
         id="stopButton"
         class="stop"
         disabled>
+
         ■ STOP
+
       </button>
 
+
     </div>
 
-    <div id="measurementStatus" class="measurement-status">
+
+    <div
+      id="measurementStatus"
+      class="measurement-status">
+
       Sensor is waiting.
+
     </div>
+
 
   </section>
 
 
-  <!-- SERIAL MONITOR -->
+  <!-- =====================================================
+       SESSION
+       ===================================================== -->
 
   <section class="card">
 
-    <h2>Serial Monitor</h2>
 
-    <div class="card-description">
-      Dane przesyłane pomiędzy przeglądarką a Gazela Sensor.
+    <div class="session-header">
+
+      <div>
+
+        <h2>
+          SESSION
+        </h2>
+
+        <div class="card-description">
+          Aktualna sesja pomiarowa i jej ruchy.
+        </div>
+
+      </div>
+
+
+      <div
+        id="sessionBadge"
+        class="session-badge">
+
+        No session
+
+      </div>
+
     </div>
 
-    <div id="serialMonitor" class="serial-monitor"></div>
+
+    <div
+      id="movementList"
+      class="movement-list">
+
+      <div class="movement-card">
+
+        <div class="movement-status">
+          Brak aktywnej sesji.
+        </div>
+
+      </div>
+
+    </div>
+
 
   </section>
+
+
+  <!-- =====================================================
+       SERIAL MONITOR
+       ===================================================== -->
+
+  <section class="card">
+
+
+    <h2>
+      Serial Monitor
+    </h2>
+
+
+    <div class="card-description">
+
+      Dane przesyłane pomiędzy przeglądarką
+      a Gazela Sensor.
+
+    </div>
+
+
+    <div
+      id="serialMonitor"
+      class="serial-monitor">
+    </div>
+
+
+  </section>
+
 
 </main>
 
 
 <footer>
-  GAZELA SPINER SENSOR &nbsp; | &nbsp; Sensor Lab
+
+  GAZELA SPINER SENSOR
+  &nbsp; | &nbsp;
+  Sensor Lab
+
 </footer>
 
 
 <script>
 
-  // =========================================================
+
+  // ========================================================
   // GAZELA SPINER SENSOR LAB
-  // Web Serial interface
   //
   // Firmware:
   // Gazela Sensor v17.3
   //
-  // Command:
-  // S = START MEASUREMENT
-  // =========================================================
+  // SESSION
+  //   ├── Movement 1
+  //   ├── Movement 2
+  //   ├── Movement 3
+  //   ├── Movement 4
+  //   └── Movement 5
+  //
+  // Dane są obecnie przechowywane tylko w pamięci przeglądarki.
+  // ========================================================
 
+
+  // ========================================================
+  // SERIAL VARIABLES
+  // ========================================================
 
   let port = null;
+
   let reader = null;
+
   let writer = null;
 
   let keepReading = false;
+
   let measuring = false;
 
   let buffer = "";
 
+
+  // ========================================================
+  // SESSION DATA
+  // ========================================================
+
+  let currentSession = null;
+
+  let currentMovement = null;
+
+  let sessionCounter = 0;
+
   let samplesReceived = 0;
 
 
-  // =========================================================
+  // ========================================================
   // ELEMENTS
-  // =========================================================
+  // ========================================================
 
   const connectButton =
     document.getElementById("connectButton");
@@ -606,24 +1028,42 @@
   const measurementStatus =
     document.getElementById("measurementStatus");
 
+  const movementList =
+    document.getElementById("movementList");
 
-  // =========================================================
-  // SERIAL MONITOR
-  // =========================================================
+  const sessionBadge =
+    document.getElementById("sessionBadge");
 
-  function addSerialLine(text, type = "") {
 
-    const line = document.createElement("div");
+  // ========================================================
+  // SERIAL LOG
+  // ========================================================
 
-    line.className = "serial-line";
+  function addSerialLine(
+    text,
+    type = ""
+  ) {
+
+    const line =
+      document.createElement("div");
+
+    line.className =
+      "serial-line";
+
 
     if (type) {
+
       line.classList.add(type);
+
     }
 
-    line.textContent = text;
+
+    line.textContent =
+      text;
+
 
     serialMonitor.appendChild(line);
+
 
     serialMonitor.scrollTop =
       serialMonitor.scrollHeight;
@@ -631,107 +1071,987 @@
   }
 
 
-  // =========================================================
+  // ========================================================
   // STATUS
-  // =========================================================
+  // ========================================================
 
-  function setStatus(text, type = "") {
+  function setStatus(
+    text,
+    type = ""
+  ) {
 
-    statusText.textContent = text;
+    statusText.textContent =
+      text;
+
 
     statusDot.className =
       "status-dot";
 
+
     if (type) {
+
       statusDot.classList.add(type);
+
     }
 
   }
 
 
-  // =========================================================
-  // CONNECT
-  // =========================================================
+  // ========================================================
+  // START NEW SESSION
+  // ========================================================
 
-  async function connectSensor() {
+  function createSession() {
 
-    if (!("serial" in navigator)) {
+    sessionCounter++;
 
-      alert(
-        "Ta przeglądarka nie obsługuje Web Serial. Użyj Google Chrome lub Microsoft Edge."
-      );
 
-      return;
+    currentSession = {
+
+      id:
+        "SESSION-" +
+        Date.now(),
+
+      number:
+        sessionCounter,
+
+      startedAt:
+        new Date(),
+
+      movements: []
+
+    };
+
+
+    currentMovement =
+      null;
+
+
+    samplesReceived =
+      0;
+
+
+    document.getElementById(
+      "samplesValue"
+    ).textContent =
+      "0";
+
+
+    sessionBadge.textContent =
+      "Session " +
+      currentSession.number;
+
+
+    movementList.innerHTML = "";
+
+
+    measurementStatus.textContent =
+      "Session created. Waiting for movements.";
+
+    measurementStatus.className =
+      "measurement-status active";
+
+  }
+
+
+  // ========================================================
+  // CREATE MOVEMENT
+  // ========================================================
+
+  function createMovement(
+    movementNumber
+  ) {
+
+    if (!currentSession) {
+
+      createSession();
+
     }
 
 
-    try {
+    // Jeżeli taki ruch już istnieje,
+    // wykorzystujemy istniejący.
 
-      port = await navigator.serial.requestPort();
-
-      await port.open({
-        baudRate: 115200
-      });
-
-
-      setStatus(
-        "Sensor connected",
-        "connected"
+    let movement =
+      currentSession.movements.find(
+        item =>
+          item.number === movementNumber
       );
 
 
+    if (!movement) {
+
+      movement = {
+
+        number:
+          movementNumber,
+
+        samples: [],
+
+        startedAt:
+          new Date(),
+
+        endedAt:
+          null,
+
+        status:
+          "recording"
+
+      };
+
+
+      currentSession.movements.push(
+        movement
+      );
+
+    }
+
+
+    currentMovement =
+      movement;
+
+
+    renderMovements();
+
+  }
+
+
+  // ========================================================
+  // FINISH MOVEMENT
+  // ========================================================
+
+  function finishCurrentMovement() {
+
+    if (!currentMovement) {
+
+      return;
+
+    }
+
+
+    if (
+      currentMovement.status ===
+      "recording"
+    ) {
+
+      currentMovement.endedAt =
+        new Date();
+
+      currentMovement.status =
+        "completed";
+
+    }
+
+
+    renderMovements();
+
+  }
+
+
+  // ========================================================
+  // FINISH SESSION
+  // ========================================================
+
+  function finishSession() {
+
+    finishCurrentMovement();
+
+
+    if (currentSession) {
+
+      currentSession.endedAt =
+        new Date();
+
+    }
+
+
+    currentMovement =
+      null;
+
+
+    measuring =
+      false;
+
+
+    renderMovements();
+
+
+    measurementStatus.textContent =
+      "Session finished. " +
+      currentSession.movements.length +
+      " movement(s) received.";
+
+    measurementStatus.className =
+      "measurement-status finished";
+
+
+    setStatus(
+      "Measurement finished",
+      "connected"
+    );
+
+
+    startButton.disabled =
+      false;
+
+    stopButton.disabled =
+      true;
+
+  }
+
+
+  // ========================================================
+  // RENDER MOVEMENTS
+  // ========================================================
+
+  function renderMovements() {
+
+    if (
+      !currentSession ||
+      currentSession.movements.length === 0
+    ) {
+
+      movementList.innerHTML =
+
+        `<div class="movement-card">
+          <div class="movement-status">
+            Brak zarejestrowanych ruchów.
+          </div>
+        </div>`;
+
+      return;
+
+    }
+
+
+    movementList.innerHTML = "";
+
+
+    currentSession.movements.forEach(
+      movement => {
+
+        const card =
+          document.createElement("div");
+
+
+        card.className =
+          "movement-card";
+
+
+        if (
+          currentMovement &&
+          currentMovement.number ===
+          movement.number
+        ) {
+
+          card.classList.add(
+            "active"
+          );
+
+        }
+
+
+        if (
+          movement.status ===
+          "completed"
+        ) {
+
+          card.classList.add(
+            "completed"
+          );
+
+        }
+
+
+        const sampleCount =
+          movement.samples.length;
+
+
+        let duration =
+          "—";
+
+
+        if (
+          movement.samples.length > 1
+        ) {
+
+          const first =
+            movement.samples[0];
+
+          const last =
+            movement.samples[
+              movement.samples.length - 1
+            ];
+
+
+          duration =
+            (
+              last.timeMs -
+              first.timeMs
+            ) +
+            " ms";
+
+        }
+
+
+        let lastSample =
+          null;
+
+
+        if (sampleCount > 0) {
+
+          lastSample =
+            movement.samples[
+              sampleCount - 1
+            ];
+
+        }
+
+
+        const lastG =
+          lastSample
+            ? lastSample.G.toFixed(3)
+            : "—";
+
+
+        const lastAngle =
+          lastSample
+            ? lastSample.Angle.toFixed(2)
+            : "—";
+
+
+        const lastGZ =
+          lastSample
+            ? lastSample.GZ.toFixed(2)
+            : "—";
+
+
+        card.innerHTML = `
+
+          <div class="movement-top">
+
+            <div class="movement-title">
+              Movement ${movement.number}
+            </div>
+
+            <div class="movement-status">
+              ${
+                movement.status === "completed"
+                  ? "Completed"
+                  : "Recording"
+              }
+            </div>
+
+          </div>
+
+
+          <div class="movement-data">
+
+            <div class="movement-data-item">
+
+              <div class="movement-data-label">
+                Samples
+              </div>
+
+              <div class="movement-data-value">
+                ${sampleCount}
+              </div>
+
+            </div>
+
+
+            <div class="movement-data-item">
+
+              <div class="movement-data-label">
+                Duration
+              </div>
+
+              <div class="movement-data-value">
+                ${duration}
+              </div>
+
+            </div>
+
+
+            <div class="movement-data-item">
+
+              <div class="movement-data-label">
+                Last G
+              </div>
+
+              <div class="movement-data-value">
+                ${lastG} g
+              </div>
+
+            </div>
+
+
+            <div class="movement-data-item">
+
+              <div class="movement-data-label">
+                Last Angle
+              </div>
+
+              <div class="movement-data-value">
+                ${lastAngle}°
+              </div>
+
+            </div>
+
+
+            <div class="movement-data-item">
+
+              <div class="movement-data-label">
+                Last GZ
+              </div>
+
+              <div class="movement-data-value">
+                ${lastGZ} °/s
+              </div>
+
+            </div>
+
+          </div>
+        `;
+
+
+        movementList.appendChild(
+          card
+        );
+
+      }
+    );
+
+  }
+
+
+  // ========================================================
+  // UPDATE LIVE SENSOR
+  // ========================================================
+
+  function updateLiveSensor(
+    data
+  ) {
+
+    document.getElementById(
+      "movementValue"
+    ).textContent =
+      data.movement;
+
+
+    document.getElementById(
+      "timeValue"
+    ).textContent =
+      data.timeMs +
+      " ms";
+
+
+    setNumber(
+      "ax",
+      data.AX
+    );
+
+    setNumber(
+      "ay",
+      data.AY
+    );
+
+    setNumber(
+      "az",
+      data.AZ
+    );
+
+    setNumber(
+      "g",
+      data.G
+    );
+
+    setNumber(
+      "angle",
+      data.Angle
+    );
+
+    setNumber(
+      "gx",
+      data.GX
+    );
+
+    setNumber(
+      "gy",
+      data.GY
+    );
+
+    setNumber(
+      "gz",
+      data.GZ
+    );
+
+    setNumber(
+      "angley",
+      data.AngleY
+    );
+
+  }
+
+
+  // ========================================================
+  // PARSE SENSOR DATA
+  // ========================================================
+
+  function parseSensorData(
+    line
+  ) {
+
+    const parts =
+      line.split(",");
+
+
+    if (
+      parts.length < 11
+    ) {
+
+      return;
+
+    }
+
+
+    const movement =
+      Number(parts[0]);
+
+
+    const timeMs =
+      Number(parts[1]);
+
+
+    if (
+      !Number.isFinite(movement) ||
+      !Number.isFinite(timeMs)
+    ) {
+
+      return;
+
+    }
+
+
+    const data = {
+
+      movement:
+        movement,
+
+      timeMs:
+        timeMs,
+
+      AX:
+        Number(parts[2]),
+
+      AY:
+        Number(parts[3]),
+
+      AZ:
+        Number(parts[4]),
+
+      G:
+        Number(parts[5]),
+
+      Angle:
+        Number(parts[6]),
+
+      GX:
+        Number(parts[7]),
+
+      GY:
+        Number(parts[8]),
+
+      GZ:
+        Number(parts[9]),
+
+      AngleY:
+        Number(parts[10])
+
+    };
+
+
+    // ------------------------------------------
+    // CHECK NUMBERS
+    // ------------------------------------------
+
+    if (
+      !Number.isFinite(data.AX) ||
+      !Number.isFinite(data.AY) ||
+      !Number.isFinite(data.AZ) ||
+      !Number.isFinite(data.G) ||
+      !Number.isFinite(data.Angle) ||
+      !Number.isFinite(data.GX) ||
+      !Number.isFinite(data.GY) ||
+      !Number.isFinite(data.GZ) ||
+      !Number.isFinite(data.AngleY)
+    ) {
+
+      return;
+
+    }
+
+
+    // ------------------------------------------
+    // SESSION
+    // ------------------------------------------
+
+    if (!currentSession) {
+
+      createSession();
+
+    }
+
+
+    // ------------------------------------------
+    // MOVEMENT
+    // ------------------------------------------
+
+    if (
+      !currentMovement ||
+      currentMovement.number !==
+      movement
+    ) {
+
+      if (
+        currentMovement
+      ) {
+
+        finishCurrentMovement();
+
+      }
+
+
+      createMovement(
+        movement
+      );
+
+    }
+
+
+    // ------------------------------------------
+    // SAVE SAMPLE IN MEMORY
+    // ------------------------------------------
+
+    currentMovement.samples.push(
+      data
+    );
+
+
+    samplesReceived++;
+
+
+    // ------------------------------------------
+    // LIVE DISPLAY
+    // ------------------------------------------
+
+    document.getElementById(
+      "samplesValue"
+    ).textContent =
+      samplesReceived;
+
+
+    updateLiveSensor(
+      data
+    );
+
+
+    // ------------------------------------------
+    // UPDATE MOVEMENT UI
+    // ------------------------------------------
+
+    renderMovements();
+
+  }
+
+
+  // ========================================================
+  // NUMBER DISPLAY
+  // ========================================================
+
+  function setNumber(
+    id,
+    value
+  ) {
+
+    const element =
+      document.getElementById(
+        id
+      );
+
+
+    if (
+      !Number.isFinite(value)
+    ) {
+
+      element.textContent =
+        "—";
+
+      return;
+
+    }
+
+
+    element.textContent =
+      value.toFixed(3);
+
+  }
+
+
+  // ========================================================
+  // PROCESS SERIAL LINE
+  // ========================================================
+
+  function processSerialLine(
+    line
+  ) {
+
+    addSerialLine(
+      line,
+      "serial-data"
+    );
+
+
+    // ------------------------------------------
+    // READY
+    // ------------------------------------------
+
+    if (
+      line === "READY"
+    ) {
+
+      if (!measuring) {
+
+        setStatus(
+          "Sensor ready",
+          "connected"
+        );
+
+      }
+
+      return;
+
+    }
+
+
+    // ------------------------------------------
+    // START
+    // ------------------------------------------
+
+    if (
+      line === "INFO,START"
+    ) {
+
+      measuring =
+        true;
+
+
+      if (!currentSession) {
+
+        createSession();
+
+      }
+
+
+      setStatus(
+        "Measurement running",
+        "measuring"
+      );
+
+
+      measurementStatus.textContent =
+        "Measurement running...";
+
+
+      measurementStatus.className =
+        "measurement-status active";
+
+
+      return;
+
+    }
+
+
+    // ------------------------------------------
+    // PREPARE
+    // ------------------------------------------
+
+    if (
+      line === "INFO,PREPARE"
+    ) {
+
+      measuring =
+        true;
+
+
+      setStatus(
+        "Preparing sensor...",
+        "measuring"
+      );
+
+
+      measurementStatus.textContent =
+        "Preparing measurement...";
+
+
+      measurementStatus.className =
+        "measurement-status active";
+
+
+      return;
+
+    }
+
+
+    // ------------------------------------------
+    // MOVEMENT
+    // ------------------------------------------
+
+    if (
+      line.startsWith(
+        "INFO,MOVEMENT_"
+      )
+    ) {
+
+      const match =
+        line.match(
+          /INFO,MOVEMENT_(\d+)/
+        );
+
+
+      if (match) {
+
+        const movementNumber =
+          Number(match[1]);
+
+
+        if (
+          currentMovement &&
+          currentMovement.number !==
+          movementNumber
+        ) {
+
+          finishCurrentMovement();
+
+        }
+
+
+        createMovement(
+          movementNumber
+        );
+
+
+        setStatus(
+          "Movement " +
+          movementNumber,
+          "measuring"
+        );
+
+      }
+
+
+      return;
+
+    }
+
+
+    // ------------------------------------------
+    // WAIT
+    // ------------------------------------------
+
+    if (
+      line.startsWith(
+        "INFO,WAIT_AFTER_MOVEMENT_"
+      )
+    ) {
+
+      return;
+
+    }
+
+
+    // ------------------------------------------
+    // END
+    // ------------------------------------------
+
+    if (
+      line === "END,ALL_MOVEMENTS"
+    ) {
+
+      finishSession();
+
+      return;
+
+    }
+
+
+    // ------------------------------------------
+    // HEADER
+    // ------------------------------------------
+
+    if (
+      line.startsWith(
+        "MOVEMENT,TIME_ms"
+      )
+    ) {
+
       addSerialLine(
-        "CONNECTED TO GAZELA SENSOR",
+        "CSV HEADER DETECTED",
         "serial-info"
       );
 
 
-      connectButton.disabled = true;
+      return;
 
-      disconnectButton.disabled = false;
-
-      startButton.disabled = false;
+    }
 
 
-      measurementStatus.textContent =
-        "Sensor connected. Ready for measurement.";
+    // ------------------------------------------
+    // ERROR
+    // ------------------------------------------
 
-      measurementStatus.className =
-        "measurement-status";
-
-
-      keepReading = true;
-
-      readSerial();
-
-
-    } catch (error) {
-
-      console.error(error);
-
-      addSerialLine(
-        "ERROR: " + error.message,
-        "serial-error"
-      );
+    if (
+      line === "ERROR,IMU"
+    ) {
 
       setStatus(
-        "Connection error",
+        "IMU error",
         "error"
       );
 
+
+      addSerialLine(
+        "IMU ERROR",
+        "serial-error"
+      );
+
+
+      return;
+
     }
+
+
+    // ------------------------------------------
+    // DATA
+    // ------------------------------------------
+
+    parseSensorData(
+      line
+    );
 
   }
 
 
-  // =========================================================
-  // READ SERIAL
-  // =========================================================
+  // ========================================================
+  // SERIAL READ
+  // ========================================================
 
   async function readSerial() {
 
     if (!port) {
+
       return;
+
     }
 
 
@@ -757,30 +2077,72 @@
             const {
               value,
               done
-            } = await reader.read();
+            } =
+              await reader.read();
 
 
             if (done) {
+
               break;
+
             }
 
 
-            if (value) {
+            if (!value) {
 
-              const text =
-                decoder.decode(
-                  value,
-                  { stream: true }
+              continue;
+
+            }
+
+
+            const text =
+              decoder.decode(
+                value,
+                {
+                  stream: true
+                }
+              );
+
+
+            buffer +=
+              text;
+
+
+            const lines =
+              buffer.split(
+                /\r?\n/
+              );
+
+
+            buffer =
+              lines.pop();
+
+
+            for (
+              const line
+              of lines
+            ) {
+
+              const clean =
+                line.trim();
+
+
+              if (
+                clean
+              ) {
+
+                processSerialLine(
+                  clean
                 );
 
-
-              processSerialText(text);
+              }
 
             }
 
           }
 
-        } finally {
+        }
+        finally {
 
           reader.releaseLock();
 
@@ -790,13 +2152,24 @@
 
       }
 
-    } catch (error) {
+    }
+    catch (error) {
 
-      console.error(error);
+      console.error(
+        error
+      );
+
 
       addSerialLine(
-        "SERIAL ERROR: " + error.message,
+        "SERIAL ERROR: " +
+        error.message,
         "serial-error"
+      );
+
+
+      setStatus(
+        "Serial error",
+        "error"
       );
 
     }
@@ -804,295 +2177,109 @@
   }
 
 
-  // =========================================================
-  // PROCESS SERIAL TEXT
-  // =========================================================
+  // ========================================================
+  // CONNECT SENSOR
+  // ========================================================
 
-  function processSerialText(text) {
-
-    buffer += text;
-
-
-    const lines =
-      buffer.split(/\r?\n/);
-
-
-    buffer =
-      lines.pop();
-
-
-    for (const line of lines) {
-
-      const clean =
-        line.trim();
-
-
-      if (!clean) {
-        continue;
-      }
-
-
-      processSerialLine(clean);
-
-    }
-
-  }
-
-
-  // =========================================================
-  // PROCESS SERIAL LINE
-  // =========================================================
-
-  function processSerialLine(line) {
-
-    addSerialLine(
-      line,
-      "serial-data"
-    );
-
-
-    // -----------------------------------------
-    // READY
-    // -----------------------------------------
-
-    if (line === "READY") {
-
-      if (!measuring) {
-
-        setStatus(
-          "Sensor ready",
-          "connected"
-        );
-
-      }
-
-      return;
-    }
-
-
-    // -----------------------------------------
-    // END
-    // -----------------------------------------
+  async function connectSensor() {
 
     if (
-      line === "END" ||
-      line.startsWith("END,")
+      !("serial" in navigator)
     ) {
 
-      measuring = false;
+      alert(
+        "Web Serial API nie jest dostępne. Użyj Google Chrome lub Microsoft Edge."
+      );
 
-      stopButton.disabled = true;
 
-      startButton.disabled = false;
+      return;
+
+    }
+
+
+    try {
+
+      port =
+        await navigator.serial.requestPort();
+
+
+      await port.open({
+        baudRate: 115200
+      });
+
 
       setStatus(
-        "Measurement finished",
+        "Sensor connected",
         "connected"
       );
 
 
+      addSerialLine(
+        "CONNECTED TO GAZELA SENSOR",
+        "serial-info"
+      );
+
+
+      addSerialLine(
+        "BAUD RATE: 115200",
+        "serial-info"
+      );
+
+
+      connectButton.disabled =
+        true;
+
+
+      disconnectButton.disabled =
+        false;
+
+
+      startButton.disabled =
+        false;
+
+
       measurementStatus.textContent =
-        "Measurement finished. Sensor is ready.";
+        "Sensor connected. Ready for measurement.";
+
 
       measurementStatus.className =
-        "measurement-status finished";
+        "measurement-status";
 
 
-      return;
+      keepReading =
+        true;
+
+
+      readSerial();
+
     }
+    catch (error) {
+
+      console.error(
+        error
+      );
 
 
-    // -----------------------------------------
-    // HEADER
-    // -----------------------------------------
-
-    if (
-      line.startsWith(
-        "MOVEMENT,TIME_ms"
-      )
-    ) {
-
-      return;
-    }
+      addSerialLine(
+        "CONNECTION ERROR: " +
+        error.message,
+        "serial-error"
+      );
 
 
-    // -----------------------------------------
-    // CSV DATA
-    // -----------------------------------------
-
-    if (
-      line.includes(",")
-    ) {
-
-      parseSensorData(line);
+      setStatus(
+        "Connection error",
+        "error"
+      );
 
     }
 
   }
 
 
-  // =========================================================
-  // PARSE SENSOR DATA
-  //
-  // v17.3:
-  //
-  // MOVEMENT,
-  // TIME_ms,
-  // AX,
-  // AY,
-  // AZ,
-  // G,
-  // Angle,
-  // GX,
-  // GY,
-  // GZ,
-  // AngleY
-  // =========================================================
-
-  function parseSensorData(line) {
-
-    const parts =
-      line.split(",");
-
-
-    if (parts.length < 11) {
-      return;
-    }
-
-
-    const movement =
-      parts[0];
-
-    const time =
-      parts[1];
-
-    const ax =
-      parseFloat(parts[2]);
-
-    const ay =
-      parseFloat(parts[3]);
-
-    const az =
-      parseFloat(parts[4]);
-
-    const g =
-      parseFloat(parts[5]);
-
-    const angle =
-      parseFloat(parts[6]);
-
-    const gx =
-      parseFloat(parts[7]);
-
-    const gy =
-      parseFloat(parts[8]);
-
-    const gz =
-      parseFloat(parts[9]);
-
-    const angley =
-      parseFloat(parts[10]);
-
-
-    // -----------------------------------------
-    // UPDATE COUNTER
-    // -----------------------------------------
-
-    samplesReceived++;
-
-    document.getElementById(
-      "samplesValue"
-    ).textContent =
-      samplesReceived;
-
-
-    // -----------------------------------------
-    // UPDATE VALUES
-    // -----------------------------------------
-
-    setValue(
-      "movementValue",
-      movement
-    );
-
-    setValue(
-      "timeValue",
-      time + " ms"
-    );
-
-
-    setNumber("ax", ax);
-
-    setNumber("ay", ay);
-
-    setNumber("az", az);
-
-    setNumber("g", g);
-
-    setNumber("angle", angle);
-
-    setNumber("gx", gx);
-
-    setNumber("gy", gy);
-
-    setNumber("gz", gz);
-
-    setNumber("angley", angley);
-
-  }
-
-
-  // =========================================================
-  // VALUE HELPERS
-  // =========================================================
-
-  function setValue(
-    id,
-    value
-  ) {
-
-    document.getElementById(id)
-      .textContent = value;
-
-  }
-
-
-  function setNumber(
-    id,
-    value
-  ) {
-
-    const element =
-      document.getElementById(id);
-
-
-    if (
-      value === null ||
-      value === undefined ||
-      Number.isNaN(value)
-    ) {
-
-      element.textContent = "—";
-
-      return;
-    }
-
-
-    element.textContent =
-      value.toFixed(3);
-
-  }
-
-
-  // =========================================================
+  // ========================================================
   // START MEASUREMENT
-  //
-  // Arduino v17.3 expects:
-  //
-  // S
-  //
-  // followed by newline.
-  // =========================================================
+  // ========================================================
 
   async function startMeasurement() {
 
@@ -1102,50 +2289,63 @@
         "Najpierw połącz sensor."
       );
 
+
       return;
+
     }
 
 
     if (!port.writable) {
 
       addSerialLine(
-        "ERROR: Serial port is not writable.",
+        "ERROR: Port is not writable.",
         "serial-error"
       );
 
+
       return;
+
     }
 
 
+    // ------------------------------------------
+    // NEW SESSION
+    // ------------------------------------------
+
+    createSession();
+
+
+    measuring =
+      true;
+
+
+    setStatus(
+      "Starting measurement...",
+      "measuring"
+    );
+
+
+    measurementStatus.textContent =
+      "Starting measurement...";
+
+
+    measurementStatus.className =
+      "measurement-status active";
+
+
+    startButton.disabled =
+      true;
+
+
+    stopButton.disabled =
+      false;
+
+
+    // ------------------------------------------
+    // SEND S
+    // ------------------------------------------
+
     try {
-
-      samplesReceived = 0;
-
-      document.getElementById(
-        "samplesValue"
-      ).textContent = "0";
-
-
-      measuring = true;
-
-
-      setStatus(
-        "Measurement running",
-        "measuring"
-      );
-
-
-      measurementStatus.textContent =
-        "Measurement running...";
-
-      measurementStatus.className =
-        "measurement-status active";
-
-
-      startButton.disabled = true;
-
-      stopButton.disabled = false;
-
 
       writer =
         port.writable.getWriter();
@@ -1156,7 +2356,9 @@
 
 
       await writer.write(
-        encoder.encode("S\n")
+        encoder.encode(
+          "S\n"
+        )
       );
 
 
@@ -1170,28 +2372,44 @@
         "serial-info"
       );
 
+    }
+    catch (error) {
 
-    } catch (error) {
-
-      console.error(error);
+      console.error(
+        error
+      );
 
 
       if (writer) {
 
         try {
+
           writer.releaseLock();
-        } catch (e) {}
+
+        }
+        catch (e) {}
 
         writer = null;
 
       }
 
 
-      measuring = false;
+      measuring =
+        false;
 
-      startButton.disabled = false;
 
-      stopButton.disabled = true;
+      startButton.disabled =
+        false;
+
+
+      stopButton.disabled =
+        true;
+
+
+      setStatus(
+        "Measurement error",
+        "error"
+      );
 
 
       addSerialLine(
@@ -1200,35 +2418,33 @@
         "serial-error"
       );
 
-
-      setStatus(
-        "Measurement error",
-        "error"
-      );
-
     }
 
   }
 
 
-  // =========================================================
+  // ========================================================
   // STOP
-  //
-  // NOTE:
-  // The current firmware may not implement
-  // a STOP command yet.
-  //
-  // Therefore this button currently stops
-  // the browser-side measurement state.
-  // =========================================================
+  // ========================================================
 
-  async function stopMeasurement() {
+  function stopMeasurement() {
 
-    measuring = false;
+    /*
+      v17.3 nie ma obecnie osobnej komendy STOP.
+      Ten przycisk zatrzymuje tylko stan aplikacji.
+    */
 
-    stopButton.disabled = true;
 
-    startButton.disabled = false;
+    measuring =
+      false;
+
+
+    stopButton.disabled =
+      true;
+
+
+    startButton.disabled =
+      false;
 
 
     setStatus(
@@ -1238,29 +2454,33 @@
 
 
     measurementStatus.textContent =
-      "Measurement stopped from browser.";
+      "Measurement state stopped in browser.";
+
 
     measurementStatus.className =
       "measurement-status";
 
 
     addSerialLine(
-      "> STOP (browser)",
+      "> STOP (browser only)",
       "serial-info"
     );
 
   }
 
 
-  // =========================================================
+  // ========================================================
   // DISCONNECT
-  // =========================================================
+  // ========================================================
 
   async function disconnectSensor() {
 
-    keepReading = false;
+    keepReading =
+      false;
 
-    measuring = false;
+
+    measuring =
+      false;
 
 
     try {
@@ -1273,9 +2493,12 @@
 
       }
 
-    } catch (error) {
+    }
+    catch (error) {
 
-      console.warn(error);
+      console.warn(
+        error
+      );
 
     }
 
@@ -1288,23 +2511,34 @@
 
       }
 
-    } catch (error) {
+    }
+    catch (error) {
 
-      console.warn(error);
+      console.warn(
+        error
+      );
 
     }
 
 
-    port = null;
+    port =
+      null;
 
 
-    connectButton.disabled = false;
+    connectButton.disabled =
+      false;
 
-    disconnectButton.disabled = true;
 
-    startButton.disabled = true;
+    disconnectButton.disabled =
+      true;
 
-    stopButton.disabled = true;
+
+    startButton.disabled =
+      true;
+
+
+    stopButton.disabled =
+      true;
 
 
     setStatus(
@@ -1314,6 +2548,7 @@
 
     measurementStatus.textContent =
       "Sensor disconnected.";
+
 
     measurementStatus.className =
       "measurement-status";
@@ -1327,9 +2562,9 @@
   }
 
 
-  // =========================================================
+  // ========================================================
   // BUTTON EVENTS
-  // =========================================================
+  // ========================================================
 
   connectButton.addEventListener(
     "click",
@@ -1355,18 +2590,22 @@
   );
 
 
-  // =========================================================
+  // ========================================================
   // INITIAL STATE
-  // =========================================================
+  // ========================================================
 
-  if (!("serial" in navigator)) {
+  if (
+    !("serial" in navigator)
+  ) {
 
     setStatus(
       "Web Serial unavailable",
       "error"
     );
 
-    connectButton.disabled = true;
+
+    connectButton.disabled =
+      true;
 
 
     addSerialLine(
@@ -1377,12 +2616,13 @@
   }
 
 
-  // =========================================================
-  // OPTIONAL:
-  // HANDLE DEVICE DISCONNECT
-  // =========================================================
+  // ========================================================
+  // DEVICE DISCONNECT
+  // ========================================================
 
-  if ("serial" in navigator) {
+  if (
+    "serial" in navigator
+  ) {
 
     navigator.serial.addEventListener(
       "disconnect",
@@ -1401,6 +2641,23 @@
     );
 
   }
+
+
+  // ========================================================
+  // INITIAL MESSAGE
+  // ========================================================
+
+  addSerialLine(
+    "Gazela Spiner Sensor Lab ready.",
+    "serial-info"
+  );
+
+
+  addSerialLine(
+    "Waiting for sensor connection...",
+    "serial-info"
+  );
+
 
 </script>
 
