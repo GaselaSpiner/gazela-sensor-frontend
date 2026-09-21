@@ -16,6 +16,10 @@
 // HEARTBEAT:
 // Sensor wysyła HEARTBEAT co 1 sekundę,
 // kiedy znajduje się w stanie READY.
+//
+// LIVE MODE:
+// Po połączeniu frontend automatycznie wysyła "L".
+// Sensor przechodzi wtedy w ciągły LIVE STREAM.
 // ========================================================
 
 
@@ -295,9 +299,6 @@ function createMovement(
   }
 
 
-  // Jeżeli taki ruch już istnieje,
-  // wykorzystujemy istniejący.
-
   let movement =
     currentSession.movements.find(
       item =>
@@ -412,13 +413,9 @@ function finishSession() {
     "measurement-status finished";
 
 
-  // Po zakończeniu pomiaru pozostajemy
-  // połączeni z sensorem.
-  //
-  // Heartbeat nadal kontroluje połączenie.
-
   startButton.disabled =
     false;
+
 
   stopButton.disabled =
     true;
@@ -874,6 +871,20 @@ function parseLiveData(
   }
 
 
+  // LIVE DATA = aktywny sygnał z sensora.
+  // W LIVE MODE heartbeat nie jest wysyłany,
+  // dlatego aktualizujemy czas ostatniego sygnału.
+
+  lastHeartbeatTime =
+    Date.now();
+
+
+  setStatus(
+    "Live sensor",
+    "connected"
+  );
+
+
   updateLiveSensorMode(
     data
   );
@@ -958,10 +969,6 @@ function parseSensorData(
   };
 
 
-  // ------------------------------------------
-  // CHECK NUMBERS
-  // ------------------------------------------
-
   if (
     !Number.isFinite(data.AX) ||
     !Number.isFinite(data.AY) ||
@@ -979,9 +986,12 @@ function parseSensorData(
   }
 
 
-  // ------------------------------------------
-  // SESSION
-  // ------------------------------------------
+  // Dane pomiarowe są również sygnałem,
+  // że sensor nadal odpowiada.
+
+  lastHeartbeatTime =
+    Date.now();
+
 
   if (!currentSession) {
 
@@ -989,10 +999,6 @@ function parseSensorData(
 
   }
 
-
-  // ------------------------------------------
-  // MOVEMENT
-  // ------------------------------------------
 
   if (
     !currentMovement ||
@@ -1016,10 +1022,6 @@ function parseSensorData(
   }
 
 
-  // ------------------------------------------
-  // SAVE SAMPLE IN MEMORY
-  // ------------------------------------------
-
   currentMovement.samples.push(
     data
   );
@@ -1027,10 +1029,6 @@ function parseSensorData(
 
   samplesReceived++;
 
-
-  // ------------------------------------------
-  // LIVE DISPLAY
-  // ------------------------------------------
 
   document.getElementById(
     "samplesValue"
@@ -1042,10 +1040,6 @@ function parseSensorData(
     data
   );
 
-
-  // ------------------------------------------
-  // UPDATE MOVEMENT UI
-  // ------------------------------------------
 
   renderMovements();
 
@@ -1166,6 +1160,10 @@ function processSerialLine(
       false;
 
 
+    lastHeartbeatTime =
+      Date.now();
+
+
     setStatus(
       "Live sensor",
       "connected"
@@ -1193,10 +1191,26 @@ function processSerialLine(
     line === "INFO,LIVE_START"
   ) {
 
+    measuring =
+      false;
+
+
+    lastHeartbeatTime =
+      Date.now();
+
+
     setStatus(
       "Live sensor",
       "connected"
     );
+
+
+    measurementStatus.textContent =
+      "Live sensor mode active.";
+
+
+    measurementStatus.className =
+      "measurement-status active";
 
 
     return;
@@ -1243,6 +1257,10 @@ function processSerialLine(
       true;
 
 
+    lastHeartbeatTime =
+      Date.now();
+
+
     if (!currentSession) {
 
       createSession();
@@ -1279,6 +1297,10 @@ function processSerialLine(
 
     measuring =
       true;
+
+
+    lastHeartbeatTime =
+      Date.now();
 
 
     setStatus(
@@ -1322,6 +1344,10 @@ function processSerialLine(
         Number(match[1]);
 
 
+      lastHeartbeatTime =
+        Date.now();
+
+
       measurementStatus.textContent =
         "Countdown: " +
         countdown;
@@ -1358,6 +1384,10 @@ function processSerialLine(
 
       const movementNumber =
         Number(match[1]);
+
+
+      lastHeartbeatTime =
+        Date.now();
 
 
       if (
@@ -1410,6 +1440,10 @@ function processSerialLine(
     )
   ) {
 
+    lastHeartbeatTime =
+      Date.now();
+
+
     finishCurrentMovement();
 
     return;
@@ -1426,6 +1460,10 @@ function processSerialLine(
       "INFO,WAIT_AFTER_MOVEMENT_"
     )
   ) {
+
+    lastHeartbeatTime =
+      Date.now();
+
 
     measurementStatus.textContent =
       "Prepare for next movement.";
@@ -1448,6 +1486,10 @@ function processSerialLine(
     line === "INFO,WAIT"
   ) {
 
+    lastHeartbeatTime =
+      Date.now();
+
+
     measurementStatus.textContent =
       "Waiting for next movement.";
 
@@ -1468,6 +1510,10 @@ function processSerialLine(
   if (
     line === "END,ALL_MOVEMENTS"
   ) {
+
+    lastHeartbeatTime =
+      Date.now();
+
 
     finishSession();
 
@@ -1695,6 +1741,60 @@ async function readSerial() {
 
 
 // ========================================================
+// SEND COMMAND
+// ========================================================
+
+async function sendCommand(
+  command
+) {
+
+  if (
+    !port ||
+    !port.writable
+  ) {
+
+    throw new Error(
+      "Serial port is not writable."
+    );
+
+  }
+
+
+  writer =
+    port.writable.getWriter();
+
+
+  try {
+
+    const encoder =
+      new TextEncoder();
+
+
+    await writer.write(
+      encoder.encode(
+        command + "\n"
+      )
+    );
+
+
+    addSerialLine(
+      "> " + command,
+      "serial-info"
+    );
+
+  }
+  finally {
+
+    writer.releaseLock();
+
+    writer = null;
+
+  }
+
+}
+
+
+// ========================================================
 // CONNECT SENSOR
 // ========================================================
 
@@ -1730,7 +1830,7 @@ async function connectSensor() {
     // ------------------------------------------
 
     setStatus(
-      "Waiting for sensor...",
+      "Connecting...",
       "connected"
     );
 
@@ -1759,12 +1859,16 @@ async function connectSensor() {
       false;
 
 
+    stopButton.disabled =
+      true;
+
+
     measurementStatus.textContent =
-      "Sensor connected. Waiting for READY.";
+      "Sensor connected. Starting LIVE mode...";
 
 
     measurementStatus.className =
-      "measurement-status";
+      "measurement-status active";
 
 
     keepReading =
@@ -1772,7 +1876,7 @@ async function connectSensor() {
 
 
     // ------------------------------------------
-    // HEARTBEAT MONITOR
+    // START HEARTBEAT / SIGNAL MONITOR
     // ------------------------------------------
 
     startHeartbeatMonitor();
@@ -1783,6 +1887,81 @@ async function connectSensor() {
     // ------------------------------------------
 
     readSerial();
+
+
+    // ------------------------------------------
+    // START LIVE MODE
+    //
+    // Firmware v18.5:
+    // L = LIVE MODE
+    // ------------------------------------------
+
+    setTimeout(
+      async () => {
+
+        if (
+          !port ||
+          !port.writable
+        ) {
+
+          return;
+
+        }
+
+
+        try {
+
+          await sendCommand(
+            "L"
+          );
+
+
+          setStatus(
+            "Live sensor",
+            "connected"
+          );
+
+
+          measurementStatus.textContent =
+            "Live sensor mode active.";
+
+
+          measurementStatus.className =
+            "measurement-status active";
+
+        }
+        catch (error) {
+
+          console.error(
+            error
+          );
+
+
+          setStatus(
+            "Live mode error",
+            "error"
+          );
+
+
+          measurementStatus.textContent =
+            "Unable to start LIVE mode.";
+
+
+          measurementStatus.className =
+            "measurement-status";
+
+
+          addSerialLine(
+            "LIVE ERROR: " +
+            error.message,
+            "serial-error"
+          );
+
+        }
+
+      },
+      300
+    );
 
   }
   catch (error) {
@@ -1875,33 +2054,15 @@ async function startMeasurement() {
 
   // ------------------------------------------
   // SEND S
+  //
+  // Firmware v18.5:
+  // S = START MEASUREMENT
   // ------------------------------------------
 
   try {
 
-    writer =
-      port.writable.getWriter();
-
-
-    const encoder =
-      new TextEncoder();
-
-
-    await writer.write(
-      encoder.encode(
-        "S\n"
-      )
-    );
-
-
-    writer.releaseLock();
-
-    writer = null;
-
-
-    addSerialLine(
-      "> S",
-      "serial-info"
+    await sendCommand(
+      "S"
     );
 
   }
@@ -1910,20 +2071,6 @@ async function startMeasurement() {
     console.error(
       error
     );
-
-
-    if (writer) {
-
-      try {
-
-        writer.releaseLock();
-
-      }
-      catch (e) {}
-
-      writer = null;
-
-    }
 
 
     measuring =
@@ -2045,6 +2192,35 @@ async function disconnectSensor() {
   try {
 
     if (port) {
+
+      // ------------------------------------------
+      // EXIT LIVE MODE
+      //
+      // Firmware v18.5:
+      // Q = EXIT LIVE MODE
+      // ------------------------------------------
+
+      if (
+        port.writable
+      ) {
+
+        try {
+
+          await sendCommand(
+            "Q"
+          );
+
+        }
+        catch (error) {
+
+          console.warn(
+            "Unable to send Q:",
+            error
+          );
+
+        }
+
+      }
 
       await port.close();
 
