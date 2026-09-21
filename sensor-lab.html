@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <title>Gazela Spiner Sensor Lab</title>
-<link rel="stylesheet" href="css/style.css">
+
+  <link rel="stylesheet" href="css/style.css">
 </head>
 
 
@@ -58,13 +59,16 @@
 
 
   <!-- =====================================================
-       MODULES
+       MODULE NAVIGATION
        ===================================================== -->
 
   <section class="modules">
 
 
-    <div class="module">
+    <button
+      class="module module-button active"
+      id="liveSensorModule"
+      type="button">
 
       <h3>
         LIVE SENSOR
@@ -75,10 +79,13 @@
         przyspieszenie, żyroskop, G oraz kąty.
       </p>
 
-    </div>
+    </button>
 
 
-    <div class="module">
+    <button
+      class="module module-button"
+      id="liveChartsModule"
+      type="button">
 
       <h3>
         LIVE CHARTS
@@ -89,10 +96,13 @@
         i parametrów ruchu.
       </p>
 
-    </div>
+    </button>
 
 
-    <div class="module">
+    <button
+      class="module module-button"
+      id="movementPlayerModule"
+      type="button">
 
       <h3>
         MOVEMENT PLAYER
@@ -103,10 +113,13 @@
         i obserwacja ich przebiegu w czasie.
       </p>
 
-    </div>
+    </button>
 
 
-    <div class="module">
+    <button
+      class="module module-button"
+      id="sessionModule"
+      type="button">
 
       <h3>
         SESSION
@@ -117,7 +130,7 @@
         z kolejnych sesji pomiarowych.
       </p>
 
-    </div>
+    </button>
 
 
   </section>
