@@ -42,6 +42,8 @@
     </p>
 
 
+    <!-- SENSOR CONNECTION STATUS -->
+
     <div class="status">
 
       <span
@@ -147,7 +149,7 @@
     </h2>
 
     <div class="card-description">
-      Dane odbierane bezpośrednio z Gazela Sensor v17.3.
+      Dane odbierane bezpośrednio z sensora Gazela Spiner.
     </div>
 
 
@@ -399,14 +401,19 @@
     <div class="controls">
 
 
-      <button id="connectButton">
+      <button
+        id="connectButton"
+        type="button">
+
         Connect Sensor
+
       </button>
 
 
       <button
         id="disconnectButton"
         class="secondary"
+        type="button"
         disabled>
 
         Disconnect
@@ -417,6 +424,7 @@
       <button
         id="startButton"
         class="start"
+        type="button"
         disabled>
 
         ▶ START MEASUREMENT
@@ -427,6 +435,7 @@
       <button
         id="stopButton"
         class="stop"
+        type="button"
         disabled>
 
         ■ STOP
