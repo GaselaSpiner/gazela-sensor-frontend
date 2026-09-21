@@ -1,137 +1,117 @@
 // ========================================================
-// GAZELA SPINER SENSOR LAB
-//
-// Firmware:
-// Gazela Sensor v18.5
-//
-// SESSION
-//   ├── Movement 1
-//   ├── Movement 2
-//   ├── Movement 3
-//   ├── Movement 4
-//   └── Movement 5
-//
-// Dane są obecnie przechowywane tylko w pamięci przeglądarki.
-//
-// HEARTBEAT:
-// Sensor wysyła HEARTBEAT co 1 sekundę,
-// kiedy znajduje się w stanie READY.
-//
-// LIVE MODE:
-// Po połączeniu frontend automatycznie wysyła "L".
-// Sensor przechodzi wtedy w ciągły LIVE STREAM.
+// GAZELA SPINER SENSOR — SENSOR LAB
+// app.js
 // ========================================================
 
 
 // ========================================================
-// SERIAL VARIABLES
+// GLOBAL VARIABLES
 // ========================================================
 
 let port = null;
-
 let reader = null;
-
-let writer = null;
-
-let keepReading = false;
 
 let measuring = false;
 
-let buffer = "";
+let currentMovement = 0;
+let currentMovementStart = null;
 
+let sessionStartTime = null;
+let sessionEndTime = null;
 
-// ========================================================
-// HEARTBEAT
-// ========================================================
+let sampleCount = 0;
 
 let lastHeartbeatTime = 0;
-
 let heartbeatMonitor = null;
 
 const HEARTBEAT_TIMEOUT = 3000;
 
 
 // ========================================================
-// SESSION DATA
+// DOM ELEMENTS
 // ========================================================
-
-let currentSession = null;
-
-let currentMovement = null;
-
-let sessionCounter = 0;
-
-let samplesReceived = 0;
-
-
-// ========================================================
-// ELEMENTS
-// ========================================================
-
-const connectButton =
-  document.getElementById("connectButton");
-
-const disconnectButton =
-  document.getElementById("disconnectButton");
-
-const startButton =
-  document.getElementById("startButton");
-
-const stopButton =
-  document.getElementById("stopButton");
-
-const serialMonitor =
-  document.getElementById("serialMonitor");
 
 const statusDot =
-  document.getElementById("statusDot");
+    document.getElementById("statusDot");
 
 const statusText =
-  document.getElementById("statusText");
+    document.getElementById("statusText");
+
+const movementValue =
+    document.getElementById("movementValue");
+
+const timeValue =
+    document.getElementById("timeValue");
+
+const samplesValue =
+    document.getElementById("samplesValue");
+
+const axValue =
+    document.getElementById("ax");
+
+const ayValue =
+    document.getElementById("ay");
+
+const azValue =
+    document.getElementById("az");
+
+const gValue =
+    document.getElementById("g");
+
+const angleValue =
+    document.getElementById("angle");
+
+const gxValue =
+    document.getElementById("gx");
+
+const gyValue =
+    document.getElementById("gy");
+
+const gzValue =
+    document.getElementById("gz");
+
+const angleyValue =
+    document.getElementById("angley");
+
+const connectButton =
+    document.getElementById("connectButton");
+
+const disconnectButton =
+    document.getElementById("disconnectButton");
+
+const startButton =
+    document.getElementById("startButton");
+
+const stopButton =
+    document.getElementById("stopButton");
 
 const measurementStatus =
-  document.getElementById("measurementStatus");
-
-const movementList =
-  document.getElementById("movementList");
+    document.getElementById("measurementStatus");
 
 const sessionBadge =
-  document.getElementById("sessionBadge");
+    document.getElementById("sessionBadge");
+
+const movementList =
+    document.getElementById("movementList");
+
+const serialMonitor =
+    document.getElementById("serialMonitor");
 
 
 // ========================================================
-// SERIAL LOG
+// INITIAL STATE
 // ========================================================
 
-function addSerialLine(
-  text,
-  type = ""
-) {
+if (startButton) {
+    startButton.disabled = true;
+}
 
-  const line =
-    document.createElement("div");
+if (stopButton) {
+    stopButton.disabled = true;
+}
 
-  line.className =
-    "serial-line";
-
-
-  if (type) {
-
-    line.classList.add(type);
-
-  }
-
-
-  line.textContent =
-    text;
-
-
-  serialMonitor.appendChild(line);
-
-
-  serialMonitor.scrollTop =
-    serialMonitor.scrollHeight;
-
+if (disconnectButton) {
+    disconnectButton.disabled = true;
 }
 
 
@@ -139,24 +119,123 @@ function addSerialLine(
 // STATUS
 // ========================================================
 
-function setStatus(
-  text,
-  type = ""
+function setStatus(text, state = "neutral") {
+
+    if (statusText) {
+        statusText.textContent = text;
+    }
+
+    if (statusDot) {
+
+        statusDot.className =
+            "status-dot";
+
+        if (state) {
+            statusDot.classList.add(state);
+        }
+
+    }
+
+}
+
+
+// ========================================================
+// SERIAL MONITOR
+// ========================================================
+
+function addSerialLine(
+    text,
+    className = ""
 ) {
 
-  statusText.textContent =
-    text;
+    if (!serialMonitor) {
+        return;
+    }
+
+    const line =
+        document.createElement("div");
+
+    line.textContent = text;
+
+    if (className) {
+        line.className = className;
+    }
+
+    serialMonitor.appendChild(line);
+
+    serialMonitor.scrollTop =
+        serialMonitor.scrollHeight;
+
+}
 
 
-  statusDot.className =
-    "status-dot";
+// ========================================================
+// FORMAT NUMBER
+// ========================================================
+
+function formatNumber(
+    value,
+    decimals = 3
+) {
+
+    const number =
+        Number(value);
+
+    if (!Number.isFinite(number)) {
+        return "--";
+    }
+
+    return number.toFixed(decimals);
+
+}
 
 
-  if (type) {
+// ========================================================
+// FORMAT TIME
+// ========================================================
 
-    statusDot.classList.add(type);
+function formatTime(
+    milliseconds
+) {
 
-  }
+    if (
+        !Number.isFinite(
+            milliseconds
+        )
+    ) {
+
+        return "00:00.000";
+
+    }
+
+    const totalMs =
+        Math.max(
+            0,
+            milliseconds
+        );
+
+    const minutes =
+        Math.floor(
+            totalMs / 60000
+        );
+
+    const seconds =
+        Math.floor(
+            (totalMs % 60000) / 1000
+        );
+
+    const ms =
+        Math.floor(
+            totalMs % 1000
+        );
+
+    return (
+        String(minutes).padStart(2, "0") +
+        ":" +
+        String(seconds).padStart(2, "0") +
+        "." +
+        String(ms).padStart(3, "0")
+    );
 
 }
 
@@ -167,636 +246,116 @@ function setStatus(
 
 function startHeartbeatMonitor() {
 
-  stopHeartbeatMonitor();
+    stopHeartbeatMonitor();
 
+    lastHeartbeatTime =
+        Date.now();
 
-  lastHeartbeatTime =
-    Date.now();
+    heartbeatMonitor =
+        setInterval(() => {
 
+            if (!port) {
+                return;
+            }
 
-  heartbeatMonitor =
-    setInterval(
-      () => {
+            const timeSinceHeartbeat =
+                Date.now() -
+                lastHeartbeatTime;
 
-        if (!port) {
-          return;
-        }
+            if (
+                timeSinceHeartbeat >
+                HEARTBEAT_TIMEOUT
+            ) {
 
+                if (!measuring) {
 
-        const timeSinceHeartbeat =
-          Date.now() - lastHeartbeatTime;
+                    setStatus(
+                        "Sensor connection lost",
+                        "error"
+                    );
 
+                }
 
-        if (
-          timeSinceHeartbeat >
-          HEARTBEAT_TIMEOUT
-        ) {
+            }
 
-          if (!measuring) {
-
-            setStatus(
-              "Sensor connection lost",
-              "error"
-            );
-
-          }
-
-        }
-
-      },
-      500
-    );
+        }, 500);
 
 }
 
+
+// ========================================================
+// STOP HEARTBEAT MONITOR
+// ========================================================
 
 function stopHeartbeatMonitor() {
 
-  if (heartbeatMonitor) {
+    if (heartbeatMonitor) {
 
-    clearInterval(
-      heartbeatMonitor
-    );
-
-    heartbeatMonitor =
-      null;
-
-  }
-
-}
-
-
-// ========================================================
-// START NEW SESSION
-// ========================================================
-
-function createSession() {
-
-  sessionCounter++;
-
-
-  currentSession = {
-
-    id:
-      "SESSION-" +
-      Date.now(),
-
-    number:
-      sessionCounter,
-
-    startedAt:
-      new Date(),
-
-    movements: []
-
-  };
-
-
-  currentMovement =
-    null;
-
-
-  samplesReceived =
-    0;
-
-
-  document.getElementById(
-    "samplesValue"
-  ).textContent =
-    "0";
-
-
-  sessionBadge.textContent =
-    "Session " +
-    currentSession.number;
-
-
-  movementList.innerHTML = "";
-
-
-  measurementStatus.textContent =
-    "Session created. Waiting for movements.";
-
-
-  measurementStatus.className =
-    "measurement-status active";
-
-}
-
-
-// ========================================================
-// CREATE MOVEMENT
-// ========================================================
-
-function createMovement(
-  movementNumber
-) {
-
-  if (!currentSession) {
-
-    createSession();
-
-  }
-
-
-  let movement =
-    currentSession.movements.find(
-      item =>
-        item.number === movementNumber
-    );
-
-
-  if (!movement) {
-
-    movement = {
-
-      number:
-        movementNumber,
-
-      samples: [],
-
-      startedAt:
-        new Date(),
-
-      endedAt:
-        null,
-
-      status:
-        "recording"
-
-    };
-
-
-    currentSession.movements.push(
-      movement
-    );
-
-  }
-
-
-  currentMovement =
-    movement;
-
-
-  renderMovements();
-
-}
-
-
-// ========================================================
-// FINISH MOVEMENT
-// ========================================================
-
-function finishCurrentMovement() {
-
-  if (!currentMovement) {
-
-    return;
-
-  }
-
-
-  if (
-    currentMovement.status ===
-    "recording"
-  ) {
-
-    currentMovement.endedAt =
-      new Date();
-
-    currentMovement.status =
-      "completed";
-
-  }
-
-
-  renderMovements();
-
-}
-
-
-// ========================================================
-// FINISH SESSION
-// ========================================================
-
-function finishSession() {
-
-  finishCurrentMovement();
-
-
-  if (currentSession) {
-
-    currentSession.endedAt =
-      new Date();
-
-  }
-
-
-  currentMovement =
-    null;
-
-
-  measuring =
-    false;
-
-
-  renderMovements();
-
-
-  measurementStatus.textContent =
-    "Session finished. " +
-    currentSession.movements.length +
-    " movement(s) received.";
-
-
-  measurementStatus.className =
-    "measurement-status finished";
-
-
-  startButton.disabled =
-    false;
-
-
-  stopButton.disabled =
-    true;
-
-}
-
-
-// ========================================================
-// RENDER MOVEMENTS
-// ========================================================
-
-function renderMovements() {
-
-  if (
-    !currentSession ||
-    currentSession.movements.length === 0
-  ) {
-
-    movementList.innerHTML =
-
-      `<div class="movement-card">
-        <div class="movement-status">
-          Brak zarejestrowanych ruchów.
-        </div>
-      </div>`;
-
-    return;
-
-  }
-
-
-  movementList.innerHTML = "";
-
-
-  currentSession.movements.forEach(
-    movement => {
-
-      const card =
-        document.createElement("div");
-
-
-      card.className =
-        "movement-card";
-
-
-      if (
-        currentMovement &&
-        currentMovement.number ===
-        movement.number
-      ) {
-
-        card.classList.add(
-          "active"
+        clearInterval(
+            heartbeatMonitor
         );
 
-      }
-
-
-      if (
-        movement.status ===
-        "completed"
-      ) {
-
-        card.classList.add(
-          "completed"
-        );
-
-      }
-
-
-      const sampleCount =
-        movement.samples.length;
-
-
-      let duration =
-        "—";
-
-
-      if (
-        movement.samples.length > 1
-      ) {
-
-        const first =
-          movement.samples[0];
-
-        const last =
-          movement.samples[
-            movement.samples.length - 1
-          ];
-
-
-        duration =
-          (
-            last.timeMs -
-            first.timeMs
-          ) +
-          " ms";
-
-      }
-
-
-      let lastSample =
-        null;
-
-
-      if (sampleCount > 0) {
-
-        lastSample =
-          movement.samples[
-            sampleCount - 1
-          ];
-
-      }
-
-
-      const lastG =
-        lastSample
-          ? lastSample.G.toFixed(3)
-          : "—";
-
-
-      const lastAngle =
-        lastSample
-          ? lastSample.Angle.toFixed(2)
-          : "—";
-
-
-      const lastGZ =
-        lastSample
-          ? lastSample.GZ.toFixed(2)
-          : "—";
-
-
-      card.innerHTML = `
-
-        <div class="movement-top">
-
-          <div class="movement-title">
-            Movement ${movement.number}
-          </div>
-
-          <div class="movement-status">
-            ${
-              movement.status === "completed"
-                ? "Completed"
-                : "Recording"
-            }
-          </div>
-
-        </div>
-
-
-        <div class="movement-data">
-
-          <div class="movement-data-item">
-
-            <div class="movement-data-label">
-              Samples
-            </div>
-
-            <div class="movement-data-value">
-              ${sampleCount}
-            </div>
-
-          </div>
-
-
-          <div class="movement-data-item">
-
-            <div class="movement-data-label">
-              Duration
-            </div>
-
-            <div class="movement-data-value">
-              ${duration}
-            </div>
-
-          </div>
-
-
-          <div class="movement-data-item">
-
-            <div class="movement-data-label">
-              Last G
-            </div>
-
-            <div class="movement-data-value">
-              ${lastG} g
-            </div>
-
-          </div>
-
-
-          <div class="movement-data-item">
-
-            <div class="movement-data-label">
-              Last Angle
-            </div>
-
-            <div class="movement-data-value">
-              ${lastAngle}°
-            </div>
-
-          </div>
-
-
-          <div class="movement-data-item">
-
-            <div class="movement-data-label">
-              Last GZ
-            </div>
-
-            <div class="movement-data-value">
-              ${lastGZ} °/s
-            </div>
-
-          </div>
-
-        </div>
-      `;
-
-
-      movementList.appendChild(
-        card
-      );
+        heartbeatMonitor =
+            null;
 
     }
-  );
 
 }
 
 
 // ========================================================
-// UPDATE LIVE SENSOR
+// RESET LIVE VALUES
 // ========================================================
 
-function updateLiveSensor(
-  data
-) {
+function resetLiveValues() {
 
-  document.getElementById(
-    "movementValue"
-  ).textContent =
-    data.movement;
+    if (movementValue) {
+        movementValue.textContent = "--";
+    }
 
+    if (timeValue) {
+        timeValue.textContent = "--";
+    }
 
-  document.getElementById(
-    "timeValue"
-  ).textContent =
-    data.timeMs +
-    " ms";
+    if (samplesValue) {
+        samplesValue.textContent = "0";
+    }
 
+    if (axValue) {
+        axValue.textContent = "--";
+    }
 
-  setNumber(
-    "ax",
-    data.AX
-  );
+    if (ayValue) {
+        ayValue.textContent = "--";
+    }
 
+    if (azValue) {
+        azValue.textContent = "--";
+    }
 
-  setNumber(
-    "ay",
-    data.AY
-  );
+    if (gValue) {
+        gValue.textContent = "--";
+    }
 
+    if (angleValue) {
+        angleValue.textContent = "--";
+    }
 
-  setNumber(
-    "az",
-    data.AZ
-  );
+    if (gxValue) {
+        gxValue.textContent = "--";
+    }
 
+    if (gyValue) {
+        gyValue.textContent = "--";
+    }
 
-  setNumber(
-    "g",
-    data.G
-  );
+    if (gzValue) {
+        gzValue.textContent = "--";
+    }
 
-
-  setNumber(
-    "angle",
-    data.Angle
-  );
-
-
-  setNumber(
-    "gx",
-    data.GX
-  );
-
-
-  setNumber(
-    "gy",
-    data.GY
-  );
-
-
-  setNumber(
-    "gz",
-    data.GZ
-  );
-
-
-  setNumber(
-    "angley",
-    data.AngleY
-  );
-
-}
-
-
-// ========================================================
-// UPDATE LIVE SENSOR FROM LIVE MODE
-// ========================================================
-
-function updateLiveSensorMode(
-  data
-) {
-
-  document.getElementById(
-    "movementValue"
-  ).textContent =
-    "LIVE";
-
-
-  document.getElementById(
-    "timeValue"
-  ).textContent =
-    "LIVE";
-
-
-  setNumber(
-    "ax",
-    data.AX
-  );
-
-
-  setNumber(
-    "ay",
-    data.AY
-  );
-
-
-  setNumber(
-    "az",
-    data.AZ
-  );
-
-
-  setNumber(
-    "g",
-    data.G
-  );
-
-
-  setNumber(
-    "angle",
-    data.Angle
-  );
-
-
-  setNumber(
-    "gx",
-    data.GX
-  );
-
-
-  setNumber(
-    "gy",
-    data.GY
-  );
-
-
-  setNumber(
-    "gz",
-    data.GZ
-  );
-
-
-  setNumber(
-    "angley",
-    data.AngleY
-  );
+    if (angleyValue) {
+        angleyValue.textContent = "--";
+    }
 
 }
 
@@ -806,276 +365,102 @@ function updateLiveSensorMode(
 // ========================================================
 
 function parseLiveData(
-  line
+    line
 ) {
 
-  const parts =
-    line.split(",");
-
-
-  if (
-    parts.length !== 10
-  ) {
-
-    return;
-
-  }
-
-
-  const data = {
-
-    AX:
-      Number(parts[1]),
-
-    AY:
-      Number(parts[2]),
-
-    AZ:
-      Number(parts[3]),
-
-    G:
-      Number(parts[4]),
-
-    Angle:
-      Number(parts[5]),
-
-    GX:
-      Number(parts[6]),
-
-    GY:
-      Number(parts[7]),
-
-    GZ:
-      Number(parts[8]),
-
-    AngleY:
-      Number(parts[9])
-
-  };
-
-
-  if (
-    !Number.isFinite(data.AX) ||
-    !Number.isFinite(data.AY) ||
-    !Number.isFinite(data.AZ) ||
-    !Number.isFinite(data.G) ||
-    !Number.isFinite(data.Angle) ||
-    !Number.isFinite(data.GX) ||
-    !Number.isFinite(data.GY) ||
-    !Number.isFinite(data.GZ) ||
-    !Number.isFinite(data.AngleY)
-  ) {
-
-    return;
-
-  }
-
-
-  // LIVE DATA = aktywny sygnał z sensora.
-  // W LIVE MODE heartbeat nie jest wysyłany,
-  // dlatego aktualizujemy czas ostatniego sygnału.
-
-  lastHeartbeatTime =
-    Date.now();
-
-
-  setStatus(
-    "Live sensor",
-    "connected"
-  );
-
-
-  updateLiveSensorMode(
-    data
-  );
-
-}
-
-
-// ========================================================
-// PARSE SENSOR DATA
-// ========================================================
-
-function parseSensorData(
-  line
-) {
-
-  const parts =
-    line.split(",");
-
-
-  if (
-    parts.length < 11
-  ) {
-
-    return;
-
-  }
-
-
-  const movement =
-    Number(parts[0]);
-
-
-  const timeMs =
-    Number(parts[1]);
-
-
-  if (
-    !Number.isFinite(movement) ||
-    !Number.isFinite(timeMs)
-  ) {
-
-    return;
-
-  }
-
-
-  const data = {
-
-    movement:
-      movement,
-
-    timeMs:
-      timeMs,
-
-    AX:
-      Number(parts[2]),
-
-    AY:
-      Number(parts[3]),
-
-    AZ:
-      Number(parts[4]),
-
-    G:
-      Number(parts[5]),
-
-    Angle:
-      Number(parts[6]),
-
-    GX:
-      Number(parts[7]),
-
-    GY:
-      Number(parts[8]),
-
-    GZ:
-      Number(parts[9]),
-
-    AngleY:
-      Number(parts[10])
-
-  };
-
-
-  if (
-    !Number.isFinite(data.AX) ||
-    !Number.isFinite(data.AY) ||
-    !Number.isFinite(data.AZ) ||
-    !Number.isFinite(data.G) ||
-    !Number.isFinite(data.Angle) ||
-    !Number.isFinite(data.GX) ||
-    !Number.isFinite(data.GY) ||
-    !Number.isFinite(data.GZ) ||
-    !Number.isFinite(data.AngleY)
-  ) {
-
-    return;
-
-  }
-
-
-  // Dane pomiarowe są również sygnałem,
-  // że sensor nadal odpowiada.
-
-  lastHeartbeatTime =
-    Date.now();
-
-
-  if (!currentSession) {
-
-    createSession();
-
-  }
-
-
-  if (
-    !currentMovement ||
-    currentMovement.number !==
-    movement
-  ) {
+    const parts =
+        line.split(",");
 
     if (
-      currentMovement
+        parts.length <
+        10
     ) {
+        return;
+    }
 
-      finishCurrentMovement();
+    if (
+        parts[0] !==
+        "LIVE"
+    ) {
+        return;
+    }
 
+    const AX =
+        parseFloat(parts[1]);
+
+    const AY =
+        parseFloat(parts[2]);
+
+    const AZ =
+        parseFloat(parts[3]);
+
+    const G =
+        parseFloat(parts[4]);
+
+    const Angle =
+        parseFloat(parts[5]);
+
+    const GX =
+        parseFloat(parts[6]);
+
+    const GY =
+        parseFloat(parts[7]);
+
+    const GZ =
+        parseFloat(parts[8]);
+
+    const AngleY =
+        parseFloat(parts[9]);
+
+
+    if (axValue) {
+        axValue.textContent =
+            formatNumber(AX);
+    }
+
+    if (ayValue) {
+        ayValue.textContent =
+            formatNumber(AY);
+    }
+
+    if (azValue) {
+        azValue.textContent =
+            formatNumber(AZ);
+    }
+
+    if (gValue) {
+        gValue.textContent =
+            formatNumber(G);
+    }
+
+    if (angleValue) {
+        angleValue.textContent =
+            formatNumber(Angle, 1);
+    }
+
+    if (gxValue) {
+        gxValue.textContent =
+            formatNumber(GX);
+    }
+
+    if (gyValue) {
+        gyValue.textContent =
+            formatNumber(GY);
+    }
+
+    if (gzValue) {
+        gzValue.textContent =
+            formatNumber(GZ);
+    }
+
+    if (angleyValue) {
+        angleyValue.textContent =
+            formatNumber(AngleY, 1);
     }
 
 
-    createMovement(
-      movement
-    );
-
-  }
-
-
-  currentMovement.samples.push(
-    data
-  );
-
-
-  samplesReceived++;
-
-
-  document.getElementById(
-    "samplesValue"
-  ).textContent =
-    samplesReceived;
-
-
-  updateLiveSensor(
-    data
-  );
-
-
-  renderMovements();
-
-}
-
-
-// ========================================================
-// NUMBER DISPLAY
-// ========================================================
-
-function setNumber(
-  id,
-  value
-) {
-
-  const element =
-    document.getElementById(
-      id
-    );
-
-
-  if (
-    !Number.isFinite(value)
-  ) {
-
-    element.textContent =
-      "—";
-
-
-    return;
-
-  }
-
-
-  element.textContent =
-    value.toFixed(3);
+    lastHeartbeatTime =
+        Date.now();
 
 }
 
@@ -1085,657 +470,619 @@ function setNumber(
 // ========================================================
 
 function processSerialLine(
-  line
+    line
 ) {
 
-  addSerialLine(
-    line,
-    "serial-data"
-  );
+    if (!line) {
+        return;
+    }
+
+    addSerialLine(line);
 
 
-  // ------------------------------------------
-  // HEARTBEAT
-  // ------------------------------------------
+    // ----------------------------------------------------
+    // HEARTBEAT
+    // ----------------------------------------------------
 
-  if (
-    line === "HEARTBEAT"
-  ) {
+    if (
+        line ===
+        "HEARTBEAT"
+    ) {
 
-    lastHeartbeatTime =
-      Date.now();
+        lastHeartbeatTime =
+            Date.now();
+
+        if (!measuring) {
+
+            setStatus(
+                "Sensor ready",
+                "connected"
+            );
+
+        }
+
+        return;
+    }
 
 
-    if (!measuring) {
+    // ----------------------------------------------------
+    // READY
+    // ----------------------------------------------------
 
-      setStatus(
-        "Sensor ready",
-        "connected"
-      );
+    if (
+        line ===
+        "READY"
+    ) {
+
+        measuring =
+            false;
+
+        lastHeartbeatTime =
+            Date.now();
+
+        setStatus(
+            "Sensor ready",
+            "connected"
+        );
+
+        if (measurementStatus) {
+
+            measurementStatus.textContent =
+                "Sensor ready.";
+
+            measurementStatus.className =
+                "measurement-status";
+
+        }
+
+        if (startButton) {
+            startButton.disabled = false;
+        }
+
+        if (stopButton) {
+            stopButton.disabled = true;
+        }
+
+        return;
+    }
+
+
+    // ----------------------------------------------------
+    // LIVE MODE
+    // ----------------------------------------------------
+
+    if (
+        line ===
+        "INFO,LIVE_MODE"
+    ) {
+
+        measuring =
+            false;
+
+        setStatus(
+            "Live sensor",
+            "connected"
+        );
+
+        if (measurementStatus) {
+
+            measurementStatus.textContent =
+                "Live sensor mode active.";
+
+            measurementStatus.className =
+                "measurement-status active";
+
+        }
+
+        if (startButton) {
+            startButton.disabled = false;
+        }
+
+        if (stopButton) {
+            stopButton.disabled = true;
+        }
+
+        return;
+    }
+
+
+    // ----------------------------------------------------
+    // LIVE START
+    // ----------------------------------------------------
+
+    if (
+        line ===
+        "INFO,LIVE_START"
+    ) {
+
+        measuring =
+            false;
+
+        setStatus(
+            "Live sensor",
+            "connected"
+        );
+
+        if (measurementStatus) {
+
+            measurementStatus.textContent =
+                "Live sensor mode active.";
+
+            measurementStatus.className =
+                "measurement-status active";
+
+        }
+
+        if (startButton) {
+            startButton.disabled = false;
+        }
+
+        if (stopButton) {
+            stopButton.disabled = true;
+        }
+
+        return;
+    }
+
+
+    // ----------------------------------------------------
+    // LIVE STOP
+    // ----------------------------------------------------
+
+    if (
+        line ===
+        "INFO,LIVE_STOP"
+    ) {
+
+        return;
 
     }
 
 
-    return;
+    // ----------------------------------------------------
+    // MEASUREMENT START
+    // ----------------------------------------------------
 
-  }
+    if (
+        line ===
+        "INFO,START"
+    ) {
+
+        measuring =
+            true;
+
+        sessionStartTime =
+            Date.now();
+
+        sessionEndTime =
+            null;
+
+        sampleCount =
+            0;
+
+        currentMovement =
+            0;
+
+        if (sessionBadge) {
+
+            sessionBadge.textContent =
+                "Measurement";
+
+        }
+
+        setStatus(
+            "Measurement running",
+            "connected"
+        );
+
+        if (measurementStatus) {
+
+            measurementStatus.textContent =
+                "Measurement running.";
+
+            measurementStatus.className =
+                "measurement-status active";
+
+        }
+
+        if (startButton) {
+            startButton.disabled = true;
+        }
+
+        if (stopButton) {
+            stopButton.disabled = false;
+        }
+
+        return;
+    }
 
 
-  // ------------------------------------------
-  // READY
-  // ------------------------------------------
+    // ----------------------------------------------------
+    // PREPARE
+    // ----------------------------------------------------
 
-  if (
-    line === "READY"
-  ) {
+    if (
+        line ===
+        "INFO,PREPARE"
+    ) {
 
-    lastHeartbeatTime =
-      Date.now();
+        if (measurementStatus) {
+
+            measurementStatus.textContent =
+                "Preparing measurement...";
+
+            measurementStatus.className =
+                "measurement-status active";
+
+        }
+
+        return;
+    }
 
 
-    if (!measuring) {
+    // ----------------------------------------------------
+    // COUNTDOWN
+    // ----------------------------------------------------
 
-      setStatus(
-        "Sensor ready",
-        "connected"
-      );
+    if (
+        line.startsWith(
+            "COUNTDOWN,"
+        )
+    ) {
+
+        const value =
+            line.split(",")[1];
+
+        if (measurementStatus) {
+
+            measurementStatus.textContent =
+                "Countdown: " +
+                value;
+
+        }
+
+        return;
+    }
+
+
+    // ----------------------------------------------------
+    // MOVEMENT
+    // ----------------------------------------------------
+
+    if (
+        line.startsWith(
+            "MOVEMENT,"
+        )
+    ) {
+
+        const parts =
+            line.split(",");
+
+        if (
+            parts.length >= 2
+        ) {
+
+            currentMovement =
+                parseInt(
+                    parts[1],
+                    10
+                );
+
+        }
+
+        if (movementValue) {
+
+            movementValue.textContent =
+                currentMovement;
+
+        }
+
+        return;
+    }
+
+
+    // ----------------------------------------------------
+    // CSV HEADER
+    // ----------------------------------------------------
+
+    if (
+        line.startsWith(
+            "MOVEMENT,TIME_ms"
+        )
+    ) {
+
+        return;
 
     }
 
 
-    return;
+    // ----------------------------------------------------
+    // CSV SAMPLE
+    // ----------------------------------------------------
 
-  }
+    if (
+        /^\d+,/.test(line)
+    ) {
 
+        sampleCount++;
 
-  // ------------------------------------------
-  // LIVE MODE
-  // ------------------------------------------
+        if (samplesValue) {
 
-  if (
-    line === "INFO,LIVE_MODE"
-  ) {
+            samplesValue.textContent =
+                sampleCount;
 
-    measuring =
-      false;
+        }
 
+        const parts =
+            line.split(",");
 
-    lastHeartbeatTime =
-      Date.now();
+        if (
+            parts.length >= 11
+        ) {
 
+            const movement =
+                parseInt(
+                    parts[0],
+                    10
+                );
 
-    setStatus(
-      "Live sensor",
-      "connected"
-    );
+            const time =
+                parseInt(
+                    parts[1],
+                    10
+                );
 
+            const AX =
+                parseFloat(
+                    parts[2]
+                );
 
-    measurementStatus.textContent =
-      "Live sensor mode active.";
+            const AY =
+                parseFloat(
+                    parts[3]
+                );
 
+            const AZ =
+                parseFloat(
+                    parts[4]
+                );
 
-    measurementStatus.className =
-      "measurement-status active";
+            const G =
+                parseFloat(
+                    parts[5]
+                );
 
+            const Angle =
+                parseFloat(
+                    parts[6]
+                );
 
-    return;
+            const GX =
+                parseFloat(
+                    parts[7]
+                );
 
-  }
+            const GY =
+                parseFloat(
+                    parts[8]
+                );
 
+            const GZ =
+                parseFloat(
+                    parts[9]
+                );
 
-  // ------------------------------------------
-  // LIVE START
-  // ------------------------------------------
-
-  if (
-    line === "INFO,LIVE_START"
-  ) {
-
-    measuring =
-      false;
-
-
-    lastHeartbeatTime =
-      Date.now();
-
-
-    setStatus(
-      "Live sensor",
-      "connected"
-    );
-
-
-    measurementStatus.textContent =
-      "Live sensor mode active.";
-
-
-    measurementStatus.className =
-      "measurement-status active";
-
-
-    return;
-
-  }
-
-
-  // ------------------------------------------
-  // LIVE STOP
-  // ------------------------------------------
-
-  if (
-    line === "INFO,LIVE_STOP"
-  ) {
-
-    setStatus(
-      "Sensor ready",
-      "connected"
-    );
+            const AngleY =
+                parseFloat(
+                    parts[10]
+                );
 
 
-    measurementStatus.textContent =
-      "Sensor is waiting.";
+            if (movementValue) {
+                movementValue.textContent =
+                    movement;
+            }
 
+            if (timeValue) {
+                timeValue.textContent =
+                    formatTime(time);
+            }
 
-    measurementStatus.className =
-      "measurement-status";
+            if (axValue) {
+                axValue.textContent =
+                    formatNumber(AX);
+            }
 
+            if (ayValue) {
+                ayValue.textContent =
+                    formatNumber(AY);
+            }
 
-    return;
+            if (azValue) {
+                azValue.textContent =
+                    formatNumber(AZ);
+            }
 
-  }
+            if (gValue) {
+                gValue.textContent =
+                    formatNumber(G);
+            }
 
+            if (angleValue) {
+                angleValue.textContent =
+                    formatNumber(Angle, 1);
+            }
 
-  // ------------------------------------------
-  // START
-  // ------------------------------------------
+            if (gxValue) {
+                gxValue.textContent =
+                    formatNumber(GX);
+            }
 
-  if (
-    line === "INFO,START"
-  ) {
+            if (gyValue) {
+                gyValue.textContent =
+                    formatNumber(GY);
+            }
 
-    measuring =
-      true;
+            if (gzValue) {
+                gzValue.textContent =
+                    formatNumber(GZ);
+            }
 
+            if (angleyValue) {
+                angleyValue.textContent =
+                    formatNumber(AngleY, 1);
+            }
 
-    lastHeartbeatTime =
-      Date.now();
+        }
 
-
-    if (!currentSession) {
-
-      createSession();
-
+        return;
     }
 
 
-    setStatus(
-      "Measurement running",
-      "measuring"
-    );
+    // ----------------------------------------------------
+    // END OF SESSION
+    // ----------------------------------------------------
 
+    if (
+        line ===
+        "END,ALL_MOVEMENTS"
+    ) {
 
-    measurementStatus.textContent =
-      "Measurement running...";
+        finishSession();
 
-
-    measurementStatus.className =
-      "measurement-status active";
-
-
-    return;
-
-  }
-
-
-  // ------------------------------------------
-  // PREPARE
-  // ------------------------------------------
-
-  if (
-    line === "INFO,PREPARE"
-  ) {
-
-    measuring =
-      true;
-
-
-    lastHeartbeatTime =
-      Date.now();
-
-
-    setStatus(
-      "Preparing sensor...",
-      "measuring"
-    );
-
-
-    measurementStatus.textContent =
-      "Preparing measurement...";
-
-
-    measurementStatus.className =
-      "measurement-status active";
-
-
-    return;
-
-  }
-
-
-  // ------------------------------------------
-  // COUNTDOWN
-  // ------------------------------------------
-
-  if (
-    line.startsWith(
-      "COUNTDOWN,"
-    )
-  ) {
-
-    const match =
-      line.match(
-        /COUNTDOWN,(\d+)/
-      );
-
-
-    if (match) {
-
-      const countdown =
-        Number(match[1]);
-
-
-      lastHeartbeatTime =
-        Date.now();
-
-
-      measurementStatus.textContent =
-        "Countdown: " +
-        countdown;
-
-
-      measurementStatus.className =
-        "measurement-status active";
-
+        return;
     }
 
 
-    return;
+    // ----------------------------------------------------
+    // LIVE DATA
+    // ----------------------------------------------------
 
-  }
+    if (
+        line.startsWith(
+            "LIVE,"
+        )
+    ) {
 
+        parseLiveData(
+            line
+        );
 
-  // ------------------------------------------
-  // MOVEMENT
-  // ------------------------------------------
-
-  if (
-    line.startsWith(
-      "INFO,MOVEMENT_"
-    )
-  ) {
-
-    const match =
-      line.match(
-        /INFO,MOVEMENT_(\d+)/
-      );
-
-
-    if (match) {
-
-      const movementNumber =
-        Number(match[1]);
-
-
-      lastHeartbeatTime =
-        Date.now();
-
-
-      if (
-        currentMovement &&
-        currentMovement.number !==
-        movementNumber
-      ) {
-
-        finishCurrentMovement();
-
-      }
-
-
-      createMovement(
-        movementNumber
-      );
-
-
-      setStatus(
-        "Movement " +
-        movementNumber,
-        "measuring"
-      );
-
-
-      measurementStatus.textContent =
-        "Recording movement " +
-        movementNumber +
-        "...";
-
-
-      measurementStatus.className =
-        "measurement-status active";
-
+        return;
     }
-
-
-    return;
-
-  }
-
-
-  // ------------------------------------------
-  // MOVEMENT COMPLETE
-  // ------------------------------------------
-
-  if (
-    line.match(
-      /^INFO,MOVEMENT_\d+_COMPLETE$/
-    )
-  ) {
-
-    lastHeartbeatTime =
-      Date.now();
-
-
-    finishCurrentMovement();
-
-    return;
-
-  }
-
-
-  // ------------------------------------------
-  // WAIT
-  // ------------------------------------------
-
-  if (
-    line.startsWith(
-      "INFO,WAIT_AFTER_MOVEMENT_"
-    )
-  ) {
-
-    lastHeartbeatTime =
-      Date.now();
-
-
-    measurementStatus.textContent =
-      "Prepare for next movement.";
-
-
-    measurementStatus.className =
-      "measurement-status active";
-
-
-    return;
-
-  }
-
-
-  // ------------------------------------------
-  // WAIT
-  // ------------------------------------------
-
-  if (
-    line === "INFO,WAIT"
-  ) {
-
-    lastHeartbeatTime =
-      Date.now();
-
-
-    measurementStatus.textContent =
-      "Waiting for next movement.";
-
-
-    measurementStatus.className =
-      "measurement-status active";
-
-
-    return;
-
-  }
-
-
-  // ------------------------------------------
-  // END
-  // ------------------------------------------
-
-  if (
-    line === "END,ALL_MOVEMENTS"
-  ) {
-
-    lastHeartbeatTime =
-      Date.now();
-
-
-    finishSession();
-
-
-    return;
-
-  }
-
-
-  // ------------------------------------------
-  // HEADER
-  // ------------------------------------------
-
-  if (
-    line.startsWith(
-      "MOVEMENT,TIME_ms"
-    )
-  ) {
-
-    addSerialLine(
-      "CSV HEADER DETECTED",
-      "serial-info"
-    );
-
-
-    return;
-
-  }
-
-
-  // ------------------------------------------
-  // LIVE DATA
-  // ------------------------------------------
-
-  if (
-    line.startsWith(
-      "LIVE,"
-    )
-  ) {
-
-    parseLiveData(
-      line
-    );
-
-
-    return;
-
-  }
-
-
-  // ------------------------------------------
-  // ERROR
-  // ------------------------------------------
-
-  if (
-    line === "ERROR,IMU_NOT_FOUND" ||
-    line === "ERROR,IMU"
-  ) {
-
-    setStatus(
-      "IMU error",
-      "error"
-    );
-
-
-    addSerialLine(
-      "IMU ERROR",
-      "serial-error"
-    );
-
-
-    return;
-
-  }
-
-
-  // ------------------------------------------
-  // DATA
-  // ------------------------------------------
-
-  parseSensorData(
-    line
-  );
 
 }
 
 
 // ========================================================
-// SERIAL READ
+// READ SERIAL
 // ========================================================
 
 async function readSerial() {
 
-  if (!port) {
+    if (!port) {
+        return;
+    }
 
-    return;
+    try {
 
-  }
+        const decoder =
+            new TextDecoder();
 
+        reader =
+            port.readable.getReader();
 
-  const decoder =
-    new TextDecoder();
-
-
-  try {
-
-    while (
-      port.readable &&
-      keepReading
-    ) {
-
-      reader =
-        port.readable.getReader();
-
-
-      try {
+        let buffer =
+            "";
 
         while (true) {
 
-          const {
-            value,
-            done
-          } =
-            await reader.read();
+            const {
+                value,
+                done
+            } =
+                await reader.read();
 
+            if (done) {
+                break;
+            }
 
-          if (done) {
+            if (!value) {
+                continue;
+            }
 
-            break;
+            buffer +=
+                decoder.decode(
+                    value,
+                    {
+                        stream: true
+                    }
+                );
 
-          }
+            const lines =
+                buffer.split(
+                    /\r?\n/
+                );
 
+            buffer =
+                lines.pop() || "";
 
-          if (!value) {
-
-            continue;
-
-          }
-
-
-          const text =
-            decoder.decode(
-              value,
-              {
-                stream: true
-              }
-            );
-
-
-          buffer +=
-            text;
-
-
-          const lines =
-            buffer.split(
-              /\r?\n/
-            );
-
-
-          buffer =
-            lines.pop();
-
-
-          for (
-            const line
-            of lines
-          ) {
-
-            const clean =
-              line.trim();
-
-
-            if (
-              clean
+            for (
+                const line
+                of lines
             ) {
 
-              processSerialLine(
-                clean
-              );
+                const cleanLine =
+                    line.trim();
+
+                if (
+                    cleanLine
+                ) {
+
+                    processSerialLine(
+                        cleanLine
+                    );
+
+                }
 
             }
 
-          }
+        }
+
+    }
+    catch (error) {
+
+        console.error(
+            error
+        );
+
+        if (port) {
+
+            setStatus(
+                "Serial connection error",
+                "error"
+            );
 
         }
 
-      }
-      finally {
+    }
+    finally {
 
-        reader.releaseLock();
+        if (reader) {
 
-        reader = null;
+            try {
+                reader.releaseLock();
+            }
+            catch (error) {
+                console.warn(error);
+            }
 
-      }
+            reader =
+                null;
+
+        }
 
     }
-
-  }
-  catch (error) {
-
-    console.error(
-      error
-    );
-
-
-    addSerialLine(
-      "SERIAL ERROR: " +
-      error.message,
-      "serial-error"
-    );
-
-
-    if (port) {
-
-      setStatus(
-        "Serial error",
-        "error"
-      );
-
-    }
-
-  }
 
 }
 
@@ -1745,51 +1092,123 @@ async function readSerial() {
 // ========================================================
 
 async function sendCommand(
-  command
+    command
 ) {
 
-  if (
-    !port ||
-    !port.writable
-  ) {
+    if (
+        !port ||
+        !port.writable
+    ) {
 
-    throw new Error(
-      "Serial port is not writable."
-    );
+        return;
 
-  }
+    }
+
+    const writer =
+        port.writable.getWriter();
+
+    try {
+
+        await writer.write(
+            new TextEncoder().encode(
+                command + "\n"
+            )
+        );
+
+        addSerialLine(
+            "> " + command,
+            "serial-command"
+        );
+
+    }
+    finally {
+
+        writer.releaseLock();
+
+    }
+
+}
 
 
-  writer =
-    port.writable.getWriter();
+// ========================================================
+// START LIVE MODE
+// ========================================================
 
+async function startLiveMode() {
 
-  try {
+    if (
+        !port ||
+        !port.writable
+    ) {
 
-    const encoder =
-      new TextEncoder();
+        return;
 
+    }
 
-    await writer.write(
-      encoder.encode(
-        command + "\n"
-      )
-    );
+    try {
 
+        await sendCommand(
+            "L"
+        );
 
-    addSerialLine(
-      "> " + command,
-      "serial-info"
-    );
+        measuring =
+            false;
 
-  }
-  finally {
+        lastHeartbeatTime =
+            Date.now();
 
-    writer.releaseLock();
+        setStatus(
+            "Live sensor",
+            "connected"
+        );
 
-    writer = null;
+        if (measurementStatus) {
 
-  }
+            measurementStatus.textContent =
+                "Live sensor mode active.";
+
+            measurementStatus.className =
+                "measurement-status active";
+
+        }
+
+        if (startButton) {
+            startButton.disabled = false;
+        }
+
+        if (stopButton) {
+            stopButton.disabled = true;
+        }
+
+    }
+    catch (error) {
+
+        console.error(
+            error
+        );
+
+        setStatus(
+            "Live mode error",
+            "error"
+        );
+
+        if (measurementStatus) {
+
+            measurementStatus.textContent =
+                "Unable to return to LIVE mode.";
+
+            measurementStatus.className =
+                "measurement-status";
+
+        }
+
+        addSerialLine(
+            "LIVE ERROR: " +
+            error.message,
+            "serial-error"
+        );
+
+    }
 
 }
 
@@ -1800,190 +1219,92 @@ async function sendCommand(
 
 async function connectSensor() {
 
-  if (
-    !("serial" in navigator)
-  ) {
+    if (
+        !("serial" in navigator)
+    ) {
 
-    alert(
-      "Web Serial API nie jest dostępne. Użyj Google Chrome lub Microsoft Edge."
-    );
+        alert(
+            "Web Serial API is not supported. Use Google Chrome or Microsoft Edge."
+        );
 
+        return;
 
-    return;
+    }
 
-  }
+    try {
 
+        port =
+            await navigator.serial.requestPort();
 
-  try {
-
-    port =
-      await navigator.serial.requestPort();
-
-
-    await port.open({
-      baudRate: 115200
-    });
+        await port.open({
+            baudRate: 115200
+        });
 
 
-    // ------------------------------------------
-    // INITIAL CONNECTION
-    // ------------------------------------------
-
-    setStatus(
-      "Connecting...",
-      "connected"
-    );
-
-
-    addSerialLine(
-      "CONNECTED TO GAZELA SENSOR",
-      "serial-info"
-    );
-
-
-    addSerialLine(
-      "BAUD RATE: 115200",
-      "serial-info"
-    );
-
-
-    connectButton.disabled =
-      true;
-
-
-    disconnectButton.disabled =
-      false;
-
-
-    startButton.disabled =
-      false;
-
-
-    stopButton.disabled =
-      true;
-
-
-    measurementStatus.textContent =
-      "Sensor connected. Starting LIVE mode...";
-
-
-    measurementStatus.className =
-      "measurement-status active";
-
-
-    keepReading =
-      true;
-
-
-    // ------------------------------------------
-    // START HEARTBEAT / SIGNAL MONITOR
-    // ------------------------------------------
-
-    startHeartbeatMonitor();
-
-
-    // ------------------------------------------
-    // START SERIAL READER
-    // ------------------------------------------
-
-    readSerial();
-
-
-    // ------------------------------------------
-    // START LIVE MODE
-    //
-    // Firmware v18.5:
-    // L = LIVE MODE
-    // ------------------------------------------
-
-    setTimeout(
-      async () => {
-
-        if (
-          !port ||
-          !port.writable
-        ) {
-
-          return;
-
+        if (connectButton) {
+            connectButton.disabled = true;
         }
 
+        if (disconnectButton) {
+            disconnectButton.disabled = false;
+        }
 
-        try {
-
-          await sendCommand(
-            "L"
-          );
-
-
-          setStatus(
-            "Live sensor",
+        setStatus(
+            "Sensor connected",
             "connected"
-          );
+        );
 
 
-          measurementStatus.textContent =
-            "Live sensor mode active.";
+        addSerialLine(
+            "Serial port connected.",
+            "serial-info"
+        );
 
 
-          measurementStatus.className =
-            "measurement-status active";
+        resetLiveValues();
 
-        }
-        catch (error) {
 
-          console.error(
+        startHeartbeatMonitor();
+
+
+        readSerial();
+
+
+        // ------------------------------------------------
+        // ENTER LIVE MODE
+        // ------------------------------------------------
+
+        setTimeout(
+            () => {
+
+                startLiveMode();
+
+            },
+            300
+        );
+
+    }
+    catch (error) {
+
+        console.error(
             error
-          );
+        );
 
+        port =
+            null;
 
-          setStatus(
-            "Live mode error",
+        setStatus(
+            "Connection failed",
             "error"
-          );
+        );
 
-
-          measurementStatus.textContent =
-            "Unable to start LIVE mode.";
-
-
-          measurementStatus.className =
-            "measurement-status";
-
-
-          addSerialLine(
-            "LIVE ERROR: " +
+        addSerialLine(
+            "CONNECT ERROR: " +
             error.message,
             "serial-error"
-          );
+        );
 
-        }
-
-      },
-      300
-    );
-
-  }
-  catch (error) {
-
-    console.error(
-      error
-    );
-
-
-    addSerialLine(
-      "CONNECTION ERROR: " +
-      error.message,
-      "serial-error"
-    );
-
-
-    setStatus(
-      "Connection error",
-      "error"
-    );
-
-  }
+    }
 
 }
 
@@ -1994,289 +1315,350 @@ async function connectSensor() {
 
 async function startMeasurement() {
 
-  if (!port) {
+    if (
+        !port ||
+        !port.writable
+    ) {
 
-    alert(
-      "Najpierw połącz sensor."
-    );
+        return;
 
+    }
 
-    return;
+    try {
 
-  }
+        measuring =
+            true;
 
+        sampleCount =
+            0;
 
-  if (!port.writable) {
+        currentMovement =
+            0;
 
-    addSerialLine(
-      "ERROR: Port is not writable.",
-      "serial-error"
-    );
+        sessionStartTime =
+            Date.now();
 
-
-    return;
-
-  }
-
-
-  // ------------------------------------------
-  // NEW SESSION
-  // ------------------------------------------
-
-  createSession();
+        sessionEndTime =
+            null;
 
 
-  measuring =
-    true;
+        if (samplesValue) {
+            samplesValue.textContent =
+                "0";
+        }
+
+        if (movementValue) {
+            movementValue.textContent =
+                "--";
+        }
+
+        if (timeValue) {
+            timeValue.textContent =
+                "--";
+        }
 
 
-  setStatus(
-    "Starting measurement...",
-    "measuring"
-  );
+        if (movementList) {
+
+            movementList.innerHTML =
+                "";
+
+        }
 
 
-  measurementStatus.textContent =
-    "Starting measurement...";
+        if (sessionBadge) {
+
+            sessionBadge.textContent =
+                "Measurement";
+
+        }
 
 
-  measurementStatus.className =
-    "measurement-status active";
+        setStatus(
+            "Measurement starting",
+            "connected"
+        );
 
 
-  startButton.disabled =
-    true;
+        if (measurementStatus) {
+
+            measurementStatus.textContent =
+                "Starting measurement...";
+
+            measurementStatus.className =
+                "measurement-status active";
+
+        }
 
 
-  stopButton.disabled =
-    false;
+        if (startButton) {
+            startButton.disabled = true;
+        }
+
+        if (stopButton) {
+            stopButton.disabled = false;
+        }
 
 
-  // ------------------------------------------
-  // SEND S
-  //
-  // Firmware v18.5:
-  // S = START MEASUREMENT
-  // ------------------------------------------
+        await sendCommand(
+            "S"
+        );
 
-  try {
+    }
+    catch (error) {
 
-    await sendCommand(
-      "S"
-    );
+        console.error(
+            error
+        );
 
-  }
-  catch (error) {
+        measuring =
+            false;
 
-    console.error(
-      error
-    );
+        setStatus(
+            "Measurement error",
+            "error"
+        );
 
+        if (measurementStatus) {
+
+            measurementStatus.textContent =
+                "Unable to start measurement.";
+
+            measurementStatus.className =
+                "measurement-status";
+
+        }
+
+        if (startButton) {
+            startButton.disabled = false;
+        }
+
+        if (stopButton) {
+            stopButton.disabled = true;
+        }
+
+    }
+
+}
+
+
+// ========================================================
+// FINISH SESSION
+// ========================================================
+
+function finishSession() {
 
     measuring =
-      false;
+        false;
+
+    sessionEndTime =
+        Date.now();
 
 
-    startButton.disabled =
-      false;
+    if (sessionBadge) {
 
+        sessionBadge.textContent =
+            "Session complete";
 
-    stopButton.disabled =
-      true;
+    }
 
 
     setStatus(
-      "Measurement error",
-      "error"
+        "Measurement complete",
+        "connected"
     );
 
 
-    addSerialLine(
-      "START ERROR: " +
-      error.message,
-      "serial-error"
-    );
+    if (measurementStatus) {
 
-  }
+        measurementStatus.textContent =
+            "Five movements completed.";
+
+        measurementStatus.className =
+            "measurement-status";
+
+    }
+
+
+    if (startButton) {
+        startButton.disabled = false;
+    }
+
+    if (stopButton) {
+        stopButton.disabled = true;
+    }
+
+
+    // ====================================================
+    // RETURN TO LIVE MODE
+    // ====================================================
+
+    setTimeout(
+        () => {
+
+            startLiveMode();
+
+        },
+        300
+    );
 
 }
 
 
 // ========================================================
-// STOP
+// STOP MEASUREMENT
 // ========================================================
 
-function stopMeasurement() {
+async function stopMeasurement() {
 
-  /*
-    v18.5 nie ma osobnej komendy STOP.
-    Ten przycisk zatrzymuje tylko stan aplikacji.
-  */
+    if (!port) {
+        return;
+    }
 
+    try {
 
-  measuring =
-    false;
+        measuring =
+            false;
 
+        await sendCommand(
+            "Q"
+        );
 
-  stopButton.disabled =
-    true;
+        if (measurementStatus) {
 
+            measurementStatus.textContent =
+                "Stopping measurement...";
 
-  startButton.disabled =
-    false;
+        }
 
+    }
+    catch (error) {
 
-  if (port) {
+        console.error(
+            error
+        );
 
-    setStatus(
-      "Sensor connected",
-      "connected"
-    );
-
-  }
-
-
-  measurementStatus.textContent =
-    "Measurement state stopped in browser.";
-
-
-  measurementStatus.className =
-    "measurement-status";
-
-
-  addSerialLine(
-    "> STOP (browser only)",
-    "serial-info"
-  );
+    }
 
 }
 
 
 // ========================================================
-// DISCONNECT
+// DISCONNECT SENSOR
 // ========================================================
 
 async function disconnectSensor() {
 
-  keepReading =
-    false;
+    stopHeartbeatMonitor();
 
 
-  measuring =
-    false;
+    try {
+
+        if (port) {
+
+            try {
+
+                await sendCommand(
+                    "Q"
+                );
+
+            }
+            catch (error) {
+
+                console.warn(
+                    "Unable to send Q:",
+                    error
+                );
+
+            }
 
 
-  stopHeartbeatMonitor();
+            if (reader) {
+
+                try {
+
+                    await reader.cancel();
+
+                }
+                catch (error) {
+
+                    console.warn(
+                        error
+                    );
+
+                }
+
+            }
 
 
-  try {
+            try {
 
-    if (reader) {
+                await port.close();
 
-      await reader.cancel();
+            }
+            catch (error) {
 
-      reader = null;
+                console.warn(
+                    error
+                );
 
-    }
-
-  }
-  catch (error) {
-
-    console.warn(
-      error
-    );
-
-  }
-
-
-  try {
-
-    if (port) {
-
-      // ------------------------------------------
-      // EXIT LIVE MODE
-      //
-      // Firmware v18.5:
-      // Q = EXIT LIVE MODE
-      // ------------------------------------------
-
-      if (
-        port.writable
-      ) {
-
-        try {
-
-          await sendCommand(
-            "Q"
-          );
-
-        }
-        catch (error) {
-
-          console.warn(
-            "Unable to send Q:",
-            error
-          );
+            }
 
         }
 
-      }
+    }
+    finally {
 
-      await port.close();
+        port =
+            null;
+
+        reader =
+            null;
+
+        measuring =
+            false;
+
+
+        if (connectButton) {
+            connectButton.disabled = false;
+        }
+
+        if (disconnectButton) {
+            disconnectButton.disabled = true;
+        }
+
+        if (startButton) {
+            startButton.disabled = true;
+        }
+
+        if (stopButton) {
+            stopButton.disabled = true;
+        }
+
+
+        setStatus(
+            "Sensor not connected",
+            "neutral"
+        );
+
+
+        if (measurementStatus) {
+
+            measurementStatus.textContent =
+                "Sensor disconnected.";
+
+            measurementStatus.className =
+                "measurement-status";
+
+        }
+
+
+        addSerialLine(
+            "Serial port disconnected.",
+            "serial-info"
+        );
 
     }
-
-  }
-  catch (error) {
-
-    console.warn(
-      error
-    );
-
-  }
-
-
-  port =
-    null;
-
-
-  lastHeartbeatTime =
-    0;
-
-
-  connectButton.disabled =
-    false;
-
-
-  disconnectButton.disabled =
-    true;
-
-
-  startButton.disabled =
-    true;
-
-
-  stopButton.disabled =
-    true;
-
-
-  setStatus(
-    "Sensor not connected"
-  );
-
-
-  measurementStatus.textContent =
-    "Sensor disconnected.";
-
-
-  measurementStatus.className =
-    "measurement-status";
-
-
-  addSerialLine(
-    "DISCONNECTED",
-    "serial-info"
-  );
 
 }
 
@@ -2285,94 +1667,53 @@ async function disconnectSensor() {
 // BUTTON EVENTS
 // ========================================================
 
-connectButton.addEventListener(
-  "click",
-  connectSensor
-);
+if (connectButton) {
+
+    connectButton.addEventListener(
+        "click",
+        connectSensor
+    );
+
+}
 
 
-disconnectButton.addEventListener(
-  "click",
-  disconnectSensor
-);
+if (disconnectButton) {
+
+    disconnectButton.addEventListener(
+        "click",
+        disconnectSensor
+    );
+
+}
 
 
-startButton.addEventListener(
-  "click",
-  startMeasurement
-);
+if (startButton) {
+
+    startButton.addEventListener(
+        "click",
+        startMeasurement
+    );
+
+}
 
 
-stopButton.addEventListener(
-  "click",
-  stopMeasurement
-);
+if (stopButton) {
 
-
-// ========================================================
-// INITIAL STATE
-// ========================================================
-
-if (
-  !("serial" in navigator)
-) {
-
-  setStatus(
-    "Web Serial unavailable",
-    "error"
-  );
-
-
-  connectButton.disabled =
-    true;
-
-
-  addSerialLine(
-    "Web Serial API is not supported in this browser.",
-    "serial-error"
-  );
+    stopButton.addEventListener(
+        "click",
+        stopMeasurement
+    );
 
 }
 
 
 // ========================================================
-// DEVICE DISCONNECT
+// INITIAL STATUS
 // ========================================================
 
-if (
-  "serial" in navigator
-) {
-
-  navigator.serial.addEventListener(
-    "disconnect",
-    event => {
-
-      if (
-        port &&
-        event.target === port
-      ) {
-
-        disconnectSensor();
-
-      }
-
-    }
-  );
-
-}
-
-
-// ========================================================
-// INITIAL MESSAGE
-// ========================================================
-
-addSerialLine(
-  "Gazela Spiner Sensor Lab ready.",
-  "serial-info"
+setStatus(
+    "Sensor not connected",
+    "neutral"
 );
 
-
-addSerialLine(
-  "Waiting for sensor connection...",
-  "serial-info"
-);
+resetLiveValues();
