@@ -542,7 +542,7 @@
         id="webUsbCommunicationButton"
         type="button">
 
-        TEST USB COMMUNICATION
+        TEST LIVE USB
 
       </button>
 
@@ -665,6 +665,7 @@
         );
 
         return;
+
       }
 
 
@@ -723,11 +724,12 @@
       }
 
     }
+
   );
 
 
   /* =====================================================
-     USB COMMUNICATION TEST
+     WEBUSB LIVE STREAM TEST
      ===================================================== */
 
   webUsbCommunicationButton.addEventListener(
@@ -738,10 +740,11 @@
 
 
       webUsbRawData.textContent =
-        "Brak odebranych danych.";
+        "Oczekiwanie na dane LIVE...";
 
 
       try {
+
 
         /* =================================================
            STEP 1 — CHECK WebUSB
@@ -757,7 +760,7 @@
 
 
         setWebUsbStatus(
-          "KROK 1/9 — WebUSB dostępne."
+          "KROK 1/8 — WebUSB dostępne."
         );
 
 
@@ -768,7 +771,7 @@
         if (!device) {
 
           setWebUsbStatus(
-            "KROK 2/9 — Wybierz Nano 33 BLE..."
+            "KROK 2/8 — Wybierz Nano 33 BLE..."
           );
 
 
@@ -791,8 +794,11 @@
 
 
         setWebUsbStatus(
-          "KROK 2/9 — Wybrano: " +
+
+          "KROK 2/8 — Wybrano: " +
+
           (device.productName || "Nano 33 BLE")
+
         );
 
 
@@ -808,7 +814,7 @@
 
 
         setWebUsbStatus(
-          "KROK 3/9 — Urządzenie USB otwarte."
+          "KROK 3/8 — Urządzenie USB otwarte."
         );
 
 
@@ -827,12 +833,12 @@
 
 
         setWebUsbStatus(
-          "KROK 4/9 — Wybrano konfigurację 1."
+          "KROK 4/8 — Wybrano konfigurację 1."
         );
 
 
         /* =================================================
-           STEP 5 — CLAIM CDC COMMUNICATION INTERFACE 0
+           STEP 5 — CLAIM CDC INTERFACE
            ================================================= */
 
         await device.claimInterface(0);
@@ -840,26 +846,13 @@
         webUsbInterface0Claimed = true;
 
 
-        setWebUsbStatus(
-          "KROK 5/9 — Przejęto interfejs CDC 0."
-        );
-
-
         /* =================================================
-           STEP 6 — SET LINE CODING
-
-           115200 baud
-           8 data bits
-           no parity
-           1 stop bit
-
-           CDC SET_LINE_CODING
-           request = 0x20
-           interface = 0
+           SET LINE CODING — 115200 8N1
            ================================================= */
 
         const lineCoding =
           new Uint8Array([
+
             0x00,
             0xC2,
             0x01,
@@ -867,17 +860,24 @@
             0x00,
             0x00,
             0x08
+
           ]);
 
 
         await device.controlTransferOut(
 
           {
+
             requestType: "class",
+
             recipient: "interface",
+
             request: 0x20,
+
             value: 0x0000,
+
             index: 0x0000
+
           },
 
           lineCoding
@@ -885,44 +885,33 @@
         );
 
 
-        setWebUsbStatus(
-          "KROK 6/9 — Ustawiono 115200 8N1."
-        );
-
-
         /* =================================================
-           STEP 7 — SET CONTROL LINE STATE
+           SET CONTROL LINE STATE
 
            DTR = 1
-           RTS = 0
-
-           CDC SET_CONTROL_LINE_STATE
-           request = 0x22
-           interface = 0
-
-           DTR is the important part for Arduino CDC.
            ================================================= */
 
         await device.controlTransferOut(
 
           {
+
             requestType: "class",
+
             recipient: "interface",
+
             request: 0x22,
+
             value: 0x0001,
+
             index: 0x0000
+
           }
 
         );
 
 
-        setWebUsbStatus(
-          "KROK 7/9 — DTR aktywne."
-        );
-
-
         /* =================================================
-           STEP 8 — CLAIM DATA INTERFACE 1
+           STEP 6 — CLAIM DATA INTERFACE
            ================================================= */
 
         await device.claimInterface(1);
@@ -931,201 +920,288 @@
 
 
         setWebUsbStatus(
-          "KROK 8/9 — Przejęto interfejs danych 1."
+          "KROK 5/8 — Interfejs USB gotowy."
         );
 
 
         /* =================================================
-           SEND L
+           STEP 7 — SEND L
            ================================================= */
 
         const encoder =
           new TextEncoder();
 
 
-        const command =
-          encoder.encode("L\n");
+        const decoder =
+          new TextDecoder();
 
 
         await device.transferOut(
+
           1,
-          command
+
+          encoder.encode("L\n")
+
         );
 
 
         setWebUsbStatus(
-          "Wysłano: L — oczekiwanie na dane..."
+          "KROK 6/8 — Wysłano L. Oczekiwanie na LIVE..."
         );
 
 
         /* =================================================
-           READ DATA
-
-           Interface 1
-           Bulk IN endpoint = 1
-           Packet = 64 bytes
-
-           We read several packets.
-
-           We stop when we receive actual text.
+           STEP 8 — READ LIVE DATA
            ================================================= */
 
         let allReceived = "";
 
-        let receivedLive = false;
+        let liveCount = 0;
+
+        let countedLines = 0;
 
 
-        for (
-          let i = 0;
-          i < 10;
-          i++
+        const startTime =
+          Date.now();
+
+
+        const testDuration =
+          5000;
+
+
+        while (
+          Date.now() - startTime <
+          testDuration
         ) {
-
-          setWebUsbStatus(
-            "Odczyt USB — pakiet " +
-            (i + 1) +
-            "/10..."
-          );
 
 
           const result =
             await device.transferIn(
+
               1,
+
               64
+
             );
 
 
           if (
-            result &&
-            result.data &&
-            result.data.byteLength > 0
-          ) {
 
-            const decoder =
-              new TextDecoder();
+            result &&
+
+            result.data &&
+
+            result.data.byteLength > 0
+
+          ) {
 
 
             const text =
-              decoder.decode(result.data);
+              decoder.decode(
+                result.data
+              );
 
 
             allReceived += text;
 
 
-            webUsbRawData.textContent =
-              "ODEBRANO Z NANO:\n\n" +
-              allReceived;
+            const lines =
+              allReceived.split(/\r?\n/);
+
+
+            /*
+             * Count only NEW complete LIVE lines.
+             */
+
+            const completeLines =
+              lines.slice(
+                0,
+                -1
+              );
 
 
             if (
-              text.includes("LIVE,") ||
-              text.includes("READY") ||
-              text.includes("HEARTBEAT") ||
-              text.includes("INFO,")
+              completeLines.length >
+              countedLines
             ) {
 
-              receivedLive = true;
+              for (
+                let i = countedLines;
+                i < completeLines.length;
+                i++
+              ) {
 
-              break;
+                if (
+                  completeLines[i]
+                    .startsWith("LIVE,")
+                ) {
+
+                  liveCount++;
+
+                }
+
+              }
+
+
+              countedLines =
+                completeLines.length;
 
             }
+
+
+            webUsbRawData.textContent =
+
+              "ODEBRANO Z NANO:\n\n" +
+
+              allReceived.slice(-6000);
+
+
+            setWebUsbStatus(
+
+              "Odczyt LIVE... odebrano " +
+
+              liveCount +
+
+              " próbek."
+
+            );
 
           }
 
         }
+
+
+        /* =================================================
+           STOP LIVE MODE
+           ================================================= */
+
+        await device.transferOut(
+
+          1,
+
+          encoder.encode("Q\n")
+
+        );
 
 
         /* =================================================
            RESULT
            ================================================= */
 
-        if (receivedLive) {
+        if (
+          liveCount > 0
+        ) {
+
 
           setWebUsbStatus(
-            "SUKCES — WebUSB odebrał dane z Nano."
+
+            "SUKCES — WebUSB odebrał " +
+
+            liveCount +
+
+            " próbek LIVE z Nano."
+
           );
-
-
-          /* -----------------------------------------------
-             SEND Q ONLY AFTER SUCCESS
-             ----------------------------------------------- */
-
-          const stopCommand =
-            encoder.encode("Q\n");
-
-
-          await device.transferOut(
-            1,
-            stopCommand
-          );
-
-
-          webUsbRawData.textContent +=
-            "\n\nWYSŁANO DO NANO:\nQ";
-
 
         }
 
+
         else {
 
+
           setWebUsbStatus(
-            "USB OTWARTO, ALE NIE ODEBRANO DANYCH."
+
+            "USB działa, ale nie odebrano " +
+
+            "żadnej linii LIVE."
+
+          );
+
+        }
+
+
+        webUsbRawData.textContent +=
+
+          "\n\nWYSŁANO DO NANO:\nQ";
+
+
+        /* =================================================
+           CLEANUP — INTERFACE 1
+           ================================================= */
+
+        try {
+
+          if (
+            webUsbInterface1Claimed
+          ) {
+
+            await device.releaseInterface(1);
+
+            webUsbInterface1Claimed =
+              false;
+
+          }
+
+        }
+
+
+        catch (error) {
+
+          console.warn(
+
+            "Nie udało się zwolnić " +
+            "interfejsu 1:",
+
+            error
+
           );
 
         }
 
 
         /* =================================================
-           CLEANUP
+           CLEANUP — INTERFACE 0
            ================================================= */
 
         try {
 
-          if (webUsbInterface1Claimed) {
-
-            await device.releaseInterface(1);
-
-            webUsbInterface1Claimed = false;
-
-          }
-
-        }
-
-        catch (error) {
-
-          console.warn(
-            "Nie udało się zwolnić interfejsu 1:",
-            error
-          );
-
-        }
-
-
-        try {
-
-          if (webUsbInterface0Claimed) {
+          if (
+            webUsbInterface0Claimed
+          ) {
 
             await device.releaseInterface(0);
 
-            webUsbInterface0Claimed = false;
+            webUsbInterface0Claimed =
+              false;
 
           }
 
         }
 
+
         catch (error) {
 
           console.warn(
-            "Nie udało się zwolnić interfejsu 0:",
+
+            "Nie udało się zwolnić " +
+            "interfejsu 0:",
+
             error
+
           );
 
         }
 
 
+        /* =================================================
+           CLOSE
+           ================================================= */
+
         try {
 
-          if (device.opened) {
+          if (
+            device.opened
+          ) {
 
             await device.close();
 
@@ -1133,37 +1209,52 @@
 
         }
 
+
         catch (error) {
 
           console.warn(
+
             "Nie udało się zamknąć USB:",
+
             error
+
           );
 
         }
 
 
-        webUsbDevice = null;
+        webUsbDevice =
+          null;
 
       }
 
 
       catch (error) {
 
+
         console.error(
-          "WebUSB communication error:",
+
+          "WebUSB LIVE test error:",
+
           error
+
         );
 
 
         setWebUsbStatus(
+
           "BŁĄD WebUSB: " +
+
           error.message
+
         );
 
 
         webUsbRawData.textContent =
-          "Komunikacja zatrzymała się na powyższym etapie.";
+
+          "Test zatrzymał się na błędzie:\n\n" +
+
+          error.message;
 
 
         /* =================================================
@@ -1172,23 +1263,31 @@
 
         if (device) {
 
+
           try {
 
-            if (webUsbInterface1Claimed) {
+            if (
+              webUsbInterface1Claimed
+            ) {
 
               await device.releaseInterface(1);
 
-              webUsbInterface1Claimed = false;
+              webUsbInterface1Claimed =
+                false;
 
             }
 
           }
 
-          catch (error) {
+
+          catch (cleanupError) {
 
             console.warn(
+
               "Release interface 1 error:",
-              error
+
+              cleanupError
+
             );
 
           }
@@ -1196,21 +1295,28 @@
 
           try {
 
-            if (webUsbInterface0Claimed) {
+            if (
+              webUsbInterface0Claimed
+            ) {
 
               await device.releaseInterface(0);
 
-              webUsbInterface0Claimed = false;
+              webUsbInterface0Claimed =
+                false;
 
             }
 
           }
 
-          catch (error) {
+
+          catch (cleanupError) {
 
             console.warn(
+
               "Release interface 0 error:",
-              error
+
+              cleanupError
+
             );
 
           }
@@ -1218,7 +1324,9 @@
 
           try {
 
-            if (device.opened) {
+            if (
+              device.opened
+            ) {
 
               await device.close();
 
@@ -1226,11 +1334,15 @@
 
           }
 
-          catch (error) {
+
+          catch (cleanupError) {
 
             console.warn(
+
               "Close USB error:",
-              error
+
+              cleanupError
+
             );
 
           }
@@ -1238,11 +1350,13 @@
         }
 
 
-        webUsbDevice = null;
+        webUsbDevice =
+          null;
 
       }
 
     }
+
   );
 
 </script>
