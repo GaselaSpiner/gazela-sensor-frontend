@@ -621,30 +621,262 @@
       "Otwieranie wyboru urządzenia USB...";
 
 
+    let device = null;
+
+
     try {
 
-      const device = await navigator.usb.requestDevice({
-        filters: []
+      /*
+       * =====================================================
+       * STEP 1
+       * Wybór urządzenia USB
+       * =====================================================
+       */
+
+      device = await navigator.usb.requestDevice({
+        filters: [
+          {
+            vendorId: 0x2341
+          }
+        ]
       });
 
 
       webUsbStatus.textContent =
-        "ZNALEZIONO URZĄDZENIE: " +
+        "Wybrano urządzenie. Otwieranie USB...";
+
+
+      /*
+       * =====================================================
+       * STEP 2
+       * Otwarcie urządzenia
+       * =====================================================
+       */
+
+      await device.open();
+
+
+      /*
+       * =====================================================
+       * STEP 3
+       * Sprawdzenie konfiguracji
+       * =====================================================
+       */
+
+      if (device.configuration === null) {
+
+        await device.selectConfiguration(1);
+
+      }
+
+
+      const configuration =
+        device.configuration;
+
+
+      /*
+       * =====================================================
+       * STEP 4
+       * Analiza interfejsów i endpointów
+       * =====================================================
+       */
+
+      let result = "";
+
+      result +=
+        "WEBUSB CONNECTED\n\n";
+
+      result +=
+        "Device: " +
         (device.productName || "brak nazwy") +
-        " | producent: " +
+        "\n";
+
+      result +=
+        "Manufacturer: " +
         (device.manufacturerName || "brak danych") +
-        " | VID: 0x" +
-        device.vendorId.toString(16) +
-        " | PID: 0x" +
-        device.productId.toString(16);
+        "\n";
+
+      result +=
+        "VID: 0x" +
+        device.vendorId.toString(16).padStart(4, "0") +
+        "\n";
+
+      result +=
+        "PID: 0x" +
+        device.productId.toString(16).padStart(4, "0") +
+        "\n\n";
+
+      result +=
+        "Configuration: " +
+        configuration.configurationValue +
+        "\n";
+
+      result +=
+        "Interfaces: " +
+        configuration.interfaces.length +
+        "\n\n";
+
+
+      configuration.interfaces.forEach(
+        (usbInterface, interfaceIndex) => {
+
+          const iface =
+            usbInterface.alternate;
+
+
+          result +=
+            "INTERFACE " +
+            interfaceIndex +
+            "\n";
+
+          result +=
+            "  Interface number: " +
+            usbInterface.interfaceNumber +
+            "\n";
+
+          result +=
+            "  Alternate setting: " +
+            iface.alternateSetting +
+            "\n";
+
+          result +=
+            "  Class: 0x" +
+            iface.interfaceClass
+              .toString(16)
+              .padStart(2, "0") +
+            "\n";
+
+          result +=
+            "  Subclass: 0x" +
+            iface.interfaceSubclass
+              .toString(16)
+              .padStart(2, "0") +
+            "\n";
+
+          result +=
+            "  Protocol: 0x" +
+            iface.interfaceProtocol
+              .toString(16)
+              .padStart(2, "0") +
+            "\n";
+
+          result +=
+            "  Endpoints: " +
+            iface.endpoints.length +
+            "\n";
+
+
+          iface.endpoints.forEach(
+            (endpoint, endpointIndex) => {
+
+              result +=
+                "    Endpoint " +
+                endpointIndex +
+                "\n";
+
+              result +=
+                "      Address: 0x" +
+                endpoint.endpointNumber
+                  .toString(16)
+                  .padStart(2, "0") +
+                "\n";
+
+              result +=
+                "      Direction: " +
+                endpoint.direction +
+                "\n";
+
+              result +=
+                "      Type: " +
+                endpoint.type +
+                "\n";
+
+              result +=
+                "      Packet size: " +
+                endpoint.packetSize +
+                "\n";
+
+            }
+          );
+
+
+          result += "\n";
+
+        }
+      );
+
+
+      /*
+       * =====================================================
+       * STEP 5
+       * Pokazujemy wynik
+       * =====================================================
+       */
+
+      webUsbStatus.style.whiteSpace =
+        "pre-wrap";
+
+      webUsbStatus.textContent =
+        result;
+
+
+      /*
+       * =====================================================
+       * STEP 6
+       * Zamykamy urządzenie
+       *
+       * Na tym etapie to tylko test diagnostyczny.
+       * Właściwa warstwa komunikacyjna NIE będzie
+       * zamykała urządzenia po wykryciu.
+       * =====================================================
+       */
+
+      await device.close();
+
 
     }
 
     catch (error) {
 
+      webUsbStatus.style.whiteSpace =
+        "pre-wrap";
+
       webUsbStatus.textContent =
-        "WebUSB: " +
-        error.message;
+        "WEBUSB ERROR\n\n" +
+        "Name: " +
+        (error.name || "unknown") +
+        "\n\n" +
+        "Message:\n" +
+        (error.message || error);
+
+      
+      /*
+       * Jeżeli urządzenie zostało otwarte,
+       * próbujemy je bezpiecznie zamknąć.
+       */
+
+      if (device) {
+
+        try {
+
+          if (device.opened) {
+
+            await device.close();
+
+          }
+
+        }
+
+        catch (closeError) {
+
+          console.log(
+            "WebUSB close error:",
+            closeError
+          );
+
+        }
+
+      }
 
     }
 
