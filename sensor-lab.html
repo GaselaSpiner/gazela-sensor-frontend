@@ -611,12 +611,16 @@
 
 
 <!-- =====================================================
-     WEBUSB TEST SCRIPTS
+     WEBUSB TEST
      ===================================================== -->
 
 <script>
 
   let webUsbDevice = null;
+
+  let webUsbInterface0Claimed = false;
+
+  let webUsbInterface1Claimed = false;
 
 
   const webUsbTestButton =
@@ -636,105 +640,43 @@
 
 
   /* =====================================================
-     BASIC WebUSB DEVICE TEST
+     HELPER — STATUS
      ===================================================== */
 
-  webUsbTestButton.addEventListener("click", async () => {
+  function setWebUsbStatus(text) {
 
-    if (!("usb" in navigator)) {
+    webUsbStatus.textContent = text;
 
-      webUsbStatus.textContent =
-        "WebUSB nie jest dostępne w tej przeglądarce.";
-
-      return;
-    }
-
-
-    webUsbStatus.textContent =
-      "Otwieranie wyboru urządzenia USB...";
-
-
-    try {
-
-      const device = await navigator.usb.requestDevice({
-
-        filters: [
-          {
-            vendorId: 0x2341,
-            productId: 0x805A
-          }
-        ]
-
-      });
-
-
-      webUsbDevice = device;
-
-
-      webUsbStatus.textContent =
-        "ZNALEZIONO URZĄDZENIE: " +
-        (device.productName || "brak nazwy") +
-        " | producent: " +
-        (device.manufacturerName || "brak danych") +
-        " | VID: 0x" +
-        device.vendorId.toString(16) +
-        " | PID: 0x" +
-        device.productId.toString(16);
-
-    }
-
-    catch (error) {
-
-      webUsbStatus.textContent =
-        "WebUSB: " +
-        error.message;
-
-    }
-
-  });
+  }
 
 
   /* =====================================================
-     USB COMMUNICATION TEST
+     BASIC DEVICE TEST
      ===================================================== */
 
-  webUsbCommunicationButton.addEventListener(
+  webUsbTestButton.addEventListener(
     "click",
     async () => {
 
       if (!("usb" in navigator)) {
 
-        webUsbStatus.textContent =
-          "WebUSB nie jest dostępne w tej przeglądarce.";
+        setWebUsbStatus(
+          "WebUSB nie jest dostępne w tej przeglądarce."
+        );
 
         return;
       }
 
 
-      webUsbStatus.textContent =
-        "Rozpoczynam test komunikacji USB...";
-
-
-      webUsbRawData.textContent =
-        "Oczekiwanie na odpowiedź sensora...";
-
-
-      let device = webUsbDevice;
+      setWebUsbStatus(
+        "Otwieranie wyboru urządzenia USB..."
+      );
 
 
       try {
 
-        /* -------------------------------------------------
-           STEP 1
-           ------------------------------------------------- */
-
-        if (!device) {
-
-          webUsbStatus.textContent =
-            "Wybierz Nano 33 BLE...";
-
-
-          device = await navigator.usb.requestDevice({
+        const device =
+          await navigator.usb.requestDevice({
 
             filters: [
               {
@@ -746,15 +688,117 @@
           });
 
 
+        webUsbDevice = device;
+
+
+        setWebUsbStatus(
+
+          "ZNALEZIONO URZĄDZENIE: " +
+
+          (device.productName || "brak nazwy") +
+
+          " | producent: " +
+
+          (device.manufacturerName || "brak danych") +
+
+          " | VID: 0x" +
+
+          device.vendorId.toString(16) +
+
+          " | PID: 0x" +
+
+          device.productId.toString(16)
+
+        );
+
+      }
+
+
+      catch (error) {
+
+        setWebUsbStatus(
+          "WebUSB: " + error.message
+        );
+
+      }
+
+    }
+  );
+
+
+  /* =====================================================
+     USB COMMUNICATION TEST
+     ===================================================== */
+
+  webUsbCommunicationButton.addEventListener(
+    "click",
+    async () => {
+
+      let device = webUsbDevice;
+
+
+      webUsbRawData.textContent =
+        "Brak odebranych danych.";
+
+
+      try {
+
+        /* =================================================
+           STEP 1 — CHECK WebUSB
+           ================================================= */
+
+        if (!("usb" in navigator)) {
+
+          throw new Error(
+            "WebUSB nie jest dostępne w tej przeglądarce."
+          );
+
+        }
+
+
+        setWebUsbStatus(
+          "KROK 1/9 — WebUSB dostępne."
+        );
+
+
+        /* =================================================
+           STEP 2 — SELECT DEVICE
+           ================================================= */
+
+        if (!device) {
+
+          setWebUsbStatus(
+            "KROK 2/9 — Wybierz Nano 33 BLE..."
+          );
+
+
+          device =
+            await navigator.usb.requestDevice({
+
+              filters: [
+                {
+                  vendorId: 0x2341,
+                  productId: 0x805A
+                }
+              ]
+
+            });
+
+
           webUsbDevice = device;
 
         }
 
 
-        /* -------------------------------------------------
-           STEP 2
-           OPEN USB DEVICE
-           ------------------------------------------------- */
+        setWebUsbStatus(
+          "KROK 2/9 — Wybrano: " +
+          (device.productName || "Nano 33 BLE")
+        );
+
+
+        /* =================================================
+           STEP 3 — OPEN
+           ================================================= */
 
         if (!device.opened) {
 
@@ -763,47 +807,56 @@
         }
 
 
-        webUsbStatus.textContent =
-          "USB otwarte.";
+        setWebUsbStatus(
+          "KROK 3/9 — Urządzenie USB otwarte."
+        );
 
 
-        /* -------------------------------------------------
-           STEP 3
-           SELECT CONFIGURATION
-           ------------------------------------------------- */
+        /* =================================================
+           STEP 4 — CONFIGURATION
+           ================================================= */
 
-        if (device.configuration === null) {
+        if (
+          device.configuration === null ||
+          device.configuration.configurationValue !== 1
+        ) {
 
           await device.selectConfiguration(1);
 
         }
 
 
-        webUsbStatus.textContent =
-          "Konfiguracja USB: 1";
+        setWebUsbStatus(
+          "KROK 4/9 — Wybrano konfigurację 1."
+        );
 
 
-        /* -------------------------------------------------
-           STEP 4
-           CLAIM DATA INTERFACE
-           ------------------------------------------------- */
+        /* =================================================
+           STEP 5 — CLAIM CDC COMMUNICATION INTERFACE 0
+           ================================================= */
 
-        await device.claimInterface(1);
+        await device.claimInterface(0);
 
-
-        webUsbStatus.textContent =
-          "Interfejs danych 1 przejęty.";
+        webUsbInterface0Claimed = true;
 
 
-        /* -------------------------------------------------
-           STEP 5
-           SET LINE CODING
-           
+        setWebUsbStatus(
+          "KROK 5/9 — Przejęto interfejs CDC 0."
+        );
+
+
+        /* =================================================
+           STEP 6 — SET LINE CODING
+
            115200 baud
            8 data bits
            no parity
            1 stop bit
-           ------------------------------------------------- */
+
+           CDC SET_LINE_CODING
+           request = 0x20
+           interface = 0
+           ================================================= */
 
         const lineCoding =
           new Uint8Array([
@@ -817,171 +870,278 @@
           ]);
 
 
-        await device.controlTransferOut({
+        await device.controlTransferOut(
 
-          requestType: "class",
+          {
+            requestType: "class",
+            recipient: "interface",
+            request: 0x20,
+            value: 0x0000,
+            index: 0x0000
+          },
 
-          recipient: "interface",
+          lineCoding
 
-          request: 0x20,
-
-          value: 0x0000,
-
-          index: 0x0000
-
-        }, lineCoding);
+        );
 
 
-        /* -------------------------------------------------
-           STEP 6
-           SET CONTROL LINE STATE
+        setWebUsbStatus(
+          "KROK 6/9 — Ustawiono 115200 8N1."
+        );
+
+
+        /* =================================================
+           STEP 7 — SET CONTROL LINE STATE
 
            DTR = 1
-           RTS = 1
+           RTS = 0
 
-           value 0x0003
-           ------------------------------------------------- */
+           CDC SET_CONTROL_LINE_STATE
+           request = 0x22
+           interface = 0
 
-        await device.controlTransferOut({
+           DTR is the important part for Arduino CDC.
+           ================================================= */
 
-          requestType: "class",
+        await device.controlTransferOut(
 
-          recipient: "interface",
+          {
+            requestType: "class",
+            recipient: "interface",
+            request: 0x22,
+            value: 0x0001,
+            index: 0x0000
+          }
 
-          request: 0x22,
-
-          value: 0x0003,
-
-          index: 0x0000
-
-        });
-
-
-        webUsbStatus.textContent =
-          "CDC skonfigurowane. Wysyłam L...";
+        );
 
 
-        /* -------------------------------------------------
-           STEP 7
-           SEND LIVE COMMAND
-           ------------------------------------------------- */
+        setWebUsbStatus(
+          "KROK 7/9 — DTR aktywne."
+        );
+
+
+        /* =================================================
+           STEP 8 — CLAIM DATA INTERFACE 1
+           ================================================= */
+
+        await device.claimInterface(1);
+
+        webUsbInterface1Claimed = true;
+
+
+        setWebUsbStatus(
+          "KROK 8/9 — Przejęto interfejs danych 1."
+        );
+
+
+        /* =================================================
+           SEND L
+           ================================================= */
 
         const encoder =
           new TextEncoder();
 
 
-        const liveCommand =
+        const command =
           encoder.encode("L\n");
 
 
         await device.transferOut(
           1,
-          liveCommand
+          command
         );
 
 
-        webUsbStatus.textContent =
-          "Wysłano: L";
+        setWebUsbStatus(
+          "Wysłano: L — oczekiwanie na dane..."
+        );
 
 
-        /* -------------------------------------------------
-           STEP 8
-           SMALL WAIT
-           ------------------------------------------------- */
-
-        await new Promise(resolve => {
-
-          setTimeout(resolve, 300);
-
-        });
-
-
-        /* -------------------------------------------------
-           STEP 9
-           READ USB BULK IN
+        /* =================================================
+           READ DATA
 
            Interface 1
-           Endpoint 1 IN
-           ------------------------------------------------- */
+           Bulk IN endpoint = 1
+           Packet = 64 bytes
 
-        const result =
-          await device.transferIn(
-            1,
-            64
+           We read several packets.
+
+           We stop when we receive actual text.
+           ================================================= */
+
+        let allReceived = "";
+
+        let receivedLive = false;
+
+
+        for (
+          let i = 0;
+          i < 10;
+          i++
+        ) {
+
+          setWebUsbStatus(
+            "Odczyt USB — pakiet " +
+            (i + 1) +
+            "/10..."
           );
 
 
-        if (
-          !result ||
-          !result.data ||
-          result.data.byteLength === 0
-        ) {
+          const result =
+            await device.transferIn(
+              1,
+              64
+            );
 
-          throw new Error(
-            "Nano nie zwróciło danych przez USB."
+
+          if (
+            result &&
+            result.data &&
+            result.data.byteLength > 0
+          ) {
+
+            const decoder =
+              new TextDecoder();
+
+
+            const text =
+              decoder.decode(result.data);
+
+
+            allReceived += text;
+
+
+            webUsbRawData.textContent =
+              "ODEBRANO Z NANO:\n\n" +
+              allReceived;
+
+
+            if (
+              text.includes("LIVE,") ||
+              text.includes("READY") ||
+              text.includes("HEARTBEAT") ||
+              text.includes("INFO,")
+            ) {
+
+              receivedLive = true;
+
+              break;
+
+            }
+
+          }
+
+        }
+
+
+        /* =================================================
+           RESULT
+           ================================================= */
+
+        if (receivedLive) {
+
+          setWebUsbStatus(
+            "SUKCES — WebUSB odebrał dane z Nano."
+          );
+
+
+          /* -----------------------------------------------
+             SEND Q ONLY AFTER SUCCESS
+             ----------------------------------------------- */
+
+          const stopCommand =
+            encoder.encode("Q\n");
+
+
+          await device.transferOut(
+            1,
+            stopCommand
+          );
+
+
+          webUsbRawData.textContent +=
+            "\n\nWYSŁANO DO NANO:\nQ";
+
+
+        }
+
+        else {
+
+          setWebUsbStatus(
+            "USB OTWARTO, ALE NIE ODEBRANO DANYCH."
           );
 
         }
 
 
-        const decoder =
-          new TextDecoder();
-
-
-        const received =
-          decoder.decode(result.data);
-
-
-        webUsbRawData.textContent =
-          "ODEBRANO Z NANO:\n\n" +
-          received;
-
-
-        webUsbStatus.textContent =
-          "USB COMMUNICATION OK";
-
-
-        /* -------------------------------------------------
-           STEP 10
-           SEND Q TO EXIT LIVE MODE
-           ------------------------------------------------- */
-
-        const stopCommand =
-          encoder.encode("Q\n");
-
-
-        await device.transferOut(
-          1,
-          stopCommand
-        );
-
-
-        /* -------------------------------------------------
-           STEP 11
-           CLOSE
-           ------------------------------------------------- */
+        /* =================================================
+           CLEANUP
+           ================================================= */
 
         try {
 
-          await device.releaseInterface(1);
+          if (webUsbInterface1Claimed) {
+
+            await device.releaseInterface(1);
+
+            webUsbInterface1Claimed = false;
+
+          }
 
         }
 
-        catch (releaseError) {
+        catch (error) {
 
           console.warn(
-            "Nie udało się zwolnić interfejsu:",
-            releaseError
+            "Nie udało się zwolnić interfejsu 1:",
+            error
           );
 
         }
 
 
-        await device.close();
+        try {
+
+          if (webUsbInterface0Claimed) {
+
+            await device.releaseInterface(0);
+
+            webUsbInterface0Claimed = false;
+
+          }
+
+        }
+
+        catch (error) {
+
+          console.warn(
+            "Nie udało się zwolnić interfejsu 0:",
+            error
+          );
+
+        }
 
 
-        webUsbStatus.textContent =
-          "USB COMMUNICATION OK — L wysłane, LIVE odebrane, Q wysłane.";
+        try {
+
+          if (device.opened) {
+
+            await device.close();
+
+          }
+
+        }
+
+        catch (error) {
+
+          console.warn(
+            "Nie udało się zamknąć USB:",
+            error
+          );
+
+        }
+
 
         webUsbDevice = null;
 
@@ -996,40 +1156,69 @@
         );
 
 
-        webUsbStatus.textContent =
+        setWebUsbStatus(
           "BŁĄD WebUSB: " +
-          error.message;
+          error.message
+        );
 
 
         webUsbRawData.textContent =
-          "Nie udało się odebrać danych.";
+          "Komunikacja zatrzymała się na powyższym etapie.";
 
 
-        /* -------------------------------------------------
+        /* =================================================
            SAFE CLEANUP
-           ------------------------------------------------- */
+           ================================================= */
 
         if (device) {
 
           try {
 
+            if (webUsbInterface1Claimed) {
+
+              await device.releaseInterface(1);
+
+              webUsbInterface1Claimed = false;
+
+            }
+
+          }
+
+          catch (error) {
+
+            console.warn(
+              "Release interface 1 error:",
+              error
+            );
+
+          }
+
+
+          try {
+
+            if (webUsbInterface0Claimed) {
+
+              await device.releaseInterface(0);
+
+              webUsbInterface0Claimed = false;
+
+            }
+
+          }
+
+          catch (error) {
+
+            console.warn(
+              "Release interface 0 error:",
+              error
+            );
+
+          }
+
+
+          try {
+
             if (device.opened) {
-
-              try {
-
-                await device.releaseInterface(1);
-
-              }
-
-              catch (releaseError) {
-
-                console.warn(
-                  "Release interface error:",
-                  releaseError
-                );
-
-              }
-
 
               await device.close();
 
@@ -1037,11 +1226,11 @@
 
           }
 
-          catch (closeError) {
+          catch (error) {
 
             console.warn(
               "Close USB error:",
-              closeError
+              error
             );
 
           }
@@ -1054,7 +1243,6 @@
       }
 
     }
-
   );
 
 </script>
