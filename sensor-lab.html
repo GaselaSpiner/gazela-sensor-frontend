@@ -510,6 +510,49 @@
 
 
   <!-- =====================================================
+       WEBUSB TEST
+       ===================================================== -->
+
+  <section class="card">
+
+    <h2>
+      WebUSB Test
+    </h2>
+
+    <div class="card-description">
+
+      Test połączenia USB z sensorem przez WebUSB.
+      Ten moduł służy wyłącznie do sprawdzenia komunikacji
+      USB na urządzeniach mobilnych.
+
+    </div>
+
+
+    <div class="controls">
+
+      <button
+        id="webUsbTestButton"
+        type="button">
+
+        TEST WebUSB
+
+      </button>
+
+    </div>
+
+
+    <div
+      id="webUsbStatus"
+      class="measurement-status">
+
+      WebUSB test nie został uruchomiony.
+
+    </div>
+
+  </section>
+
+
+  <!-- =====================================================
        SERIAL MONITOR
        ===================================================== -->
 
@@ -550,7 +593,68 @@
 </footer>
 
 
+<!-- =====================================================
+     WEBUSB TEST SCRIPT
+     ===================================================== -->
+
+<script>
+
+  const webUsbTestButton =
+    document.getElementById("webUsbTestButton");
+
+  const webUsbStatus =
+    document.getElementById("webUsbStatus");
+
+
+  webUsbTestButton.addEventListener("click", async () => {
+
+    if (!("usb" in navigator)) {
+
+      webUsbStatus.textContent =
+        "WebUSB nie jest dostępne w tej przeglądarce.";
+
+      return;
+    }
+
+
+    webUsbStatus.textContent =
+      "Otwieranie wyboru urządzenia USB...";
+
+
+    try {
+
+      const device = await navigator.usb.requestDevice({
+        filters: []
+      });
+
+
+      webUsbStatus.textContent =
+        "ZNALEZIONO URZĄDZENIE: " +
+        (device.productName || "brak nazwy") +
+        " | producent: " +
+        (device.manufacturerName || "brak danych") +
+        " | VID: 0x" +
+        device.vendorId.toString(16) +
+        " | PID: 0x" +
+        device.productId.toString(16);
+
+    }
+
+    catch (error) {
+
+      webUsbStatus.textContent =
+        "WebUSB: " +
+        error.message;
+
+    }
+
+  });
+
+</script>
+
+
 <script src="js/app.js"></script>
+
 
 </body>
 </html>
