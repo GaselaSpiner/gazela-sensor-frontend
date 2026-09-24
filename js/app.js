@@ -2878,6 +2878,7 @@ function finishSession() {
             true;
     }
 
+
     // NO setTimeout().
     //
     // Arduino will send READY.
@@ -2900,7 +2901,7 @@ async function stopMeasurement() {
         measuring = false;
 
         returnToLiveAfterReady =
-            false;
+            true;
 
         await sendCommand(
             "Q"
