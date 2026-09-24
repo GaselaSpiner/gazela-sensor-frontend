@@ -4,22 +4,50 @@
 //
 // COMMUNICATION LAYER
 //
-// USB:
-//   PC      -> Web Serial
-//   Android -> WebUSB
+// FIRMWARE:
+//   GAZELA SENSOR v19
 //
-// BLE:
-//   PC      -> Web Bluetooth
-//   Android -> Web Bluetooth
+// TRANSPORT:
+//   USB:
+//     PC      -> Web Serial
+//     Android -> WebUSB
 //
-// USB FIRMWARE:
+//   BLE:
+//     PC      -> Web Bluetooth
+//     Android -> Web Bluetooth
+//
+// COMMANDS:
 //   L = LIVE
 //   S = START MEASUREMENT
-//   Q = STOP / EXIT LIVE
+//   Q = STOP MEASUREMENT / RETURN TO READY
 //
-// BLE TEST v5:
-//   L = START LIVE
-//   Q = STOP LIVE
+// SYSTEM LOGIC:
+//
+//   CONNECT
+//      ↓
+//   LIVE
+//      ↓
+//   START MEASUREMENT
+//      ↓
+//   S
+//      ↓
+//   5 MOVEMENTS
+//      ↓
+//   END
+//      ↓
+//   LIVE
+//
+// STOP during measurement:
+//
+//   STOP
+//      ↓
+//   Q
+//      ↓
+//   READY
+//      ↓
+//   L
+//      ↓
+//   LIVE
 //
 // IMPORTANT:
 // Opening USB can reset Arduino.
@@ -67,6 +95,7 @@ let measuring = false;
 let currentMovement = 0;
 
 let sessionStartTime = null;
+
 let sessionEndTime = null;
 
 let sampleCount = 0;
@@ -83,6 +112,21 @@ const HEARTBEAT_TIMEOUT = 3000;
 // ========================================================
 
 let usbLiveStartTimeout = null;
+
+
+// ========================================================
+// RETURN TO LIVE TIMER
+// ========================================================
+//
+// Used after:
+//
+// 1. normal measurement END
+// 2. STOP during measurement
+//
+// We wait until Arduino is ready, then send L.
+// ========================================================
+
+let returnToLiveTimeout = null;
 
 
 // ========================================================
@@ -170,15 +214,21 @@ const serialMonitor =
 // ========================================================
 
 if (startButton) {
-    startButton.disabled = true;
+
+    startButton.disabled =
+        true;
 }
 
 if (stopButton) {
-    stopButton.disabled = true;
+
+    stopButton.disabled =
+        true;
 }
 
 if (disconnectButton) {
-    disconnectButton.disabled = true;
+
+    disconnectButton.disabled =
+        true;
 }
 
 
@@ -232,12 +282,13 @@ function setTransportStatus(
 // SERIAL MONITOR
 // ========================================================
 //
-// LIVE,... is deliberately NOT displayed here.
+// LIVE frames are NOT displayed here.
 //
 // This prevents thousands of DOM nodes.
 // ========================================================
 
 const SERIAL_MONITOR_MAX_LINES = 500;
+
 
 function addSerialLine(
     text,
@@ -245,6 +296,7 @@ function addSerialLine(
 ) {
 
     if (!serialMonitor) {
+
         return;
     }
 
@@ -291,7 +343,11 @@ function formatNumber(
     const number =
         Number(value);
 
-    if (!Number.isFinite(number)) {
+    if (
+        !Number.isFinite(
+            number
+        )
+    ) {
 
         return "--";
     }
@@ -344,13 +400,17 @@ function formatTime(
         String(minutes).padStart(
             2,
             "0"
-        ) +
-        ":" +
+        )
+        +
+        ":"
+        +
         String(seconds).padStart(
             2,
             "0"
-        ) +
-        "." +
+        )
+        +
+        "."
+        +
         String(ms).padStart(
             3,
             "0"
@@ -379,12 +439,14 @@ class SensorTransport {
             null;
     }
 
+
     async connect() {
 
         throw new Error(
             "connect() not implemented"
         );
     }
+
 
     async send(
         command
@@ -395,11 +457,13 @@ class SensorTransport {
         );
     }
 
+
     async disconnect() {
 
         this.running =
             false;
     }
+
 
     get name() {
 
@@ -433,10 +497,12 @@ class WebSerialTransport
             null;
     }
 
+
     get name() {
 
         return "Web Serial";
     }
+
 
     async connect() {
 
@@ -449,26 +515,25 @@ class WebSerialTransport
             );
         }
 
-        // Browser opens port chooser.
 
         this.port =
             await navigator.serial
                 .requestPort();
 
-        // Opening the port can reset Arduino.
 
         await this.port.open({
             baudRate: 115200
         });
 
+
         this.running =
             true;
 
-        // Start reading immediately.
 
         this.readTask =
             this.readLoop();
     }
+
 
     async readLoop() {
 
@@ -481,8 +546,10 @@ class WebSerialTransport
                 this.port.readable
                     .getReader();
 
+
             let buffer =
                 "";
+
 
             while (
                 this.running
@@ -494,13 +561,18 @@ class WebSerialTransport
                 } =
                     await this.reader.read();
 
+
                 if (done) {
+
                     break;
                 }
 
+
                 if (!value) {
+
                     continue;
                 }
+
 
                 buffer +=
                     decoder.decode(
@@ -510,14 +582,17 @@ class WebSerialTransport
                         }
                     );
 
+
                 const lines =
                     buffer.split(
                         /\r?\n/
                     );
 
+
                 buffer =
                     lines.pop() ||
                     "";
+
 
                 for (
                     const line
@@ -526,6 +601,7 @@ class WebSerialTransport
 
                     const cleanLine =
                         line.trim();
+
 
                     if (
                         cleanLine
@@ -581,6 +657,7 @@ class WebSerialTransport
         }
     }
 
+
     async send(
         command
     ) {
@@ -595,9 +672,11 @@ class WebSerialTransport
             );
         }
 
+
         const writer =
             this.port.writable
                 .getWriter();
+
 
         try {
 
@@ -615,10 +694,12 @@ class WebSerialTransport
         }
     }
 
+
     async disconnect() {
 
         this.running =
             false;
+
 
         if (
             this.reader
@@ -641,6 +722,7 @@ class WebSerialTransport
             }
         }
 
+
         if (
             this.readTask
         ) {
@@ -658,6 +740,7 @@ class WebSerialTransport
                                 1000
                             )
                     )
+
                 ]);
 
             }
@@ -670,6 +753,7 @@ class WebSerialTransport
                 );
             }
         }
+
 
         if (
             this.port
@@ -691,6 +775,7 @@ class WebSerialTransport
             }
         }
 
+
         this.reader =
             null;
 
@@ -708,13 +793,6 @@ class WebSerialTransport
 // ========================================================
 //
 // Android + USB
-//
-// Tested with:
-// Samsung Galaxy S21
-//
-// Arduino Nano 33 BLE Sense Rev2
-// VID 2341
-// PID 805A
 // ========================================================
 
 class WebUSBTransport
@@ -747,10 +825,12 @@ class WebUSBTransport
             "";
     }
 
+
     get name() {
 
         return "WebUSB";
     }
+
 
     async connect() {
 
@@ -763,9 +843,11 @@ class WebUSBTransport
             );
         }
 
+
         const devices =
             await navigator.usb
                 .getDevices();
+
 
         this.device =
             devices.find(
@@ -775,6 +857,7 @@ class WebUSBTransport
                     device.productId ===
                         USB_PRODUCT_ID
             );
+
 
         if (
             !this.device
@@ -793,10 +876,13 @@ class WebUSBTransport
                                     USB_PRODUCT_ID
                             }
                         ]
+
                     });
         }
 
+
         await this.device.open();
+
 
         if (
             this.device.configuration ===
@@ -821,20 +907,16 @@ class WebUSBTransport
                 );
         }
 
-        // CDC communication interface
 
         await this.device
             .claimInterface(
                 0
             );
 
+
         this.interface0Claimed =
             true;
 
-        // 115200 baud
-        // 8 data bits
-        // no parity
-        // 1 stop bit
 
         const lineCoding =
             new Uint8Array([
@@ -846,6 +928,7 @@ class WebUSBTransport
                 0x00,
                 0x08
             ]);
+
 
         await this.device
             .controlTransferOut(
@@ -869,7 +952,6 @@ class WebUSBTransport
                 lineCoding
             );
 
-        // DTR = 1
 
         await this.device
             .controlTransferOut(
@@ -891,22 +973,25 @@ class WebUSBTransport
                 }
             );
 
-        // CDC data interface
 
         await this.device
             .claimInterface(
                 1
             );
 
+
         this.interface1Claimed =
             true;
+
 
         this.running =
             true;
 
+
         this.readTask =
             this.readLoop();
     }
+
 
     async readLoop() {
 
@@ -923,6 +1008,7 @@ class WebUSBTransport
                             64
                         );
 
+
                 if (
                     !result ||
                     !result.data ||
@@ -933,22 +1019,27 @@ class WebUSBTransport
                     continue;
                 }
 
+
                 const text =
                     this.decoder.decode(
                         result.data
                     );
 
+
                 this.buffer +=
                     text;
+
 
                 const lines =
                     this.buffer.split(
                         /\r?\n/
                     );
 
+
                 this.buffer =
                     lines.pop() ||
                     "";
+
 
                 for (
                     const line
@@ -957,6 +1048,7 @@ class WebUSBTransport
 
                     const cleanLine =
                         line.trim();
+
 
                     if (
                         cleanLine
@@ -986,6 +1078,7 @@ class WebUSBTransport
         }
     }
 
+
     async send(
         command
     ) {
@@ -1001,11 +1094,13 @@ class WebUSBTransport
             );
         }
 
+
         const data =
             this.encoder.encode(
                 command +
                 "\n"
             );
+
 
         await this.device
             .transferOut(
@@ -1014,10 +1109,12 @@ class WebUSBTransport
             );
     }
 
+
     async disconnect() {
 
         this.running =
             false;
+
 
         if (
             this.readTask
@@ -1036,6 +1133,7 @@ class WebUSBTransport
                                 1200
                             )
                     )
+
                 ]);
 
             }
@@ -1048,6 +1146,7 @@ class WebUSBTransport
                 );
             }
         }
+
 
         if (
             this.device
@@ -1079,6 +1178,7 @@ class WebUSBTransport
                     false;
             }
 
+
             if (
                 this.interface0Claimed
             ) {
@@ -1105,6 +1205,7 @@ class WebUSBTransport
                     false;
             }
 
+
             try {
 
                 await this.device
@@ -1121,6 +1222,7 @@ class WebUSBTransport
                 );
             }
         }
+
 
         this.device =
             null;
@@ -1140,11 +1242,12 @@ class WebUSBTransport
 //
 // PC + Android
 //
-// Current BLE firmware:
-// Gazela_BLE_Test_v5
+// Firmware:
+// GAZELA SENSOR v19
 //
 // BLE commands:
 // L
+// S
 // Q
 // ========================================================
 
@@ -1189,10 +1292,12 @@ class WebBluetoothTransport
                 .bind(this);
     }
 
+
     get name() {
 
         return "Web Bluetooth";
     }
+
 
     async connect() {
 
@@ -1204,6 +1309,7 @@ class WebBluetoothTransport
                 "Web Bluetooth nie jest dostępny w tej przeglądarce."
             );
         }
+
 
         this.device =
             await navigator.bluetooth
@@ -1222,18 +1328,17 @@ class WebBluetoothTransport
                     ]
                 });
 
+
         this.device.addEventListener(
             "gattserverdisconnected",
             this.boundDisconnectHandler
         );
 
-        // Connect GATT
 
         this.server =
             await this.device.gatt
                 .connect();
 
-        // Sensor service
 
         this.sensorService =
             await this.server
@@ -1241,7 +1346,6 @@ class WebBluetoothTransport
                     BLE_SENSOR_SERVICE_UUID
                 );
 
-        // LIVE characteristic
 
         this.liveCharacteristic =
             await this.sensorService
@@ -1249,7 +1353,6 @@ class WebBluetoothTransport
                     BLE_LIVE_CHARACTERISTIC_UUID
                 );
 
-        // Control service
 
         this.controlService =
             await this.server
@@ -1257,7 +1360,6 @@ class WebBluetoothTransport
                     BLE_CONTROL_SERVICE_UUID
                 );
 
-        // Command characteristic
 
         this.commandCharacteristic =
             await this.controlService
@@ -1265,10 +1367,10 @@ class WebBluetoothTransport
                     BLE_COMMAND_CHARACTERISTIC_UUID
                 );
 
-        // Notifications
 
         await this.liveCharacteristic
             .startNotifications();
+
 
         this.liveCharacteristic
             .addEventListener(
@@ -1276,9 +1378,11 @@ class WebBluetoothTransport
                 this.boundNotificationHandler
             );
 
+
         this.running =
             true;
     }
+
 
     handleNotification(
         event
@@ -1289,15 +1393,18 @@ class WebBluetoothTransport
             const value =
                 event.target.value;
 
+
             const text =
                 this.decoder.decode(
                     value
                 );
 
+
             const lines =
                 text.split(
                     /\r?\n/
                 );
+
 
             for (
                 const line
@@ -1306,6 +1413,7 @@ class WebBluetoothTransport
 
                 const cleanLine =
                     line.trim();
+
 
                 if (
                     cleanLine
@@ -1329,6 +1437,7 @@ class WebBluetoothTransport
         }
     }
 
+
     async send(
         command
     ) {
@@ -1342,12 +1451,6 @@ class WebBluetoothTransport
             );
         }
 
-        // BLE v5 expects:
-        //
-        // L
-        // Q
-        //
-        // WITHOUT newline.
 
         const data =
             new TextEncoder()
@@ -1355,16 +1458,19 @@ class WebBluetoothTransport
                     command
                 );
 
+
         await this.commandCharacteristic
             .writeValue(
                 data
             );
     }
 
+
     async disconnect() {
 
         this.running =
             false;
+
 
         if (
             this.liveCharacteristic
@@ -1386,6 +1492,7 @@ class WebBluetoothTransport
                 );
             }
 
+
             try {
 
                 this.liveCharacteristic
@@ -1404,6 +1511,7 @@ class WebBluetoothTransport
                 );
             }
         }
+
 
         if (
             this.device &&
@@ -1428,6 +1536,7 @@ class WebBluetoothTransport
             }
         }
 
+
         if (
             this.device
         ) {
@@ -1451,6 +1560,7 @@ class WebBluetoothTransport
             }
         }
 
+
         this.device =
             null;
 
@@ -1470,15 +1580,18 @@ class WebBluetoothTransport
             null;
     }
 
+
     handleDisconnected() {
 
         this.running =
             false;
 
+
         addSerialLine(
             "BLE device disconnected.",
             "serial-error"
         );
+
 
         if (
             sensorTransport ===
@@ -1491,10 +1604,14 @@ class WebBluetoothTransport
             transportType =
                 null;
 
+
             stopHeartbeatMonitor();
+
+            cancelReturnToLive();
 
             measuring =
                 false;
+
 
             if (
                 connectButton
@@ -1504,6 +1621,7 @@ class WebBluetoothTransport
                     false;
             }
 
+
             if (
                 disconnectButton
             ) {
@@ -1511,6 +1629,7 @@ class WebBluetoothTransport
                 disconnectButton.disabled =
                     true;
             }
+
 
             if (
                 startButton
@@ -1520,6 +1639,7 @@ class WebBluetoothTransport
                     true;
             }
 
+
             if (
                 stopButton
             ) {
@@ -1528,14 +1648,17 @@ class WebBluetoothTransport
                     true;
             }
 
+
             setStatus(
                 "Sensor disconnected",
                 "neutral"
             );
 
+
             setTransportStatus(
                 "Transport: not connected"
             );
+
 
             if (
                 measurementStatus
@@ -1572,7 +1695,6 @@ async function createSensorTransport() {
                 navigator.userAgent
             );
 
-        // Android -> WebUSB
 
         if (
             isAndroid &&
@@ -1584,7 +1706,6 @@ async function createSensorTransport() {
             );
         }
 
-        // PC -> Web Serial
 
         if (
             "serial" in navigator
@@ -1595,7 +1716,6 @@ async function createSensorTransport() {
             );
         }
 
-        // Fallback -> WebUSB
 
         if (
             "usb" in navigator
@@ -1605,6 +1725,7 @@ async function createSensorTransport() {
                 processSerialLine
             );
         }
+
 
         throw new Error(
             "Brak Web Serial oraz WebUSB."
@@ -1630,6 +1751,7 @@ async function createSensorTransport() {
             );
         }
 
+
         throw new Error(
             "Web Bluetooth nie jest dostępny w tej przeglądarce."
         );
@@ -1651,8 +1773,10 @@ function startHeartbeatMonitor() {
 
     stopHeartbeatMonitor();
 
+
     lastHeartbeatTime =
         Date.now();
+
 
     heartbeatMonitor =
         setInterval(
@@ -1665,9 +1789,11 @@ function startHeartbeatMonitor() {
                     return;
                 }
 
+
                 const timeSinceHeartbeat =
                     Date.now() -
                     lastHeartbeatTime;
+
 
                 if (
                     timeSinceHeartbeat >
@@ -1725,6 +1851,7 @@ function resetLiveValues() {
             "--";
     }
 
+
     if (
         timeValue
     ) {
@@ -1732,6 +1859,7 @@ function resetLiveValues() {
         timeValue.textContent =
             "--";
     }
+
 
     if (
         samplesValue
@@ -1741,6 +1869,7 @@ function resetLiveValues() {
             "0";
     }
 
+
     if (
         axValue
     ) {
@@ -1748,6 +1877,7 @@ function resetLiveValues() {
         axValue.textContent =
             "--";
     }
+
 
     if (
         ayValue
@@ -1757,6 +1887,7 @@ function resetLiveValues() {
             "--";
     }
 
+
     if (
         azValue
     ) {
@@ -1764,6 +1895,7 @@ function resetLiveValues() {
         azValue.textContent =
             "--";
     }
+
 
     if (
         gValue
@@ -1773,6 +1905,7 @@ function resetLiveValues() {
             "--";
     }
 
+
     if (
         angleValue
     ) {
@@ -1780,6 +1913,7 @@ function resetLiveValues() {
         angleValue.textContent =
             "--";
     }
+
 
     if (
         gxValue
@@ -1789,6 +1923,7 @@ function resetLiveValues() {
             "--";
     }
 
+
     if (
         gyValue
     ) {
@@ -1797,6 +1932,7 @@ function resetLiveValues() {
             "--";
     }
 
+
     if (
         gzValue
     ) {
@@ -1804,6 +1940,7 @@ function resetLiveValues() {
         gzValue.textContent =
             "--";
     }
+
 
     if (
         angleyValue
@@ -1840,6 +1977,7 @@ function parseLiveData(
     const parts =
         line.split(",");
 
+
     if (
         parts.length <
         10
@@ -1848,6 +1986,7 @@ function parseLiveData(
         return;
     }
 
+
     if (
         parts[0] !==
         "LIVE"
@@ -1855,6 +1994,7 @@ function parseLiveData(
 
         return;
     }
+
 
     const AX =
         parseFloat(
@@ -1912,6 +2052,7 @@ function parseLiveData(
             );
     }
 
+
     if (
         ayValue
     ) {
@@ -1921,6 +2062,7 @@ function parseLiveData(
                 AY
             );
     }
+
 
     if (
         azValue
@@ -1932,6 +2074,7 @@ function parseLiveData(
             );
     }
 
+
     if (
         gValue
     ) {
@@ -1941,6 +2084,7 @@ function parseLiveData(
                 G
             );
     }
+
 
     if (
         angleValue
@@ -1953,6 +2097,7 @@ function parseLiveData(
             );
     }
 
+
     if (
         gxValue
     ) {
@@ -1962,6 +2107,7 @@ function parseLiveData(
                 GX
             );
     }
+
 
     if (
         gyValue
@@ -1973,6 +2119,7 @@ function parseLiveData(
             );
     }
 
+
     if (
         gzValue
     ) {
@@ -1982,6 +2129,7 @@ function parseLiveData(
                 GZ
             );
     }
+
 
     if (
         angleyValue
@@ -1993,6 +2141,7 @@ function parseLiveData(
                 1
             );
     }
+
 
     // LIVE confirms communication.
 
@@ -2010,15 +2159,13 @@ function processSerialLine(
 ) {
 
     if (!line) {
+
         return;
     }
 
 
     // ====================================================
     // SERIAL MONITOR
-    // ====================================================
-    //
-    // Do not display LIVE frames.
     // ====================================================
 
     if (
@@ -2045,6 +2192,7 @@ function processSerialLine(
         lastHeartbeatTime =
             Date.now();
 
+
         if (
             !measuring
         ) {
@@ -2054,6 +2202,7 @@ function processSerialLine(
                 "connected"
             );
         }
+
 
         return;
     }
@@ -2071,13 +2220,16 @@ function processSerialLine(
         measuring =
             false;
 
+
         lastHeartbeatTime =
             Date.now();
+
 
         setStatus(
             "Sensor ready",
             "connected"
         );
+
 
         if (
             measurementStatus
@@ -2089,6 +2241,7 @@ function processSerialLine(
             measurementStatus.className =
                 "measurement-status";
         }
+
 
         if (
             startButton
@@ -2098,6 +2251,11 @@ function processSerialLine(
                 false;
         }
 
+
+        // ------------------------------------------------
+        // STOP is disabled while we are READY.
+        // ------------------------------------------------
+
         if (
             stopButton
         ) {
@@ -2106,37 +2264,6 @@ function processSerialLine(
                 true;
         }
 
-        return;
-    }
-
-
-    // ====================================================
-    // BLE READY
-    // ====================================================
-
-    if (
-        line ===
-        "BLE READY"
-    ) {
-
-        lastHeartbeatTime =
-            Date.now();
-
-        setStatus(
-            "Sensor ready",
-            "connected"
-        );
-
-        if (
-            measurementStatus
-        ) {
-
-            measurementStatus.textContent =
-                "Sensor ready.";
-
-            measurementStatus.className =
-                "measurement-status";
-        }
 
         return;
     }
@@ -2154,10 +2281,12 @@ function processSerialLine(
         measuring =
             false;
 
+
         setStatus(
             "Live sensor",
             "connected"
         );
+
 
         if (
             measurementStatus
@@ -2170,6 +2299,7 @@ function processSerialLine(
                 "measurement-status active";
         }
 
+
         if (
             startButton
         ) {
@@ -2178,6 +2308,12 @@ function processSerialLine(
                 false;
         }
 
+
+        // ------------------------------------------------
+        // LIVE is the normal idle state.
+        // STOP is only used for active measurement.
+        // ------------------------------------------------
+
         if (
             stopButton
         ) {
@@ -2185,6 +2321,7 @@ function processSerialLine(
             stopButton.disabled =
                 true;
         }
+
 
         return;
     }
@@ -2202,10 +2339,12 @@ function processSerialLine(
         measuring =
             false;
 
+
         setStatus(
             "Live sensor",
             "connected"
         );
+
 
         if (
             measurementStatus
@@ -2218,6 +2357,7 @@ function processSerialLine(
                 "measurement-status active";
         }
 
+
         if (
             startButton
         ) {
@@ -2226,6 +2366,7 @@ function processSerialLine(
                 false;
         }
 
+
         if (
             stopButton
         ) {
@@ -2233,6 +2374,7 @@ function processSerialLine(
             stopButton.disabled =
                 true;
         }
+
 
         return;
     }
@@ -2252,38 +2394,6 @@ function processSerialLine(
 
 
     // ====================================================
-    // BLE LIVE START
-    // ====================================================
-
-    if (
-        line ===
-        "LIVE START"
-    ) {
-
-        measuring =
-            false;
-
-        setStatus(
-            "Live sensor",
-            "connected"
-        );
-
-        if (
-            measurementStatus
-        ) {
-
-            measurementStatus.textContent =
-                "Live sensor mode active.";
-
-            measurementStatus.className =
-                "measurement-status active";
-        }
-
-        return;
-    }
-
-
-    // ====================================================
     // MEASUREMENT START
     // ====================================================
 
@@ -2295,17 +2405,25 @@ function processSerialLine(
         measuring =
             true;
 
+
+        cancelReturnToLive();
+
+
         sessionStartTime =
             Date.now();
+
 
         sessionEndTime =
             null;
 
+
         sampleCount =
             0;
 
+
         currentMovement =
             0;
+
 
         if (
             sessionBadge
@@ -2315,10 +2433,12 @@ function processSerialLine(
                 "Measurement";
         }
 
+
         setStatus(
             "Measurement running",
             "connected"
         );
+
 
         if (
             measurementStatus
@@ -2331,6 +2451,7 @@ function processSerialLine(
                 "measurement-status active";
         }
 
+
         if (
             startButton
         ) {
@@ -2339,6 +2460,7 @@ function processSerialLine(
                 true;
         }
 
+
         if (
             stopButton
         ) {
@@ -2346,6 +2468,7 @@ function processSerialLine(
             stopButton.disabled =
                 false;
         }
+
 
         return;
     }
@@ -2371,6 +2494,7 @@ function processSerialLine(
                 "measurement-status active";
         }
 
+
         return;
     }
 
@@ -2390,6 +2514,7 @@ function processSerialLine(
                 ","
             )[1];
 
+
         if (
             measurementStatus
         ) {
@@ -2399,44 +2524,50 @@ function processSerialLine(
                 value;
         }
 
+
         return;
     }
 
 
     // ====================================================
-    // MOVEMENT
+    // MOVEMENT HEADER
     // ====================================================
 
     if (
         line.startsWith(
-            "MOVEMENT,"
+            "INFO,MOVEMENT_"
+        ) &&
+        !line.endsWith(
+            "_COMPLETE"
         )
     ) {
 
-        const parts =
-            line.split(
-                ","
+        const match =
+            line.match(
+                /^INFO,MOVEMENT_(\d+)$/
             );
 
+
         if (
-            parts.length >=
-            2
+            match
         ) {
 
             currentMovement =
                 parseInt(
-                    parts[1],
+                    match[1],
                     10
                 );
+
+
+            if (
+                movementValue
+            ) {
+
+                movementValue.textContent =
+                    currentMovement;
+            }
         }
 
-        if (
-            movementValue
-        ) {
-
-            movementValue.textContent =
-                currentMovement;
-        }
 
         return;
     }
@@ -2451,6 +2582,15 @@ function processSerialLine(
             "INFO,WAIT"
         )
     ) {
+
+        if (
+            measurementStatus
+        ) {
+
+            measurementStatus.textContent =
+                "Waiting for next movement...";
+        }
+
 
         return;
     }
@@ -2499,6 +2639,7 @@ function processSerialLine(
 
         sampleCount++;
 
+
         if (
             samplesValue
         ) {
@@ -2507,10 +2648,10 @@ function processSerialLine(
                 sampleCount;
         }
 
+
         const parts =
-            line.split(
-                ","
-            );
+            line.split(",");
+
 
         if (
             parts.length >=
@@ -2523,51 +2664,61 @@ function processSerialLine(
                     10
                 );
 
+
             const time =
                 parseInt(
                     parts[1],
                     10
                 );
 
+
             const AX =
                 parseFloat(
                     parts[2]
                 );
+
 
             const AY =
                 parseFloat(
                     parts[3]
                 );
 
+
             const AZ =
                 parseFloat(
                     parts[4]
                 );
+
 
             const G =
                 parseFloat(
                     parts[5]
                 );
 
+
             const Angle =
                 parseFloat(
                     parts[6]
                 );
+
 
             const GX =
                 parseFloat(
                     parts[7]
                 );
 
+
             const GY =
                 parseFloat(
                     parts[8]
                 );
 
+
             const GZ =
                 parseFloat(
                     parts[9]
                 );
+
 
             const AngleY =
                 parseFloat(
@@ -2583,6 +2734,7 @@ function processSerialLine(
                     movement;
             }
 
+
             if (
                 timeValue
             ) {
@@ -2592,6 +2744,7 @@ function processSerialLine(
                         time
                     );
             }
+
 
             if (
                 axValue
@@ -2603,6 +2756,7 @@ function processSerialLine(
                     );
             }
 
+
             if (
                 ayValue
             ) {
@@ -2612,6 +2766,7 @@ function processSerialLine(
                         AY
                     );
             }
+
 
             if (
                 azValue
@@ -2623,6 +2778,7 @@ function processSerialLine(
                     );
             }
 
+
             if (
                 gValue
             ) {
@@ -2632,6 +2788,7 @@ function processSerialLine(
                         G
                     );
             }
+
 
             if (
                 angleValue
@@ -2644,6 +2801,7 @@ function processSerialLine(
                     );
             }
 
+
             if (
                 gxValue
             ) {
@@ -2653,6 +2811,7 @@ function processSerialLine(
                         GX
                     );
             }
+
 
             if (
                 gyValue
@@ -2664,6 +2823,7 @@ function processSerialLine(
                     );
             }
 
+
             if (
                 gzValue
             ) {
@@ -2673,6 +2833,7 @@ function processSerialLine(
                         GZ
                     );
             }
+
 
             if (
                 angleyValue
@@ -2685,6 +2846,7 @@ function processSerialLine(
                     );
             }
         }
+
 
         return;
     }
@@ -2741,11 +2903,13 @@ async function sendCommand(
         );
     }
 
+
     try {
 
         await sensorTransport.send(
             command
         );
+
 
         addSerialLine(
             "> " + command,
@@ -2762,11 +2926,13 @@ async function sendCommand(
             error
         );
 
+
         addSerialLine(
             "SEND ERROR: " +
             error.message,
             "serial-error"
         );
+
 
         throw error;
     }
@@ -2786,22 +2952,30 @@ async function startLiveMode() {
         return;
     }
 
+
+    cancelReturnToLive();
+
+
     try {
 
         await sendCommand(
             "L"
         );
 
+
         measuring =
             false;
 
+
         lastHeartbeatTime =
             Date.now();
+
 
         setStatus(
             "Live sensor",
             "connected"
         );
+
 
         if (
             measurementStatus
@@ -2814,6 +2988,7 @@ async function startLiveMode() {
                 "measurement-status active";
         }
 
+
         if (
             startButton
         ) {
@@ -2821,6 +2996,7 @@ async function startLiveMode() {
             startButton.disabled =
                 false;
         }
+
 
         if (
             stopButton
@@ -2839,10 +3015,12 @@ async function startLiveMode() {
             error
         );
 
+
         setStatus(
             "Live mode error",
             "error"
         );
+
 
         if (
             measurementStatus
@@ -2855,11 +3033,99 @@ async function startLiveMode() {
                 "measurement-status";
         }
 
+
         addSerialLine(
             "LIVE ERROR: " +
             error.message,
             "serial-error"
         );
+    }
+}
+
+
+// ========================================================
+// SCHEDULE RETURN TO LIVE
+// ========================================================
+
+function scheduleReturnToLive(
+    delay = 500
+) {
+
+    cancelReturnToLive();
+
+
+    if (
+        !sensorTransport
+    ) {
+
+        return;
+    }
+
+
+    addSerialLine(
+        "Returning to LIVE...",
+        "serial-info"
+    );
+
+
+    setStatus(
+        "Returning to LIVE",
+        "connected"
+    );
+
+
+    if (
+        measurementStatus
+    ) {
+
+        measurementStatus.textContent =
+            "Returning to LIVE sensor...";
+
+        measurementStatus.className =
+            "measurement-status active";
+    }
+
+
+    returnToLiveTimeout =
+        setTimeout(
+            async () => {
+
+                returnToLiveTimeout =
+                    null;
+
+
+                if (
+                    !sensorTransport
+                ) {
+
+                    return;
+                }
+
+
+                await startLiveMode();
+
+            },
+            delay
+        );
+}
+
+
+// ========================================================
+// CANCEL RETURN TO LIVE
+// ========================================================
+
+function cancelReturnToLive() {
+
+    if (
+        returnToLiveTimeout
+    ) {
+
+        clearTimeout(
+            returnToLiveTimeout
+        );
+
+        returnToLiveTimeout =
+            null;
     }
 }
 
@@ -2879,15 +3145,18 @@ function scheduleUSBLiveStart() {
         );
     }
 
+
     addSerialLine(
         "Waiting 2 seconds for sensor startup...",
         "serial-info"
     );
 
+
     setStatus(
         "Starting sensor...",
         "connected"
     );
+
 
     if (
         measurementStatus
@@ -2900,12 +3169,14 @@ function scheduleUSBLiveStart() {
             "measurement-status active";
     }
 
+
     usbLiveStartTimeout =
         setTimeout(
             async () => {
 
                 usbLiveStartTimeout =
                     null;
+
 
                 if (
                     !sensorTransport
@@ -2914,10 +3185,12 @@ function scheduleUSBLiveStart() {
                     return;
                 }
 
+
                 addSerialLine(
                     "Sensor startup delay complete → starting LIVE.",
                     "serial-info"
                 );
+
 
                 await startLiveMode();
 
@@ -2960,30 +3233,30 @@ async function connectSensor() {
         return;
     }
 
+
     cancelUSBLiveStart();
+
+    cancelReturnToLive();
+
 
     try {
 
         sensorTransport =
             await createSensorTransport();
 
+
         transportType =
             sensorTransport.name;
+
 
         setTransportStatus(
             "Transport: " +
             transportType
         );
 
-        // ------------------------------------------------
-        // CONNECT
-        // ------------------------------------------------
 
         await sensorTransport.connect();
 
-        // ------------------------------------------------
-        // UI
-        // ------------------------------------------------
 
         if (
             connectButton
@@ -2993,6 +3266,7 @@ async function connectSensor() {
                 true;
         }
 
+
         if (
             disconnectButton
         ) {
@@ -3001,13 +3275,16 @@ async function connectSensor() {
                 false;
         }
 
+
         addSerialLine(
             "Transport connected: " +
             transportType,
             "serial-info"
         );
 
+
         resetLiveValues();
+
 
         startHeartbeatMonitor();
 
@@ -3030,13 +3307,6 @@ async function connectSensor() {
         // =================================================
         // USB
         // =================================================
-        //
-        // Opening Web Serial / WebUSB can reset Arduino.
-        //
-        // Wait 2 seconds.
-        //
-        // Then send L.
-        // =================================================
 
         scheduleUSBLiveStart();
 
@@ -3050,7 +3320,10 @@ async function connectSensor() {
             error
         );
 
+
         cancelUSBLiveStart();
+        cancelReturnToLive();
+
 
         if (
             sensorTransport
@@ -3072,26 +3345,32 @@ async function connectSensor() {
             }
         }
 
+
         sensorTransport =
             null;
+
 
         transportType =
             null;
 
+
         setTransportStatus(
             "Transport: not connected"
         );
+
 
         setStatus(
             "Connection failed",
             "error"
         );
 
+
         addSerialLine(
             "CONNECT ERROR: " +
             error.message,
             "serial-error"
         );
+
 
         if (
             connectButton
@@ -3100,6 +3379,7 @@ async function connectSensor() {
             connectButton.disabled =
                 false;
         }
+
 
         if (
             disconnectButton
@@ -3116,11 +3396,7 @@ async function connectSensor() {
 // START MEASUREMENT
 // ========================================================
 //
-// USB:
-//   S supported.
-//
-// BLE v5:
-//   S NOT implemented yet.
+// v19 supports S through BOTH transports.
 // ========================================================
 
 async function startMeasurement() {
@@ -3132,60 +3408,31 @@ async function startMeasurement() {
         return;
     }
 
-    // ----------------------------------------------------
-    // BLE
-    // ----------------------------------------------------
-
-    if (
-        selectedTransport ===
-        "ble"
-    ) {
-
-        setStatus(
-            "BLE measurement not available yet",
-            "error"
-        );
-
-        if (
-            measurementStatus
-        ) {
-
-            measurementStatus.textContent =
-                "BLE currently supports LIVE only. Measurement protocol will be added later.";
-
-            measurementStatus.className =
-                "measurement-status";
-        }
-
-        addSerialLine(
-            "BLE: command S is not implemented in BLE firmware v5.",
-            "serial-info"
-        );
-
-        return;
-    }
-
-
-    // ----------------------------------------------------
-    // USB
-    // ----------------------------------------------------
 
     try {
+
+        cancelReturnToLive();
+
 
         measuring =
             true;
 
+
         sampleCount =
             0;
+
 
         currentMovement =
             0;
 
+
         sessionStartTime =
             Date.now();
 
+
         sessionEndTime =
             null;
+
 
         if (
             samplesValue
@@ -3195,6 +3442,7 @@ async function startMeasurement() {
                 "0";
         }
 
+
         if (
             movementValue
         ) {
@@ -3202,6 +3450,7 @@ async function startMeasurement() {
             movementValue.textContent =
                 "--";
         }
+
 
         if (
             timeValue
@@ -3211,6 +3460,7 @@ async function startMeasurement() {
                 "--";
         }
 
+
         if (
             movementList
         ) {
@@ -3218,6 +3468,7 @@ async function startMeasurement() {
             movementList.innerHTML =
                 "";
         }
+
 
         if (
             sessionBadge
@@ -3227,10 +3478,12 @@ async function startMeasurement() {
                 "Measurement";
         }
 
+
         setStatus(
             "Measurement starting",
             "connected"
         );
+
 
         if (
             measurementStatus
@@ -3243,6 +3496,7 @@ async function startMeasurement() {
                 "measurement-status active";
         }
 
+
         if (
             startButton
         ) {
@@ -3251,6 +3505,7 @@ async function startMeasurement() {
                 true;
         }
 
+
         if (
             stopButton
         ) {
@@ -3258,6 +3513,7 @@ async function startMeasurement() {
             stopButton.disabled =
                 false;
         }
+
 
         await sendCommand(
             "S"
@@ -3273,13 +3529,16 @@ async function startMeasurement() {
             error
         );
 
+
         measuring =
             false;
+
 
         setStatus(
             "Measurement error",
             "error"
         );
+
 
         if (
             measurementStatus
@@ -3292,6 +3551,7 @@ async function startMeasurement() {
                 "measurement-status";
         }
 
+
         if (
             startButton
         ) {
@@ -3299,6 +3559,7 @@ async function startMeasurement() {
             startButton.disabled =
                 false;
         }
+
 
         if (
             stopButton
@@ -3314,14 +3575,24 @@ async function startMeasurement() {
 // ========================================================
 // FINISH SESSION
 // ========================================================
+//
+// Normal end:
+//
+// END,ALL_MOVEMENTS
+// READY
+// ↓
+// return to LIVE
+// ========================================================
 
 function finishSession() {
 
     measuring =
         false;
 
+
     sessionEndTime =
         Date.now();
+
 
     if (
         sessionBadge
@@ -3331,10 +3602,12 @@ function finishSession() {
             "Session complete";
     }
 
+
     setStatus(
         "Measurement complete",
         "connected"
     );
+
 
     if (
         measurementStatus
@@ -3347,6 +3620,7 @@ function finishSession() {
             "measurement-status";
     }
 
+
     if (
         startButton
     ) {
@@ -3354,6 +3628,7 @@ function finishSession() {
         startButton.disabled =
             false;
     }
+
 
     if (
         stopButton
@@ -3363,22 +3638,37 @@ function finishSession() {
             true;
     }
 
-    // After USB measurement firmware returns READY.
-    // We wait 2 seconds and send L.
 
-    if (
-        sensorTransport &&
-        selectedTransport ===
-            "usb"
-    ) {
+    // Do not immediately send L.
+    //
+    // Firmware will send READY.
+    // processSerialLine() will then
+    // schedule the return to LIVE.
 
-        scheduleUSBLiveStart();
-    }
+
+    addSerialLine(
+        "Measurement finished. Waiting for READY...",
+        "serial-info"
+    );
 }
 
 
 // ========================================================
 // STOP MEASUREMENT
+// ========================================================
+//
+// IMPORTANT:
+//
+// Q is used here ONLY when a measurement
+// is active.
+//
+// After Q:
+//
+// Arduino -> READY
+// Frontend -> L
+// Arduino -> LIVE
+//
+// Last measurement values remain visible.
 // ========================================================
 
 async function stopMeasurement() {
@@ -3390,22 +3680,55 @@ async function stopMeasurement() {
         return;
     }
 
+
+    if (
+        !measuring
+    ) {
+
+        return;
+    }
+
+
     try {
 
         measuring =
             false;
 
-        await sendCommand(
-            "Q"
-        );
+
+        if (
+            stopButton
+        ) {
+
+            stopButton.disabled =
+                true;
+        }
+
+
+        if (
+            startButton
+        ) {
+
+            startButton.disabled =
+                false;
+        }
+
 
         if (
             measurementStatus
         ) {
 
             measurementStatus.textContent =
-                "Stopping...";
+                "Stopping measurement...";
+
+            measurementStatus.className =
+                "measurement-status active";
         }
+
+
+        await sendCommand(
+            "Q"
+        );
+
 
     }
     catch (
@@ -3416,6 +3739,33 @@ async function stopMeasurement() {
             "Stop measurement error:",
             error
         );
+
+
+        setStatus(
+            "Stop error",
+            "error"
+        );
+
+
+        if (
+            measurementStatus
+        ) {
+
+            measurementStatus.textContent =
+                "Unable to stop measurement.";
+
+            measurementStatus.className =
+                "measurement-status";
+        }
+
+
+        if (
+            startButton
+        ) {
+
+            startButton.disabled =
+                false;
+        }
     }
 }
 
@@ -3430,14 +3780,20 @@ async function disconnectSensor() {
 
     cancelUSBLiveStart();
 
+    cancelReturnToLive();
+
+
     const transport =
         sensorTransport;
+
 
     sensorTransport =
         null;
 
+
     transportType =
         null;
+
 
     try {
 
@@ -3445,13 +3801,12 @@ async function disconnectSensor() {
             transport
         ) {
 
-            // Stop LIVE first.
-
             try {
 
                 await transport.send(
                     "Q"
                 );
+
 
                 addSerialLine(
                     "> Q",
@@ -3468,6 +3823,7 @@ async function disconnectSensor() {
                     error
                 );
             }
+
 
             await transport
                 .disconnect();
@@ -3489,6 +3845,7 @@ async function disconnectSensor() {
         measuring =
             false;
 
+
         if (
             connectButton
         ) {
@@ -3496,6 +3853,7 @@ async function disconnectSensor() {
             connectButton.disabled =
                 false;
         }
+
 
         if (
             disconnectButton
@@ -3505,6 +3863,7 @@ async function disconnectSensor() {
                 true;
         }
 
+
         if (
             startButton
         ) {
@@ -3512,6 +3871,7 @@ async function disconnectSensor() {
             startButton.disabled =
                 true;
         }
+
 
         if (
             stopButton
@@ -3521,14 +3881,17 @@ async function disconnectSensor() {
                 true;
         }
 
+
         setStatus(
             "Sensor not connected",
             "neutral"
         );
 
+
         setTransportStatus(
             "Transport: not connected"
         );
+
 
         if (
             measurementStatus
@@ -3540,6 +3903,7 @@ async function disconnectSensor() {
             measurementStatus.className =
                 "measurement-status";
         }
+
 
         addSerialLine(
             "Sensor disconnected.",
@@ -3562,8 +3926,10 @@ function selectUSBTransport() {
         return;
     }
 
+
     selectedTransport =
         "usb";
+
 
     if (
         usbButton
@@ -3574,6 +3940,7 @@ function selectUSBTransport() {
         );
     }
 
+
     if (
         bleButton
     ) {
@@ -3583,9 +3950,11 @@ function selectUSBTransport() {
         );
     }
 
+
     setTransportStatus(
         "Transport: USB"
     );
+
 
     addSerialLine(
         "Selected transport: USB",
@@ -3607,8 +3976,10 @@ function selectBLETransport() {
         return;
     }
 
+
     selectedTransport =
         "ble";
+
 
     if (
         bleButton
@@ -3619,6 +3990,7 @@ function selectBLETransport() {
         );
     }
 
+
     if (
         usbButton
     ) {
@@ -3628,9 +4000,11 @@ function selectBLETransport() {
         );
     }
 
+
     setTransportStatus(
         "Transport: BLE"
     );
+
 
     addSerialLine(
         "Selected transport: BLE",
@@ -3715,14 +4089,17 @@ if (
 
 selectUSBTransport();
 
+
 setStatus(
     "Sensor not connected",
     "neutral"
 );
 
+
 setTransportStatus(
     "Transport: USB"
 );
+
 
 resetLiveValues();
 
@@ -3736,7 +4113,9 @@ resetLiveValues();
 // gazelaSensor.getTransport()
 // gazelaSensor.getTransportType()
 // gazelaSensor.getSelectedTransport()
+// gazelaSensor.isMeasuring()
 // gazelaSensor.send("L")
+// gazelaSensor.send("S")
 // gazelaSensor.send("Q")
 // ========================================================
 
@@ -3750,6 +4129,9 @@ window.gazelaSensor = {
 
     getSelectedTransport:
         () => selectedTransport,
+
+    isMeasuring:
+        () => measuring,
 
     send:
         sendCommand
