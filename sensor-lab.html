@@ -1,16 +1,27 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pl">
+
 <head>
+
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
 
   <title>Gazela Spiner Sensor Lab</title>
 
-  <link rel="stylesheet" href="css/style.css">
+  <link
+    rel="stylesheet"
+    href="css/style.css"
+  >
+
 </head>
 
 
 <body>
+
 
 <header>
 
@@ -37,8 +48,8 @@
     </h2>
 
     <p>
-      Środowisko do rejestracji, obserwacji i analizy ruchu rakiety
-      z wykorzystaniem sensora Gazela Spiner.
+      Środowisko do rejestracji, obserwacji i analizy ruchu
+      rakiety z wykorzystaniem sensora Gazela Spiner.
     </p>
 
 
@@ -60,6 +71,7 @@
   </section>
 
 
+
   <!-- =====================================================
        MODULE NAVIGATION
        ===================================================== -->
@@ -70,7 +82,8 @@
     <button
       class="module module-button active"
       id="liveSensorModule"
-      type="button">
+      type="button"
+    >
 
       <h3>
         LIVE SENSOR
@@ -84,10 +97,12 @@
     </button>
 
 
+
     <button
       class="module module-button"
       id="liveChartsModule"
-      type="button">
+      type="button"
+    >
 
       <h3>
         LIVE CHARTS
@@ -101,10 +116,12 @@
     </button>
 
 
+
     <button
       class="module module-button"
       id="movementPlayerModule"
-      type="button">
+      type="button"
+    >
 
       <h3>
         MOVEMENT PLAYER
@@ -118,10 +135,12 @@
     </button>
 
 
+
     <button
       class="module module-button"
       id="sessionModule"
-      type="button">
+      type="button"
+    >
 
       <h3>
         SESSION
@@ -138,19 +157,26 @@
   </section>
 
 
+
   <!-- =====================================================
        LIVE SENSOR
        ===================================================== -->
 
   <section class="card">
 
+
     <h2>
       LIVE SENSOR
     </h2>
 
+
     <div class="card-description">
-      Dane odbierane bezpośrednio z sensora Gazela Spiner.
+
+      Dane odbierane bezpośrednio
+      z sensora Gazela Spiner.
+
     </div>
+
 
 
     <div class="sensor-summary">
@@ -164,11 +190,13 @@
 
         <div
           id="movementValue"
-          class="summary-value">
+          class="summary-value"
+        >
           —
         </div>
 
       </div>
+
 
 
       <div class="summary-item">
@@ -179,11 +207,13 @@
 
         <div
           id="timeValue"
-          class="summary-value">
+          class="summary-value"
+        >
           —
         </div>
 
       </div>
+
 
 
       <div class="summary-item">
@@ -194,7 +224,8 @@
 
         <div
           id="samplesValue"
-          class="summary-value">
+          class="summary-value"
+        >
           0
         </div>
 
@@ -204,8 +235,11 @@
     </div>
 
 
+
     <div class="values">
 
+
+      <!-- AX -->
 
       <div class="value-card">
 
@@ -215,7 +249,8 @@
 
         <div
           id="ax"
-          class="value-number">
+          class="value-number"
+        >
           —
         </div>
 
@@ -225,6 +260,9 @@
 
       </div>
 
+
+
+      <!-- AY -->
 
       <div class="value-card">
 
@@ -234,7 +272,8 @@
 
         <div
           id="ay"
-          class="value-number">
+          class="value-number"
+        >
           —
         </div>
 
@@ -244,6 +283,9 @@
 
       </div>
 
+
+
+      <!-- AZ -->
 
       <div class="value-card">
 
@@ -253,7 +295,8 @@
 
         <div
           id="az"
-          class="value-number">
+          class="value-number"
+        >
           —
         </div>
 
@@ -263,6 +306,9 @@
 
       </div>
 
+
+
+      <!-- G -->
 
       <div class="value-card">
 
@@ -272,7 +318,8 @@
 
         <div
           id="g"
-          class="value-number">
+          class="value-number"
+        >
           —
         </div>
 
@@ -283,6 +330,9 @@
       </div>
 
 
+
+      <!-- ANGLE -->
+
       <div class="value-card">
 
         <div class="value-name">
@@ -291,7 +341,8 @@
 
         <div
           id="angle"
-          class="value-number">
+          class="value-number"
+        >
           —
         </div>
 
@@ -301,6 +352,9 @@
 
       </div>
 
+
+
+      <!-- GX -->
 
       <div class="value-card">
 
@@ -310,7 +364,8 @@
 
         <div
           id="gx"
-          class="value-number">
+          class="value-number"
+        >
           —
         </div>
 
@@ -320,6 +375,9 @@
 
       </div>
 
+
+
+      <!-- GY -->
 
       <div class="value-card">
 
@@ -329,7 +387,8 @@
 
         <div
           id="gy"
-          class="value-number">
+          class="value-number"
+        >
           —
         </div>
 
@@ -339,6 +398,9 @@
 
       </div>
 
+
+
+      <!-- GZ -->
 
       <div class="value-card">
 
@@ -348,7 +410,8 @@
 
         <div
           id="gz"
-          class="value-number">
+          class="value-number"
+        >
           —
         </div>
 
@@ -359,6 +422,9 @@
       </div>
 
 
+
+      <!-- ANGLEY -->
+
       <div class="value-card">
 
         <div class="value-name">
@@ -367,7 +433,8 @@
 
         <div
           id="angley"
-          class="value-number">
+          class="value-number"
+        >
           —
         </div>
 
@@ -383,79 +450,129 @@
   </section>
 
 
+
   <!-- =====================================================
        CONNECT SENSOR
        ===================================================== -->
 
   <section class="card">
 
+
     <h2>
       Connect Sensor
     </h2>
 
+
     <div class="card-description">
-      Połączenie z sensorem Gazela Spiner przez USB.
+
+      Wybierz sposób połączenia
+      z sensorem Gazela Spiner.
+
     </div>
+
 
 
     <div class="controls">
 
 
+      <!-- USB -->
+
       <button
-        id="connectButton"
-        type="button">
-
-        Connect Sensor
-
+        id="usbButton"
+        type="button"
+      >
+        USB
       </button>
 
+
+
+      <!-- BLE -->
+
+      <button
+        id="bleButton"
+        type="button"
+      >
+        BLE
+      </button>
+
+
+
+      <!-- CONNECT -->
+
+      <button
+        id="connectButton"
+        type="button"
+      >
+        Connect Sensor
+      </button>
+
+
+
+      <!-- DISCONNECT -->
 
       <button
         id="disconnectButton"
         class="secondary"
         type="button"
-        disabled>
-
+        disabled
+      >
         Disconnect
-
       </button>
 
+
+
+      <!-- START -->
 
       <button
         id="startButton"
         class="start"
         type="button"
-        disabled>
-
+        disabled
+      >
         ▶ START MEASUREMENT
-
       </button>
 
+
+
+      <!-- STOP -->
 
       <button
         id="stopButton"
         class="stop"
         type="button"
-        disabled>
-
+        disabled
+      >
         ■ STOP
-
       </button>
 
 
     </div>
 
 
+
+    <!-- TRANSPORT STATUS -->
+
+    <div
+      id="transportStatus"
+      class="measurement-status"
+    >
+      Transport: USB
+    </div>
+
+
+
+    <!-- MEASUREMENT STATUS -->
+
     <div
       id="measurementStatus"
-      class="measurement-status">
-
+      class="measurement-status"
+    >
       Sensor is waiting.
-
     </div>
 
 
   </section>
+
 
 
   <!-- =====================================================
@@ -467,6 +584,7 @@
 
     <div class="session-header">
 
+
       <div>
 
         <h2>
@@ -474,26 +592,30 @@
         </h2>
 
         <div class="card-description">
-          Aktualna sesja pomiarowa i jej ruchy.
+          Aktualna sesja pomiarowa
+          i jej ruchy.
         </div>
 
       </div>
 
 
+
       <div
         id="sessionBadge"
-        class="session-badge">
-
+        class="session-badge"
+      >
         No session
-
       </div>
+
 
     </div>
 
 
+
     <div
       id="movementList"
-      class="movement-list">
+      class="movement-list"
+    >
 
       <div class="movement-card">
 
@@ -508,65 +630,6 @@
 
   </section>
 
-
-  <!-- =====================================================
-       WEBUSB TEST
-       ===================================================== -->
-
-  <section class="card">
-
-    <h2>
-      WebUSB Test
-    </h2>
-
-    <div class="card-description">
-
-      Test bezpośredniej komunikacji USB
-      pomiędzy Chrome a Gazela Sensor.
-
-    </div>
-
-
-    <div class="controls">
-
-      <button
-        id="webUsbTestButton"
-        type="button">
-
-        TEST WebUSB
-
-      </button>
-
-
-      <button
-        id="webUsbCommunicationButton"
-        type="button">
-
-        TEST LIVE USB
-
-      </button>
-
-    </div>
-
-
-    <div
-      id="webUsbStatus"
-      class="measurement-status">
-
-      WebUSB test nie został uruchomiony.
-
-    </div>
-
-
-    <div
-      id="webUsbRawData"
-      class="measurement-status">
-
-      Brak odebranych danych.
-
-    </div>
-
-  </section>
 
 
   <!-- =====================================================
@@ -583,15 +646,18 @@
 
     <div class="card-description">
 
-      Dane przesyłane pomiędzy przeglądarką
-      a Gazela Sensor.
+      Dane kontrolne i status komunikacji
+      pomiędzy przeglądarką a Gazela Sensor.
+      Dane LIVE nie są tutaj wyświetlane.
 
     </div>
 
 
+
     <div
       id="serialMonitor"
-      class="serial-monitor">
+      class="serial-monitor"
+    >
     </div>
 
 
@@ -599,6 +665,7 @@
 
 
 </main>
+
 
 
 <footer>
@@ -610,760 +677,10 @@
 </footer>
 
 
-<!-- =====================================================
-     WEBUSB TEST
-     ===================================================== -->
-
-<script>
-
-  let webUsbDevice = null;
-
-  let webUsbInterface0Claimed = false;
-
-  let webUsbInterface1Claimed = false;
-
-
-  const webUsbTestButton =
-    document.getElementById("webUsbTestButton");
-
-
-  const webUsbCommunicationButton =
-    document.getElementById("webUsbCommunicationButton");
-
-
-  const webUsbStatus =
-    document.getElementById("webUsbStatus");
-
-
-  const webUsbRawData =
-    document.getElementById("webUsbRawData");
-
-
-  /* =====================================================
-     HELPER — STATUS
-     ===================================================== */
-
-  function setWebUsbStatus(text) {
-
-    webUsbStatus.textContent = text;
-
-  }
-
-
-  /* =====================================================
-     BASIC DEVICE TEST
-     ===================================================== */
-
-  webUsbTestButton.addEventListener(
-    "click",
-    async () => {
-
-      if (!("usb" in navigator)) {
-
-        setWebUsbStatus(
-          "WebUSB nie jest dostępne w tej przeglądarce."
-        );
-
-        return;
-
-      }
-
-
-      setWebUsbStatus(
-        "Otwieranie wyboru urządzenia USB..."
-      );
-
-
-      try {
-
-        const device =
-          await navigator.usb.requestDevice({
-
-            filters: [
-              {
-                vendorId: 0x2341,
-                productId: 0x805A
-              }
-            ]
-
-          });
-
-
-        webUsbDevice = device;
-
-
-        setWebUsbStatus(
-
-          "ZNALEZIONO URZĄDZENIE: " +
-
-          (device.productName || "brak nazwy") +
-
-          " | producent: " +
-
-          (device.manufacturerName || "brak danych") +
-
-          " | VID: 0x" +
-
-          device.vendorId.toString(16) +
-
-          " | PID: 0x" +
-
-          device.productId.toString(16)
-
-        );
-
-      }
-
-
-      catch (error) {
-
-        setWebUsbStatus(
-          "WebUSB: " + error.message
-        );
-
-      }
-
-    }
-
-  );
-
-
-  /* =====================================================
-     WEBUSB LIVE STREAM TEST
-     ===================================================== */
-
-  webUsbCommunicationButton.addEventListener(
-    "click",
-    async () => {
-
-      let device = webUsbDevice;
-
-
-      webUsbRawData.textContent =
-        "Oczekiwanie na dane LIVE...";
-
-
-      try {
-
-
-        /* =================================================
-           STEP 1 — CHECK WebUSB
-           ================================================= */
-
-        if (!("usb" in navigator)) {
-
-          throw new Error(
-            "WebUSB nie jest dostępne w tej przeglądarce."
-          );
-
-        }
-
-
-        setWebUsbStatus(
-          "KROK 1/8 — WebUSB dostępne."
-        );
-
-
-        /* =================================================
-           STEP 2 — SELECT DEVICE
-           ================================================= */
-
-        if (!device) {
-
-          setWebUsbStatus(
-            "KROK 2/8 — Wybierz Nano 33 BLE..."
-          );
-
-
-          device =
-            await navigator.usb.requestDevice({
-
-              filters: [
-                {
-                  vendorId: 0x2341,
-                  productId: 0x805A
-                }
-              ]
-
-            });
-
-
-          webUsbDevice = device;
-
-        }
-
-
-        setWebUsbStatus(
-
-          "KROK 2/8 — Wybrano: " +
-
-          (device.productName || "Nano 33 BLE")
-
-        );
-
-
-        /* =================================================
-           STEP 3 — OPEN
-           ================================================= */
-
-        if (!device.opened) {
-
-          await device.open();
-
-        }
-
-
-        setWebUsbStatus(
-          "KROK 3/8 — Urządzenie USB otwarte."
-        );
-
-
-        /* =================================================
-           STEP 4 — CONFIGURATION
-           ================================================= */
-
-        if (
-          device.configuration === null ||
-          device.configuration.configurationValue !== 1
-        ) {
-
-          await device.selectConfiguration(1);
-
-        }
-
-
-        setWebUsbStatus(
-          "KROK 4/8 — Wybrano konfigurację 1."
-        );
-
-
-        /* =================================================
-           STEP 5 — CLAIM CDC INTERFACE
-           ================================================= */
-
-        await device.claimInterface(0);
-
-        webUsbInterface0Claimed = true;
-
-
-        /* =================================================
-           SET LINE CODING — 115200 8N1
-           ================================================= */
-
-        const lineCoding =
-          new Uint8Array([
-
-            0x00,
-            0xC2,
-            0x01,
-            0x00,
-            0x00,
-            0x00,
-            0x08
-
-          ]);
-
-
-        await device.controlTransferOut(
-
-          {
-
-            requestType: "class",
-
-            recipient: "interface",
-
-            request: 0x20,
-
-            value: 0x0000,
-
-            index: 0x0000
-
-          },
-
-          lineCoding
-
-        );
-
-
-        /* =================================================
-           SET CONTROL LINE STATE
-
-           DTR = 1
-           ================================================= */
-
-        await device.controlTransferOut(
-
-          {
-
-            requestType: "class",
-
-            recipient: "interface",
-
-            request: 0x22,
-
-            value: 0x0001,
-
-            index: 0x0000
-
-          }
-
-        );
-
-
-        /* =================================================
-           STEP 6 — CLAIM DATA INTERFACE
-           ================================================= */
-
-        await device.claimInterface(1);
-
-        webUsbInterface1Claimed = true;
-
-
-        setWebUsbStatus(
-          "KROK 5/8 — Interfejs USB gotowy."
-        );
-
-
-        /* =================================================
-           STEP 7 — SEND L
-           ================================================= */
-
-        const encoder =
-          new TextEncoder();
-
-
-        const decoder =
-          new TextDecoder();
-
-
-        await device.transferOut(
-
-          1,
-
-          encoder.encode("L\n")
-
-        );
-
-
-        setWebUsbStatus(
-          "KROK 6/8 — Wysłano L. Oczekiwanie na LIVE..."
-        );
-
-
-        /* =================================================
-           STEP 8 — READ LIVE DATA
-           ================================================= */
-
-        let allReceived = "";
-
-        let liveCount = 0;
-
-        let countedLines = 0;
-
-
-        const startTime =
-          Date.now();
-
-
-        const testDuration =
-          5000;
-
-
-        while (
-          Date.now() - startTime <
-          testDuration
-        ) {
-
-
-          const result =
-            await device.transferIn(
-
-              1,
-
-              64
-
-            );
-
-
-          if (
-
-            result &&
-
-            result.data &&
-
-            result.data.byteLength > 0
-
-          ) {
-
-
-            const text =
-              decoder.decode(
-                result.data
-              );
-
-
-            allReceived += text;
-
-
-            const lines =
-              allReceived.split(/\r?\n/);
-
-
-            /*
-             * Count only NEW complete LIVE lines.
-             */
-
-            const completeLines =
-              lines.slice(
-                0,
-                -1
-              );
-
-
-            if (
-              completeLines.length >
-              countedLines
-            ) {
-
-              for (
-                let i = countedLines;
-                i < completeLines.length;
-                i++
-              ) {
-
-                if (
-                  completeLines[i]
-                    .startsWith("LIVE,")
-                ) {
-
-                  liveCount++;
-
-                }
-
-              }
-
-
-              countedLines =
-                completeLines.length;
-
-            }
-
-
-            webUsbRawData.textContent =
-
-              "ODEBRANO Z NANO:\n\n" +
-
-              allReceived.slice(-6000);
-
-
-            setWebUsbStatus(
-
-              "Odczyt LIVE... odebrano " +
-
-              liveCount +
-
-              " próbek."
-
-            );
-
-          }
-
-        }
-
-
-        /* =================================================
-           STOP LIVE MODE
-           ================================================= */
-
-        await device.transferOut(
-
-          1,
-
-          encoder.encode("Q\n")
-
-        );
-
-
-        /* =================================================
-           RESULT
-           ================================================= */
-
-        if (
-          liveCount > 0
-        ) {
-
-
-          setWebUsbStatus(
-
-            "SUKCES — WebUSB odebrał " +
-
-            liveCount +
-
-            " próbek LIVE z Nano."
-
-          );
-
-        }
-
-
-        else {
-
-
-          setWebUsbStatus(
-
-            "USB działa, ale nie odebrano " +
-
-            "żadnej linii LIVE."
-
-          );
-
-        }
-
-
-        webUsbRawData.textContent +=
-
-          "\n\nWYSŁANO DO NANO:\nQ";
-
-
-        /* =================================================
-           CLEANUP — INTERFACE 1
-           ================================================= */
-
-        try {
-
-          if (
-            webUsbInterface1Claimed
-          ) {
-
-            await device.releaseInterface(1);
-
-            webUsbInterface1Claimed =
-              false;
-
-          }
-
-        }
-
-
-        catch (error) {
-
-          console.warn(
-
-            "Nie udało się zwolnić " +
-            "interfejsu 1:",
-
-            error
-
-          );
-
-        }
-
-
-        /* =================================================
-           CLEANUP — INTERFACE 0
-           ================================================= */
-
-        try {
-
-          if (
-            webUsbInterface0Claimed
-          ) {
-
-            await device.releaseInterface(0);
-
-            webUsbInterface0Claimed =
-              false;
-
-          }
-
-        }
-
-
-        catch (error) {
-
-          console.warn(
-
-            "Nie udało się zwolnić " +
-            "interfejsu 0:",
-
-            error
-
-          );
-
-        }
-
-
-        /* =================================================
-           CLOSE
-           ================================================= */
-
-        try {
-
-          if (
-            device.opened
-          ) {
-
-            await device.close();
-
-          }
-
-        }
-
-
-        catch (error) {
-
-          console.warn(
-
-            "Nie udało się zamknąć USB:",
-
-            error
-
-          );
-
-        }
-
-
-        webUsbDevice =
-          null;
-
-      }
-
-
-      catch (error) {
-
-
-        console.error(
-
-          "WebUSB LIVE test error:",
-
-          error
-
-        );
-
-
-        setWebUsbStatus(
-
-          "BŁĄD WebUSB: " +
-
-          error.message
-
-        );
-
-
-        webUsbRawData.textContent =
-
-          "Test zatrzymał się na błędzie:\n\n" +
-
-          error.message;
-
-
-        /* =================================================
-           SAFE CLEANUP
-           ================================================= */
-
-        if (device) {
-
-
-          try {
-
-            if (
-              webUsbInterface1Claimed
-            ) {
-
-              await device.releaseInterface(1);
-
-              webUsbInterface1Claimed =
-                false;
-
-            }
-
-          }
-
-
-          catch (cleanupError) {
-
-            console.warn(
-
-              "Release interface 1 error:",
-
-              cleanupError
-
-            );
-
-          }
-
-
-          try {
-
-            if (
-              webUsbInterface0Claimed
-            ) {
-
-              await device.releaseInterface(0);
-
-              webUsbInterface0Claimed =
-                false;
-
-            }
-
-          }
-
-
-          catch (cleanupError) {
-
-            console.warn(
-
-              "Release interface 0 error:",
-
-              cleanupError
-
-            );
-
-          }
-
-
-          try {
-
-            if (
-              device.opened
-            ) {
-
-              await device.close();
-
-            }
-
-          }
-
-
-          catch (cleanupError) {
-
-            console.warn(
-
-              "Close USB error:",
-
-              cleanupError
-
-            );
-
-          }
-
-        }
-
-
-        webUsbDevice =
-          null;
-
-      }
-
-    }
-
-  );
-
-</script>
-
 
 <script src="js/app.js"></script>
 
 
 </body>
+
 </html>
