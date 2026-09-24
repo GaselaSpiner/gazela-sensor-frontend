@@ -1,664 +1,819 @@
-/*
-  GAZELA SPINER SENSOR
-  BLE TEST v5
+<!DOCTYPE html>
+<html lang="pl">
 
-  Arduino Nano 33 BLE Sense Rev2
+<head>
 
-  TEST:
-  - BLE connection
-  - LIVE DATA przez NOTIFY
-  - COMMAND przez WRITE
-  - komenda L uruchamia LIVE
-*/
+  <meta charset="UTF-8">
 
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
 
-#include <ArduinoBLE.h>
-#include <Arduino_BMI270_BMM150.h>
-#include <math.h>
+  <title>Gazela BLE Test</title>
 
 
-// =====================================================
-// BLE UUID
-// =====================================================
+  <style>
 
-// SENSOR DATA SERVICE
-
-const char* SENSOR_SERVICE_UUID =
-  "7a1e0001-5a9a-4c71-9b3a-47415a5a0001";
-
-
-// LIVE DATA CHARACTERISTIC
-
-const char* LIVE_CHARACTERISTIC_UUID =
-  "7a1e0002-5a9a-4c71-9b3a-47415a5a0001";
-
-
-// CONTROL SERVICE
-
-const char* CONTROL_SERVICE_UUID =
-  "7a1e0010-5a9a-4c71-9b3a-47415a5a0001";
-
-
-// COMMAND CHARACTERISTIC
-
-const char* COMMAND_CHARACTERISTIC_UUID =
-  "7a1e0011-5a9a-4c71-9b3a-47415a5a0001";
-
-
-// =====================================================
-// BLE SERVICES
-// =====================================================
-
-BLEService sensorService(
-  SENSOR_SERVICE_UUID
-);
-
-BLEService controlService(
-  CONTROL_SERVICE_UUID
-);
-
-
-// =====================================================
-// BLE CHARACTERISTICS
-// =====================================================
-
-// Arduino → telefon
-
-BLEStringCharacteristic liveCharacteristic(
-  LIVE_CHARACTERISTIC_UUID,
-  BLERead | BLENotify,
-  100
-);
-
-
-// Telefon → Arduino
-
-BLEStringCharacteristic commandCharacteristic(
-  COMMAND_CHARACTERISTIC_UUID,
-  BLEWrite,
-  20
-);
-
-
-// =====================================================
-// USTAWIENIA
-// =====================================================
-
-const unsigned long SAMPLE_INTERVAL = 100;
-
-unsigned long lastSampleTime = 0;
-
-
-// =====================================================
-// STAN LIVE
-// =====================================================
-
-bool liveMode = false;
-
-
-// =====================================================
-// ANGLE
-// =====================================================
-
-float angleY_Gyro = 0.0;
-
-unsigned long previousTime = 0;
-
-
-// =====================================================
-// ODCZYT SENSORÓW
-// =====================================================
-
-void readSensorData(
-  float &AX,
-  float &AY,
-  float &AZ,
-  float &G,
-  float &Angle,
-  float &GX,
-  float &GY,
-  float &GZ,
-  float &AngleY
-)
-{
-  float sensorX;
-  float sensorY;
-  float sensorZ;
-
-  float gyroX;
-  float gyroY;
-  float gyroZ;
-
-
-  // ---------------------------------------------------
-  // ACCELEROMETER
-  // ---------------------------------------------------
-
-  if (IMU.accelerationAvailable())
-  {
-    IMU.readAcceleration(
-      sensorX,
-      sensorY,
-      sensorZ
-    );
-  }
-  else
-  {
-    sensorX = 0;
-    sensorY = 0;
-    sensorZ = 0;
-  }
-
-
-  // ---------------------------------------------------
-  // GYROSCOPE
-  // ---------------------------------------------------
-
-  if (IMU.gyroscopeAvailable())
-  {
-    IMU.readGyroscope(
-      gyroX,
-      gyroY,
-      gyroZ
-    );
-  }
-  else
-  {
-    gyroX = 0;
-    gyroY = 0;
-    gyroZ = 0;
-  }
-
-
-  // ===================================================
-  // REMAPOWANIE GAZELA
-  // ===================================================
-
-  // ACC
-
-  AX = -sensorY;
-  AY = -sensorX;
-  AZ = sensorZ;
-
-
-  // GYRO
-
-  GX = -gyroY;
-  GY = -gyroX;
-  GZ = gyroZ;
-
-
-  // ===================================================
-  // G
-  // ===================================================
-
-  G = sqrt(
-    AX * AX +
-    AY * AY +
-    AZ * AZ
-  );
-
-
-  // ===================================================
-  // ANGLE
-  // ===================================================
-
-  Angle = atan2(
-    sqrt(
-      AX * AX +
-      AY * AY
-    ),
-    AZ
-  )
-  * 180.0
-  / PI;
-
-
-  // ===================================================
-  // ANGLEY
-  // ===================================================
-
-  unsigned long currentTime = micros();
-
-
-  if (previousTime != 0)
-  {
-    float dt =
-      (currentTime - previousTime)
-      / 1000000.0;
-
-    angleY_Gyro += GY * dt;
-  }
-
-
-  previousTime =
-    currentTime;
-
-
-  AngleY =
-    angleY_Gyro;
-}
-
-
-// =====================================================
-// WYSŁANIE LIVE
-// =====================================================
-
-void sendLiveData()
-{
-  float AX;
-  float AY;
-  float AZ;
-
-  float G;
-  float Angle;
-
-  float GX;
-  float GY;
-  float GZ;
-
-  float AngleY;
-
-
-  readSensorData(
-    AX,
-    AY,
-    AZ,
-    G,
-    Angle,
-    GX,
-    GY,
-    GZ,
-    AngleY
-  );
-
-
-  char buffer[100];
-
-
-  snprintf(
-    buffer,
-    sizeof(buffer),
-    "LIVE,%.4f,%.4f,%.4f,%.4f,%.2f,%.4f,%.4f,%.4f,%.2f",
-    AX,
-    AY,
-    AZ,
-    G,
-    Angle,
-    GX,
-    GY,
-    GZ,
-    AngleY
-  );
-
-
-  // ---------------------------------------------------
-  // BLE
-  // ---------------------------------------------------
-
-  liveCharacteristic.writeValue(
-    buffer
-  );
-
-
-  // ---------------------------------------------------
-  // SERIAL MONITOR
-  // ---------------------------------------------------
-
-  Serial.println(
-    buffer
-  );
-}
-
-
-// =====================================================
-// OBSŁUGA COMMAND
-// =====================================================
-
-void processCommand()
-{
-  if (
-    commandCharacteristic.written()
-  )
-  {
-    String command =
-      commandCharacteristic.value();
-
-
-    command.trim();
-
-
-    Serial.print(
-      "COMMAND → "
-    );
-
-    Serial.println(
-      command
-    );
-
-
-    // =================================================
-    // L
-    // =================================================
-
-    if (
-      command == "L" ||
-      command == "l"
-    )
-    {
-      liveMode =
-        true;
-
-
-      angleY_Gyro =
-        0.0;
-
-
-      previousTime =
-        micros();
-
-
-      lastSampleTime =
-        millis();
-
-
-      Serial.println(
-        "COMMAND L RECEIVED"
-      );
-
-
-      Serial.println(
-        "LIVE START"
-      );
+    body {
+      font-family: Arial, sans-serif;
+      background: #f7f7f5;
+      padding: 30px 16px;
+      margin: 0;
     }
 
 
-    // =================================================
-    // Q
-    // =================================================
-
-    if (
-      command == "Q" ||
-      command == "q"
-    )
-    {
-      liveMode =
-        false;
-
-
-      Serial.println(
-        "COMMAND Q RECEIVED"
-      );
-
-
-      Serial.println(
-        "LIVE STOP"
-      );
+    main {
+      max-width: 700px;
+      margin: 0 auto;
     }
-  }
-}
 
 
-// =====================================================
-// SETUP
-// =====================================================
-
-void setup()
-{
-  Serial.begin(115200);
-
-
-  while (!Serial)
-  {
-    delay(10);
-  }
-
-
-  // ---------------------------------------------------
-  // SENSOR
-  // ---------------------------------------------------
-
-  if (!IMU.begin())
-  {
-    Serial.println(
-      "ERROR,IMU_NOT_FOUND"
-    );
-
-
-    while (1)
-    {
-      delay(1000);
+    .card {
+      background: #ffffff;
+      border: 1px solid #ddd;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.05);
     }
-  }
 
 
-  // ---------------------------------------------------
-  // BLE
-  // ---------------------------------------------------
-
-  if (!BLE.begin())
-  {
-    Serial.println(
-      "ERROR,BLE_NOT_FOUND"
-    );
-
-
-    while (1)
-    {
-      delay(1000);
+    button {
+      padding: 12px 18px;
+      border: 0;
+      border-radius: 10px;
+      margin: 4px;
+      cursor: pointer;
+      font-weight: 600;
     }
-  }
 
 
-  // ---------------------------------------------------
-  // DEVICE NAME
-  // ---------------------------------------------------
-
-  BLE.setLocalName(
-    "GAZELA SENSOR"
-  );
-
-  BLE.setDeviceName(
-    "GAZELA SENSOR"
-  );
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
 
 
-  // ---------------------------------------------------
-  // ADVERTISED SERVICE
-  // ---------------------------------------------------
-
-  BLE.setAdvertisedService(
-    sensorService
-  );
+    #connect {
+      background: #2563eb;
+      color: white;
+    }
 
 
-  // ---------------------------------------------------
-  // SENSOR SERVICE
-  // ---------------------------------------------------
-
-  sensorService.addCharacteristic(
-    liveCharacteristic
-  );
+    #disconnect {
+      background: #e5e7eb;
+    }
 
 
-  // ---------------------------------------------------
+    #sendL {
+      background: #111827;
+      color: white;
+    }
+
+
+    .section {
+      margin-top: 24px;
+    }
+
+
+    .value-box {
+      background: #f1f5f9;
+      padding: 14px;
+      border-radius: 10px;
+      word-break: break-word;
+    }
+
+
+    #log {
+      background: #f1f5f9;
+      padding: 14px;
+      border-radius: 10px;
+      height: 220px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: monospace;
+    }
+
+  </style>
+
+</head>
+
+
+<body>
+
+
+<main>
+
+
+  <div class="card">
+
+
+    <h1>
+      GAZELA SPINER SENSOR
+    </h1>
+
+
+    <p>
+      BLE Test — COMMAND + LIVE DATA
+    </p>
+
+
+    <!-- =================================================
+         CONNECTION
+         ================================================= -->
+
+
+    <button id="connect">
+      CONNECT BLE
+    </button>
+
+
+    <button
+      id="disconnect"
+      disabled
+    >
+      DISCONNECT
+    </button>
+
+
+    <!-- =================================================
+         COMMAND
+         ================================================= -->
+
+
+    <div class="section">
+
+      <h3>
+        COMMAND
+      </h3>
+
+
+      <button
+        id="sendL"
+        disabled
+      >
+        SEND L
+      </button>
+
+    </div>
+
+
+    <!-- =================================================
+         STATUS
+         ================================================= -->
+
+
+    <div class="section">
+
+      <h3>
+        STATUS
+      </h3>
+
+
+      <div
+        id="status"
+        class="value-box"
+      >
+        Niepołączony.
+      </div>
+
+    </div>
+
+
+    <!-- =================================================
+         LAST COMMAND
+         ================================================= -->
+
+
+    <div class="section">
+
+      <h3>
+        LAST COMMAND
+      </h3>
+
+
+      <div
+        id="lastCommand"
+        class="value-box"
+      >
+        —
+      </div>
+
+    </div>
+
+
+    <!-- =================================================
+         LAST LIVE DATA
+         ================================================= -->
+
+
+    <div class="section">
+
+      <h3>
+        LAST LIVE DATA
+      </h3>
+
+
+      <div
+        id="value"
+        class="value-box"
+      >
+        —
+      </div>
+
+    </div>
+
+
+    <!-- =================================================
+         LOG
+         ================================================= -->
+
+
+    <div class="section">
+
+      <h3>
+        LOG
+      </h3>
+
+
+      <div id="log">
+Gotowy.
+      </div>
+
+    </div>
+
+
+  </div>
+
+
+</main>
+
+
+<script>
+
+
+  // =====================================================
+  // GAZELA SENSOR BLE
+  // =====================================================
+
+
+  // -----------------------------------------------------
+  // SENSOR DATA SERVICE
+  // -----------------------------------------------------
+
+  const SENSOR_SERVICE_UUID =
+    "7a1e0001-5a9a-4c71-9b3a-47415a5a0001";
+
+
+  // -----------------------------------------------------
+  // LIVE DATA CHARACTERISTIC
+  // -----------------------------------------------------
+
+  const LIVE_CHARACTERISTIC_UUID =
+    "7a1e0002-5a9a-4c71-9b3a-47415a5a0001";
+
+
+  // -----------------------------------------------------
   // CONTROL SERVICE
-  // ---------------------------------------------------
+  // -----------------------------------------------------
 
-  controlService.addCharacteristic(
-    commandCharacteristic
-  );
-
-
-  // ---------------------------------------------------
-  // ADD SERVICES
-  // ---------------------------------------------------
-
-  BLE.addService(
-    sensorService
-  );
-
-  BLE.addService(
-    controlService
-  );
+  const CONTROL_SERVICE_UUID =
+    "7a1e0010-5a9a-4c71-9b3a-47415a5a0001";
 
 
-  // ---------------------------------------------------
-  // INITIAL LIVE VALUE
-  // ---------------------------------------------------
+  // -----------------------------------------------------
+  // COMMAND CHARACTERISTIC
+  // -----------------------------------------------------
 
-  liveCharacteristic.writeValue(
-    "LIVE,0,0,0,0,0,0,0,0,0"
-  );
-
-
-  // ---------------------------------------------------
-  // START BLE
-  // ---------------------------------------------------
-
-  BLE.advertise();
+  const COMMAND_CHARACTERISTIC_UUID =
+    "7a1e0011-5a9a-4c71-9b3a-47415a5a0001";
 
 
-  // ---------------------------------------------------
-  // INITIAL STATE
-  // ---------------------------------------------------
+  // =====================================================
+  // CONNECTION VARIABLES
+  // =====================================================
 
-  liveMode =
-    false;
+  let device = null;
 
+  let server = null;
 
-  angleY_Gyro =
-    0.0;
+  let liveCharacteristic = null;
 
-
-  previousTime =
-    micros();
+  let commandCharacteristic = null;
 
 
-  // ---------------------------------------------------
-  // SERIAL
-  // ---------------------------------------------------
+  // =====================================================
+  // DOM
+  // =====================================================
 
-  Serial.println(
-    "GAZELA SENSOR BLE TEST v5"
-  );
-
-  Serial.println(
-    "BLE READY"
-  );
-
-  Serial.println(
-    "ADVERTISING"
-  );
-
-  Serial.println(
-    "LIVE OFF"
-  );
-}
+  const connectButton =
+    document.getElementById("connect");
 
 
-// =====================================================
-// LOOP
-// =====================================================
-
-void loop()
-{
-  // ---------------------------------------------------
-  // BLE POLL
-  // ---------------------------------------------------
-
-  BLE.poll();
+  const disconnectButton =
+    document.getElementById("disconnect");
 
 
-  // ---------------------------------------------------
-  // COMMAND
-  // ---------------------------------------------------
-
-  processCommand();
+  const sendLButton =
+    document.getElementById("sendL");
 
 
-  // ---------------------------------------------------
-  // CENTRAL
-  // ---------------------------------------------------
-
-  BLEDevice central =
-    BLE.central();
+  const status =
+    document.getElementById("status");
 
 
-  if (central)
+  const lastCommand =
+    document.getElementById("lastCommand");
+
+
+  const value =
+    document.getElementById("value");
+
+
+  const log =
+    document.getElementById("log");
+
+
+  // =====================================================
+  // LOG
+  // =====================================================
+
+  function addLog(text)
   {
-    Serial.print(
-      "CONNECTED: "
-    );
 
-    Serial.println(
-      central.address()
-    );
+    log.textContent +=
+      "\n" + text;
 
 
-    // -------------------------------------------------
-    // CONNECTION LOOP
-    // -------------------------------------------------
+    // ---------------------------------------------------
+    // MAKSYMALNIE 30 LINII
+    // ---------------------------------------------------
 
-    while (
-      central.connected()
-    )
+    const lines =
+      log.textContent.split("\n");
+
+
+    if (lines.length > 30)
     {
-      unsigned long now =
-        millis();
+
+      log.textContent =
+        lines
+          .slice(lines.length - 30)
+          .join("\n");
+
+    }
 
 
-      // -----------------------------------------------
-      // COMMAND
-      // -----------------------------------------------
+    // ---------------------------------------------------
+    // PRZEWIŃ NA DÓŁ
+    // ---------------------------------------------------
 
-      processCommand();
+    log.scrollTop =
+      log.scrollHeight;
+
+  }
 
 
-      // -----------------------------------------------
-      // LIVE
-      // -----------------------------------------------
+  // =====================================================
+  // DECODE BLE DATA
+  // =====================================================
 
-      if (
-        liveMode
+  function decodeValue(dataView)
+  {
+
+    return new TextDecoder().decode(
+
+      new Uint8Array(
+
+        dataView.buffer,
+
+        dataView.byteOffset,
+
+        dataView.byteLength
+
       )
+
+    );
+
+  }
+
+
+  // =====================================================
+  // LIVE NOTIFICATION
+  // =====================================================
+
+  function handleNotification(event)
+  {
+
+    const text =
+      decodeValue(
+        event.target.value
+      );
+
+
+    // ---------------------------------------------------
+    // POKAZUJEMY TYLKO OSTATNIĄ PRÓBKĘ
+    // ---------------------------------------------------
+
+    value.textContent =
+      text;
+
+
+    // ---------------------------------------------------
+    // NIE DODAJEMY LIVE DO LOGU
+    // ---------------------------------------------------
+
+  }
+
+
+  // =====================================================
+  // CONNECT
+  // =====================================================
+
+  connectButton.addEventListener(
+    "click",
+    async () =>
+    {
+
+      try
       {
-        if (
-          now - lastSampleTime
-          >= SAMPLE_INTERVAL
-        )
+
+        // -----------------------------------------------
+        // WEB BLUETOOTH CHECK
+        // -----------------------------------------------
+
+        if (!navigator.bluetooth)
         {
-          lastSampleTime =
-            now;
 
+          throw new Error(
+            "Web Bluetooth nie jest dostępny w tej przeglądarce."
+          );
 
-          sendLiveData();
         }
+
+
+        status.textContent =
+          "Otwieram wybór urządzenia BLE...";
+
+
+        // -----------------------------------------------
+        // DEVICE SELECTION
+        // -----------------------------------------------
+
+        device =
+          await navigator.bluetooth.requestDevice(
+          {
+
+            filters:
+            [
+
+              {
+                name:
+                  "GAZELA SENSOR"
+              }
+
+            ],
+
+            optionalServices:
+            [
+
+              SENSOR_SERVICE_UUID,
+
+              CONTROL_SERVICE_UUID
+
+            ]
+
+          });
+
+
+        addLog(
+          "DEVICE → " +
+          device.name
+        );
+
+
+        // -----------------------------------------------
+        // DISCONNECT EVENT
+        // -----------------------------------------------
+
+        device.addEventListener(
+          "gattserverdisconnected",
+          handleDisconnect
+        );
+
+
+        status.textContent =
+          "Łączenie z GAZELA SENSOR...";
+
+
+        // -----------------------------------------------
+        // GATT CONNECT
+        // -----------------------------------------------
+
+        server =
+          await device.gatt.connect();
+
+
+        addLog(
+          "GATT CONNECTED"
+        );
+
+
+        // =================================================
+        // SENSOR SERVICE
+        // =================================================
+
+        const sensorService =
+          await server.getPrimaryService(
+            SENSOR_SERVICE_UUID
+          );
+
+
+        addLog(
+          "SENSOR SERVICE OK"
+        );
+
+
+        // =================================================
+        // LIVE CHARACTERISTIC
+        // =================================================
+
+        liveCharacteristic =
+          await sensorService.getCharacteristic(
+            LIVE_CHARACTERISTIC_UUID
+          );
+
+
+        addLog(
+          "LIVE CHARACTERISTIC OK"
+        );
+
+
+        // -----------------------------------------------
+        // READ
+        // -----------------------------------------------
+
+        const data =
+          await liveCharacteristic.readValue();
+
+
+        value.textContent =
+          decodeValue(data);
+
+
+        addLog(
+          "READ OK"
+        );
+
+
+        // -----------------------------------------------
+        // NOTIFICATION HANDLER
+        // -----------------------------------------------
+
+        liveCharacteristic.addEventListener(
+          "characteristicvaluechanged",
+          handleNotification
+        );
+
+
+        // -----------------------------------------------
+        // NOTIFY
+        // -----------------------------------------------
+
+        await liveCharacteristic.startNotifications();
+
+
+        addLog(
+          "NOTIFY ON"
+        );
+
+
+        // =================================================
+        // CONTROL SERVICE
+        // =================================================
+
+        const controlService =
+          await server.getPrimaryService(
+            CONTROL_SERVICE_UUID
+          );
+
+
+        addLog(
+          "CONTROL SERVICE OK"
+        );
+
+
+        // =================================================
+        // COMMAND CHARACTERISTIC
+        // =================================================
+
+        commandCharacteristic =
+          await controlService.getCharacteristic(
+            COMMAND_CHARACTERISTIC_UUID
+          );
+
+
+        addLog(
+          "COMMAND CHARACTERISTIC OK"
+        );
+
+
+        // =================================================
+        // READY
+        // =================================================
+
+        status.textContent =
+          "POŁĄCZONO — LIVE OFF";
+
+
+        connectButton.disabled =
+          true;
+
+
+        disconnectButton.disabled =
+          false;
+
+
+        sendLButton.disabled =
+          false;
+
+
+        addLog(
+          "READY — nacisnij SEND L"
+        );
+
       }
 
 
-      BLE.poll();
+      catch (error)
+      {
+
+        console.error(error);
+
+
+        status.textContent =
+          "BŁĄD: " +
+          error.message;
+
+
+        addLog(
+          "ERROR → " +
+          error.message
+        );
+
+      }
+
     }
+  );
 
 
-    // -------------------------------------------------
-    // DISCONNECTED
-    // -------------------------------------------------
+  // =====================================================
+  // SEND L
+  // =====================================================
 
-    Serial.println(
-      "DISCONNECTED"
+  sendLButton.addEventListener(
+    "click",
+    async () =>
+    {
+
+      try
+      {
+
+        if (!commandCharacteristic)
+        {
+
+          throw new Error(
+            "COMMAND characteristic nie jest dostępna."
+          );
+
+        }
+
+
+        // -----------------------------------------------
+        // COMMAND
+        // -----------------------------------------------
+
+        const command =
+          new TextEncoder().encode(
+            "L"
+          );
+
+
+        // -----------------------------------------------
+        // WRITE
+        // -----------------------------------------------
+
+        await commandCharacteristic.writeValue(
+          command
+        );
+
+
+        // -----------------------------------------------
+        // UI
+        // -----------------------------------------------
+
+        lastCommand.textContent =
+          "L";
+
+
+        status.textContent =
+          "WYSŁANO KOMENDĘ L";
+
+
+        addLog(
+          "COMMAND → L"
+        );
+
+      }
+
+
+      catch (error)
+      {
+
+        console.error(error);
+
+
+        addLog(
+          "COMMAND ERROR → " +
+          error.message
+        );
+
+      }
+
+    }
+  );
+
+
+  // =====================================================
+  // DISCONNECT HANDLER
+  // =====================================================
+
+  function handleDisconnect()
+  {
+
+    status.textContent =
+      "Sensor rozłączony.";
+
+
+    addLog(
+      "GATT DISCONNECTED"
     );
 
 
-    liveMode =
+    connectButton.disabled =
       false;
 
 
-    angleY_Gyro =
-      0.0;
+    disconnectButton.disabled =
+      true;
 
 
-    previousTime =
-      micros();
+    sendLButton.disabled =
+      true;
+
+
+    liveCharacteristic =
+      null;
+
+
+    commandCharacteristic =
+      null;
+
+
+    server =
+      null;
+
   }
-}
+
+
+  // =====================================================
+  // DISCONNECT BUTTON
+  // =====================================================
+
+  disconnectButton.addEventListener(
+    "click",
+    () =>
+    {
+
+      if (
+        device &&
+        device.gatt &&
+        device.gatt.connected
+      )
+      {
+
+        device.gatt.disconnect();
+
+      }
+
+    }
+  );
+
+
+</script>
+
+
+</body>
+
+</html>
