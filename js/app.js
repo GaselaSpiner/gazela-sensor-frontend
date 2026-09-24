@@ -78,6 +78,8 @@ let waitingForInitialReady = false;
 
 let returnToLiveAfterReady = false;
 
+let measurementCommandSent = false;
+
 
 // ========================================================
 // HEARTBEAT
@@ -1221,6 +1223,9 @@ class WebBluetoothTransport
 
             sensorReady = false;
 
+            measurementCommandSent =
+                false;
+
             if (connectButton) {
                 connectButton.disabled = false;
             }
@@ -1749,15 +1754,6 @@ function processSerialLine(line) {
     // ====================================================
     // HEARTBEAT
     // ====================================================
-    //
-    // IMPORTANT FIX:
-    //
-    // Firmware v18 sends HEARTBEAT only while
-    // the sensor is in READY/waiting state.
-    //
-    // Therefore HEARTBEAT is also accepted as
-    // confirmation that the sensor is ready.
-    // ====================================================
 
     if (
         line ===
@@ -1769,9 +1765,6 @@ function processSerialLine(line) {
 
         sensorReady =
             true;
-
-        // If connectSensor() is waiting for READY,
-        // HEARTBEAT can complete that wait.
 
         if (
             typeof window.__gazelaReadyWaiter ===
@@ -1786,9 +1779,6 @@ function processSerialLine(line) {
 
             waiter();
         }
-
-        // If measurement has ended and we are
-        // waiting to return to LIVE, do it now.
 
         if (
             returnToLiveAfterReady &&
@@ -1998,6 +1988,21 @@ function processSerialLine(line) {
         line ===
         "INFO,START"
     ) {
+
+        /*
+         * INFO,START is accepted only when this page
+         * explicitly sent command S.
+         *
+         * This prevents CONNECT -> L -> INFO,START
+         * from accidentally starting a measurement.
+         */
+
+        if (!measurementCommandSent) {
+            return;
+        }
+
+        measurementCommandSent =
+            false;
 
         measuring = true;
 
@@ -2478,6 +2483,9 @@ async function connectSensor() {
     returnToLiveAfterReady =
         false;
 
+    measurementCommandSent =
+        false;
+
     try {
 
         sensorTransport =
@@ -2585,6 +2593,11 @@ async function connectSensor() {
             waitingForInitialReady =
                 false;
 
+            /*
+             * CONNECT always ends in LIVE.
+             * No measurement command S is sent here.
+             */
+
             await startLiveMode();
         }
 
@@ -2622,6 +2635,9 @@ async function connectSensor() {
             false;
 
         returnToLiveAfterReady =
+            false;
+
+        measurementCommandSent =
             false;
 
         stopHeartbeatMonitor();
@@ -2731,6 +2747,13 @@ async function startMeasurement() {
         returnToLiveAfterReady =
             false;
 
+        /*
+         * Authorize INFO,START only for this explicit
+         * START button action.
+         */
+        measurementCommandSent =
+            true;
+
 
         if (samplesValue) {
 
@@ -2802,6 +2825,9 @@ async function startMeasurement() {
 
         measuring = false;
 
+        measurementCommandSent =
+            false;
+
         setStatus(
             "Measurement error",
             "error"
@@ -2838,6 +2864,9 @@ async function startMeasurement() {
 function finishSession() {
 
     measuring = false;
+
+    measurementCommandSent =
+        false;
 
     sessionEndTime =
         Date.now();
@@ -2900,6 +2929,9 @@ async function stopMeasurement() {
 
         measuring = false;
 
+        measurementCommandSent =
+            false;
+
         returnToLiveAfterReady =
             true;
 
@@ -2945,6 +2977,9 @@ async function disconnectSensor() {
         false;
 
     returnToLiveAfterReady =
+        false;
+
+    measurementCommandSent =
         false;
 
     try {
