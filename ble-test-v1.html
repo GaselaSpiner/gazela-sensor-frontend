@@ -10,7 +10,7 @@
     content="width=device-width, initial-scale=1.0"
   >
 
-  <title>Gazela BLE Test v1</title>
+  <title>Gazela BLE Test v2</title>
 
   <style>
 
@@ -52,11 +52,6 @@
       background: #e5e7eb;
     }
 
-    #notify {
-      background: #111827;
-      color: white;
-    }
-
     pre {
       background: #f1f5f9;
       padding: 14px;
@@ -79,7 +74,7 @@
     <h1>GAZELA SPINER SENSOR</h1>
 
     <p>
-      BLE Test v1 — połączenie i odczyt HELLO.
+      BLE Test v2 — automatyczne NOTIFY i LIVE DATA.
     </p>
 
 
@@ -93,14 +88,6 @@
       disabled
     >
       DISCONNECT
-    </button>
-
-
-    <button
-      id="notify"
-      disabled
-    >
-      WŁĄCZ NOTIFY
     </button>
 
 
@@ -167,10 +154,6 @@ Gotowy.
     document.getElementById("disconnect");
 
 
-  const notifyButton =
-    document.getElementById("notify");
-
-
   const status =
     document.getElementById("status");
 
@@ -219,6 +202,30 @@ Gotowy.
 
 
   // =====================================================
+  // NOTIFICATION HANDLER
+  // =====================================================
+
+  function handleNotification(event) {
+
+    const text =
+      decodeValue(
+        event.target.value
+      );
+
+
+    value.textContent =
+      text;
+
+
+    addLog(
+      "NOTIFY → " +
+      text
+    );
+
+  }
+
+
+  // =====================================================
   // CONNECT
   // =====================================================
 
@@ -227,6 +234,10 @@ Gotowy.
     async () => {
 
       try {
+
+        // -----------------------------------------------
+        // CHECK WEB BLUETOOTH
+        // -----------------------------------------------
 
         if (!navigator.bluetooth) {
 
@@ -276,16 +287,7 @@ Gotowy.
 
         device.addEventListener(
           "gattserverdisconnected",
-          () => {
-
-            status.textContent =
-              "Sensor rozłączony.";
-
-            addLog(
-              "GATT DISCONNECTED"
-            );
-
-          }
+          handleDisconnect
         );
 
 
@@ -358,11 +360,33 @@ Gotowy.
 
 
         // -----------------------------------------------
+        // NOTIFICATION EVENT
+        // -----------------------------------------------
+
+        characteristic.addEventListener(
+          "characteristicvaluechanged",
+          handleNotification
+        );
+
+
+        // -----------------------------------------------
+        // AUTOMATIC NOTIFY
+        // -----------------------------------------------
+
+        await characteristic.startNotifications();
+
+
+        addLog(
+          "NOTIFY WŁĄCZONE AUTOMATYCZNIE."
+        );
+
+
+        // -----------------------------------------------
         // SUCCESS
         // -----------------------------------------------
 
         status.textContent =
-          "POŁĄCZONO — GAZELA SENSOR";
+          "POŁĄCZONO — GAZELA SENSOR — LIVE";
 
 
         connectButton.disabled =
@@ -371,11 +395,6 @@ Gotowy.
 
         disconnectButton.disabled =
           false;
-
-
-        notifyButton.disabled =
-          false;
-
 
       }
 
@@ -401,66 +420,40 @@ Gotowy.
 
 
   // =====================================================
-  // NOTIFICATIONS
+  // DISCONNECT HANDLER
   // =====================================================
 
-  notifyButton.addEventListener(
-    "click",
-    async () => {
+  function handleDisconnect() {
 
-      try {
-
-        await characteristic.startNotifications();
+    status.textContent =
+      "Sensor rozłączony.";
 
 
-        characteristic.addEventListener(
-          "characteristicvaluechanged",
-          event => {
-
-            const text =
-              decodeValue(
-                event.target.value
-              );
+    addLog(
+      "GATT DISCONNECTED"
+    );
 
 
-            value.textContent =
-              text;
+    connectButton.disabled =
+      false;
 
 
-            addLog(
-              "NOTIFY → " +
-              text
-            );
-
-          }
-        );
+    disconnectButton.disabled =
+      true;
 
 
-        addLog(
-          "NOTIFY WŁĄCZONE."
-        );
+    characteristic =
+      null;
 
 
-        notifyButton.disabled =
-          true;
+    server =
+      null;
 
-      }
-
-      catch (error) {
-
-        addLog(
-          "NOTIFY ERROR → " +
-          error.message
-        );
-
-      }
-
-    }
-  );
+  }
 
 
   // =====================================================
-  // DISCONNECT
+  // DISCONNECT BUTTON
   // =====================================================
 
   disconnectButton.addEventListener(
