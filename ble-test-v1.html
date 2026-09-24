@@ -2,818 +2,629 @@
 <html lang="pl">
 
 <head>
-
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
-
-  <title>Gazela BLE Test</title>
-
+  <title>Gazela Sensor BLE Test</title>
 
   <style>
-
     body {
       font-family: Arial, sans-serif;
       background: #f7f7f5;
-      padding: 30px 16px;
       margin: 0;
+      padding: 20px;
     }
 
-
-    main {
+    .container {
       max-width: 700px;
       margin: 0 auto;
     }
 
-
-    .card {
-      background: #ffffff;
-      border: 1px solid #ddd;
-      border-radius: 16px;
-      padding: 24px;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.05);
+    h1 {
+      margin-bottom: 10px;
     }
 
+    .card {
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
 
     button {
       padding: 12px 18px;
-      border: 0;
-      border-radius: 10px;
-      margin: 4px;
+      margin: 5px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background: white;
       cursor: pointer;
-      font-weight: 600;
+      font-size: 15px;
     }
 
-
-    button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
+    button:hover {
+      background: #f0f0f0;
     }
 
-
-    #connect {
+    .primary {
       background: #2563eb;
       color: white;
+      border-color: #2563eb;
     }
 
-
-    #disconnect {
-      background: #e5e7eb;
-    }
-
-
-    #sendL {
-      background: #111827;
+    .danger {
+      background: #dc2626;
       color: white;
+      border-color: #dc2626;
     }
 
-
-    .section {
-      margin-top: 24px;
+    .status {
+      font-size: 18px;
+      font-weight: bold;
+      margin: 10px 0;
     }
 
-
-    .value-box {
-      background: #f1f5f9;
-      padding: 14px;
-      border-radius: 10px;
-      word-break: break-word;
-    }
-
-
-    #log {
-      background: #f1f5f9;
-      padding: 14px;
-      border-radius: 10px;
-      height: 220px;
-      overflow-y: auto;
-      white-space: pre-wrap;
-      word-break: break-word;
+    .value {
+      background: #f3f4f6;
+      padding: 12px;
+      border-radius: 8px;
+      word-break: break-all;
+      margin-top: 8px;
       font-family: monospace;
     }
 
+    #log {
+      background: #111;
+      color: #ddd;
+      padding: 12px;
+      border-radius: 8px;
+      min-height: 150px;
+      max-height: 300px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 13px;
+      white-space: pre-wrap;
+    }
   </style>
-
 </head>
 
 
 <body>
 
+<div class="container">
 
-<main>
+  <h1>GAZELA SENSOR — BLE TEST</h1>
 
+
+  <!-- ===================================================== -->
+  <!-- CONNECTION -->
+  <!-- ===================================================== -->
 
   <div class="card">
 
+    <h2>Połączenie</h2>
 
-    <h1>
-      GAZELA SPINER SENSOR
-    </h1>
+    <div id="status" class="status">
+      NIEPOŁĄCZONO
+    </div>
 
-
-    <p>
-      BLE Test — COMMAND + LIVE DATA
-    </p>
-
-
-    <!-- =================================================
-         CONNECTION
-         ================================================= -->
-
-
-    <button id="connect">
+    <button
+      id="connectButton"
+      class="primary"
+    >
       CONNECT BLE
     </button>
 
-
     <button
-      id="disconnect"
-      disabled
+      id="disconnectButton"
     >
       DISCONNECT
     </button>
 
-
-    <!-- =================================================
-         COMMAND
-         ================================================= -->
+  </div>
 
 
-    <div class="section">
+  <!-- ===================================================== -->
+  <!-- CONTROL -->
+  <!-- ===================================================== -->
 
-      <h3>
-        COMMAND
-      </h3>
+  <div class="card">
 
+    <h2>Sterowanie LIVE</h2>
 
-      <button
-        id="sendL"
-        disabled
-      >
-        SEND L
-      </button>
+    <button
+      id="sendLButton"
+      class="primary"
+    >
+      SEND L
+    </button>
 
+    <button
+      id="sendQButton"
+      class="danger"
+    >
+      SEND Q
+    </button>
+
+    <p>
+      L = uruchom LIVE<br>
+      Q = zatrzymaj LIVE
+    </p>
+
+    <div>
+      Ostatnia komenda:
     </div>
 
-
-    <!-- =================================================
-         STATUS
-         ================================================= -->
-
-
-    <div class="section">
-
-      <h3>
-        STATUS
-      </h3>
-
-
-      <div
-        id="status"
-        class="value-box"
-      >
-        Niepołączony.
-      </div>
-
+    <div
+      id="lastCommand"
+      class="value"
+    >
+      —
     </div>
-
-
-    <!-- =================================================
-         LAST COMMAND
-         ================================================= -->
-
-
-    <div class="section">
-
-      <h3>
-        LAST COMMAND
-      </h3>
-
-
-      <div
-        id="lastCommand"
-        class="value-box"
-      >
-        —
-      </div>
-
-    </div>
-
-
-    <!-- =================================================
-         LAST LIVE DATA
-         ================================================= -->
-
-
-    <div class="section">
-
-      <h3>
-        LAST LIVE DATA
-      </h3>
-
-
-      <div
-        id="value"
-        class="value-box"
-      >
-        —
-      </div>
-
-    </div>
-
-
-    <!-- =================================================
-         LOG
-         ================================================= -->
-
-
-    <div class="section">
-
-      <h3>
-        LOG
-      </h3>
-
-
-      <div id="log">
-Gotowy.
-      </div>
-
-    </div>
-
 
   </div>
 
 
-</main>
+  <!-- ===================================================== -->
+  <!-- LIVE DATA -->
+  <!-- ===================================================== -->
+
+  <div class="card">
+
+    <h2>LIVE DATA</h2>
+
+    <div>
+      Ostatnie dane:
+    </div>
+
+    <div
+      id="lastLiveData"
+      class="value"
+    >
+      —
+    </div>
+
+  </div>
+
+
+  <!-- ===================================================== -->
+  <!-- LOG -->
+  <!-- ===================================================== -->
+
+  <div class="card">
+
+    <h2>LOG</h2>
+
+    <div id="log"></div>
+
+  </div>
+
+</div>
 
 
 <script>
 
+// ============================================================
+// UUID
+// ============================================================
 
-  // =====================================================
-  // GAZELA SENSOR BLE
-  // =====================================================
+const SENSOR_SERVICE_UUID =
+  "7a1e0001-5a9a-4c71-9b3a-47415a5a0001";
 
+const LIVE_CHARACTERISTIC_UUID =
+  "7a1e0002-5a9a-4c71-9b3a-47415a5a0001";
 
-  // -----------------------------------------------------
-  // SENSOR DATA SERVICE
-  // -----------------------------------------------------
+const CONTROL_SERVICE_UUID =
+  "7a1e0010-5a9a-4c71-9b3a-47415a5a0001";
 
-  const SENSOR_SERVICE_UUID =
-    "7a1e0001-5a9a-4c71-9b3a-47415a5a0001";
-
-
-  // -----------------------------------------------------
-  // LIVE DATA CHARACTERISTIC
-  // -----------------------------------------------------
-
-  const LIVE_CHARACTERISTIC_UUID =
-    "7a1e0002-5a9a-4c71-9b3a-47415a5a0001";
+const COMMAND_CHARACTERISTIC_UUID =
+  "7a1e0011-5a9a-4c71-9b3a-47415a5a0001";
 
 
-  // -----------------------------------------------------
-  // CONTROL SERVICE
-  // -----------------------------------------------------
+// ============================================================
+// ELEMENTS
+// ============================================================
 
-  const CONTROL_SERVICE_UUID =
-    "7a1e0010-5a9a-4c71-9b3a-47415a5a0001";
+const connectButton =
+  document.getElementById("connectButton");
 
+const disconnectButton =
+  document.getElementById("disconnectButton");
 
-  // -----------------------------------------------------
-  // COMMAND CHARACTERISTIC
-  // -----------------------------------------------------
+const sendLButton =
+  document.getElementById("sendLButton");
 
-  const COMMAND_CHARACTERISTIC_UUID =
-    "7a1e0011-5a9a-4c71-9b3a-47415a5a0001";
+const sendQButton =
+  document.getElementById("sendQButton");
 
+const statusElement =
+  document.getElementById("status");
 
-  // =====================================================
-  // CONNECTION VARIABLES
-  // =====================================================
+const lastCommandElement =
+  document.getElementById("lastCommand");
 
-  let device = null;
+const lastLiveDataElement =
+  document.getElementById("lastLiveData");
 
-  let server = null;
-
-  let liveCharacteristic = null;
-
-  let commandCharacteristic = null;
-
-
-  // =====================================================
-  // DOM
-  // =====================================================
-
-  const connectButton =
-    document.getElementById("connect");
+const logElement =
+  document.getElementById("log");
 
 
-  const disconnectButton =
-    document.getElementById("disconnect");
+// ============================================================
+// BLE VARIABLES
+// ============================================================
+
+let device = null;
+
+let liveCharacteristic = null;
+
+let commandCharacteristic = null;
 
 
-  const sendLButton =
-    document.getElementById("sendL");
+// ============================================================
+// LOG
+// ============================================================
+
+function log(message)
+{
+  const line =
+    document.createElement("div");
+
+  line.textContent =
+    message;
+
+  logElement.appendChild(line);
 
 
-  const status =
-    document.getElementById("status");
+  // Maksymalnie 30 wpisów
 
-
-  const lastCommand =
-    document.getElementById("lastCommand");
-
-
-  const value =
-    document.getElementById("value");
-
-
-  const log =
-    document.getElementById("log");
-
-
-  // =====================================================
-  // LOG
-  // =====================================================
-
-  function addLog(text)
+  while (
+    logElement.children.length > 30
+  )
   {
-
-    log.textContent +=
-      "\n" + text;
-
-
-    // ---------------------------------------------------
-    // MAKSYMALNIE 30 LINII
-    // ---------------------------------------------------
-
-    const lines =
-      log.textContent.split("\n");
-
-
-    if (lines.length > 30)
-    {
-
-      log.textContent =
-        lines
-          .slice(lines.length - 30)
-          .join("\n");
-
-    }
-
-
-    // ---------------------------------------------------
-    // PRZEWIŃ NA DÓŁ
-    // ---------------------------------------------------
-
-    log.scrollTop =
-      log.scrollHeight;
-
+    logElement.removeChild(
+      logElement.firstChild
+    );
   }
 
 
-  // =====================================================
-  // DECODE BLE DATA
-  // =====================================================
+  logElement.scrollTop =
+    logElement.scrollHeight;
+}
 
-  function decodeValue(dataView)
+
+// ============================================================
+// STATUS
+// ============================================================
+
+function setStatus(message)
+{
+  statusElement.textContent =
+    message;
+}
+
+
+// ============================================================
+// CONNECT
+// ============================================================
+
+async function connectBLE()
+{
+  try
   {
+    log("Łączenie z GAZELA SENSOR...");
 
-    return new TextDecoder().decode(
 
-      new Uint8Array(
+    // --------------------------------------------------------
+    // Wybór urządzenia
+    // --------------------------------------------------------
 
-        dataView.buffer,
+    device =
+      await navigator.bluetooth.requestDevice({
 
-        dataView.byteOffset,
+        filters: [
+          {
+            name: "GAZELA SENSOR"
+          }
+        ],
 
-        dataView.byteLength
+        optionalServices: [
+          SENSOR_SERVICE_UUID,
+          CONTROL_SERVICE_UUID
+        ]
 
-      )
+      });
 
+
+    log(
+      "Wybrano: " +
+      device.name
     );
 
-  }
+
+    // --------------------------------------------------------
+    // Disconnect event
+    // --------------------------------------------------------
+
+    device.addEventListener(
+      "gattserverdisconnected",
+      handleDisconnect
+    );
 
 
-  // =====================================================
-  // LIVE NOTIFICATION
-  // =====================================================
+    // --------------------------------------------------------
+    // GATT CONNECT
+    // --------------------------------------------------------
 
-  function handleNotification(event)
-  {
+    const server =
+      await device.gatt.connect();
 
-    const text =
-      decodeValue(
-        event.target.value
+
+    log("GATT CONNECTED");
+
+
+    // ========================================================
+    // SENSOR SERVICE
+    // ========================================================
+
+    const sensorService =
+      await server.getPrimaryService(
+        SENSOR_SERVICE_UUID
       );
 
 
-    // ---------------------------------------------------
-    // POKAZUJEMY TYLKO OSTATNIĄ PRÓBKĘ
-    // ---------------------------------------------------
+    // ========================================================
+    // LIVE CHARACTERISTIC
+    // ========================================================
 
-    value.textContent =
-      text;
-
-
-    // ---------------------------------------------------
-    // NIE DODAJEMY LIVE DO LOGU
-    // ---------------------------------------------------
-
-  }
+    liveCharacteristic =
+      await sensorService.getCharacteristic(
+        LIVE_CHARACTERISTIC_UUID
+      );
 
 
-  // =====================================================
-  // CONNECT
-  // =====================================================
+    // --------------------------------------------------------
+    // Initial read
+    // --------------------------------------------------------
 
-  connectButton.addEventListener(
-    "click",
-    async () =>
+    try
     {
+      const value =
+        await liveCharacteristic.readValue();
 
-      try
-      {
+      const text =
+        new TextDecoder().decode(value);
 
-        // -----------------------------------------------
-        // WEB BLUETOOTH CHECK
-        // -----------------------------------------------
-
-        if (!navigator.bluetooth)
-        {
-
-          throw new Error(
-            "Web Bluetooth nie jest dostępny w tej przeglądarce."
-          );
-
-        }
-
-
-        status.textContent =
-          "Otwieram wybór urządzenia BLE...";
-
-
-        // -----------------------------------------------
-        // DEVICE SELECTION
-        // -----------------------------------------------
-
-        device =
-          await navigator.bluetooth.requestDevice(
-          {
-
-            filters:
-            [
-
-              {
-                name:
-                  "GAZELA SENSOR"
-              }
-
-            ],
-
-            optionalServices:
-            [
-
-              SENSOR_SERVICE_UUID,
-
-              CONTROL_SERVICE_UUID
-
-            ]
-
-          });
-
-
-        addLog(
-          "DEVICE → " +
-          device.name
-        );
-
-
-        // -----------------------------------------------
-        // DISCONNECT EVENT
-        // -----------------------------------------------
-
-        device.addEventListener(
-          "gattserverdisconnected",
-          handleDisconnect
-        );
-
-
-        status.textContent =
-          "Łączenie z GAZELA SENSOR...";
-
-
-        // -----------------------------------------------
-        // GATT CONNECT
-        // -----------------------------------------------
-
-        server =
-          await device.gatt.connect();
-
-
-        addLog(
-          "GATT CONNECTED"
-        );
-
-
-        // =================================================
-        // SENSOR SERVICE
-        // =================================================
-
-        const sensorService =
-          await server.getPrimaryService(
-            SENSOR_SERVICE_UUID
-          );
-
-
-        addLog(
-          "SENSOR SERVICE OK"
-        );
-
-
-        // =================================================
-        // LIVE CHARACTERISTIC
-        // =================================================
-
-        liveCharacteristic =
-          await sensorService.getCharacteristic(
-            LIVE_CHARACTERISTIC_UUID
-          );
-
-
-        addLog(
-          "LIVE CHARACTERISTIC OK"
-        );
-
-
-        // -----------------------------------------------
-        // READ
-        // -----------------------------------------------
-
-        const data =
-          await liveCharacteristic.readValue();
-
-
-        value.textContent =
-          decodeValue(data);
-
-
-        addLog(
-          "READ OK"
-        );
-
-
-        // -----------------------------------------------
-        // NOTIFICATION HANDLER
-        // -----------------------------------------------
-
-        liveCharacteristic.addEventListener(
-          "characteristicvaluechanged",
-          handleNotification
-        );
-
-
-        // -----------------------------------------------
-        // NOTIFY
-        // -----------------------------------------------
-
-        await liveCharacteristic.startNotifications();
-
-
-        addLog(
-          "NOTIFY ON"
-        );
-
-
-        // =================================================
-        // CONTROL SERVICE
-        // =================================================
-
-        const controlService =
-          await server.getPrimaryService(
-            CONTROL_SERVICE_UUID
-          );
-
-
-        addLog(
-          "CONTROL SERVICE OK"
-        );
-
-
-        // =================================================
-        // COMMAND CHARACTERISTIC
-        // =================================================
-
-        commandCharacteristic =
-          await controlService.getCharacteristic(
-            COMMAND_CHARACTERISTIC_UUID
-          );
-
-
-        addLog(
-          "COMMAND CHARACTERISTIC OK"
-        );
-
-
-        // =================================================
-        // READY
-        // =================================================
-
-        status.textContent =
-          "POŁĄCZONO — LIVE OFF";
-
-
-        connectButton.disabled =
-          true;
-
-
-        disconnectButton.disabled =
-          false;
-
-
-        sendLButton.disabled =
-          false;
-
-
-        addLog(
-          "READY — nacisnij SEND L"
-        );
-
-      }
-
-
-      catch (error)
-      {
-
-        console.error(error);
-
-
-        status.textContent =
-          "BŁĄD: " +
-          error.message;
-
-
-        addLog(
-          "ERROR → " +
-          error.message
-        );
-
-      }
-
+      lastLiveDataElement.textContent =
+        text;
     }
-  );
-
-
-  // =====================================================
-  // SEND L
-  // =====================================================
-
-  sendLButton.addEventListener(
-    "click",
-    async () =>
+    catch (error)
     {
-
-      try
-      {
-
-        if (!commandCharacteristic)
-        {
-
-          throw new Error(
-            "COMMAND characteristic nie jest dostępna."
-          );
-
-        }
-
-
-        // -----------------------------------------------
-        // COMMAND
-        // -----------------------------------------------
-
-        const command =
-          new TextEncoder().encode(
-            "L"
-          );
-
-
-        // -----------------------------------------------
-        // WRITE
-        // -----------------------------------------------
-
-        await commandCharacteristic.writeValue(
-          command
-        );
-
-
-        // -----------------------------------------------
-        // UI
-        // -----------------------------------------------
-
-        lastCommand.textContent =
-          "L";
-
-
-        status.textContent =
-          "WYSŁANO KOMENDĘ L";
-
-
-        addLog(
-          "COMMAND → L"
-        );
-
-      }
-
-
-      catch (error)
-      {
-
-        console.error(error);
-
-
-        addLog(
-          "COMMAND ERROR → " +
-          error.message
-        );
-
-      }
-
+      log(
+        "READ LIVE: " +
+        error.message
+      );
     }
-  );
 
 
-  // =====================================================
-  // DISCONNECT HANDLER
-  // =====================================================
+    // --------------------------------------------------------
+    // Notifications
+    // --------------------------------------------------------
 
-  function handleDisconnect()
-  {
-
-    status.textContent =
-      "Sensor rozłączony.";
-
-
-    addLog(
-      "GATT DISCONNECTED"
+    liveCharacteristic.addEventListener(
+      "characteristicvaluechanged",
+      handleLiveNotification
     );
 
 
-    connectButton.disabled =
-      false;
+    await liveCharacteristic.startNotifications();
 
 
-    disconnectButton.disabled =
-      true;
+    log(
+      "LIVE NOTIFY ON"
+    );
 
 
-    sendLButton.disabled =
-      true;
+    // ========================================================
+    // CONTROL SERVICE
+    // ========================================================
+
+    const controlService =
+      await server.getPrimaryService(
+        CONTROL_SERVICE_UUID
+      );
 
 
-    liveCharacteristic =
-      null;
-
+    // ========================================================
+    // COMMAND CHARACTERISTIC
+    // ========================================================
 
     commandCharacteristic =
-      null;
+      await controlService.getCharacteristic(
+        COMMAND_CHARACTERISTIC_UUID
+      );
 
 
-    server =
-      null;
+    log(
+      "COMMAND CHARACTERISTIC READY"
+    );
 
+
+    setStatus(
+      "POŁĄCZONO — LIVE OFF"
+    );
+
+  }
+  catch (error)
+  {
+    console.error(error);
+
+    log(
+      "BŁĄD: " +
+      error.message
+    );
+
+    setStatus(
+      "BŁĄD POŁĄCZENIA"
+    );
+  }
+}
+
+
+// ============================================================
+// LIVE NOTIFICATION
+// ============================================================
+
+function handleLiveNotification(event)
+{
+  const value =
+    event.target.value;
+
+  const text =
+    new TextDecoder().decode(value);
+
+
+  lastLiveDataElement.textContent =
+    text;
+}
+
+
+// ============================================================
+// SEND COMMAND
+// ============================================================
+
+async function sendCommand(command)
+{
+  if (
+    !commandCharacteristic
+  )
+  {
+    log(
+      "Brak połączenia z COMMAND"
+    );
+
+    return;
   }
 
 
-  // =====================================================
-  // DISCONNECT BUTTON
-  // =====================================================
+  try
+  {
+    const data =
+      new TextEncoder().encode(
+        command
+      );
 
-  disconnectButton.addEventListener(
-    "click",
-    () =>
+
+    await commandCharacteristic.writeValue(
+      data
+    );
+
+
+    lastCommandElement.textContent =
+      command;
+
+
+    log(
+      "Wysłano: " +
+      command
+    );
+
+
+    if (command === "L")
     {
-
-      if (
-        device &&
-        device.gatt &&
-        device.gatt.connected
-      )
-      {
-
-        device.gatt.disconnect();
-
-      }
-
+      setStatus(
+        "POŁĄCZONO — LIVE ON"
+      );
     }
+
+
+    if (command === "Q")
+    {
+      setStatus(
+        "POŁĄCZONO — LIVE OFF"
+      );
+    }
+
+  }
+  catch (error)
+  {
+    console.error(error);
+
+    log(
+      "BŁĄD COMMAND: " +
+      error.message
+    );
+  }
+}
+
+
+// ============================================================
+// DISCONNECT
+// ============================================================
+
+function disconnectBLE()
+{
+  if (
+    device &&
+    device.gatt &&
+    device.gatt.connected
+  )
+  {
+    device.gatt.disconnect();
+  }
+}
+
+
+// ============================================================
+// DISCONNECT HANDLER
+// ============================================================
+
+function handleDisconnect()
+{
+  log(
+    "BLE DISCONNECTED"
   );
 
 
+  setStatus(
+    "NIEPOŁĄCZONO"
+  );
+
+
+  liveCharacteristic = null;
+
+  commandCharacteristic = null;
+}
+
+
+// ============================================================
+// BUTTONS
+// ============================================================
+
+connectButton.addEventListener(
+  "click",
+  connectBLE
+);
+
+
+disconnectButton.addEventListener(
+  "click",
+  disconnectBLE
+);
+
+
+sendLButton.addEventListener(
+  "click",
+  () => sendCommand("L")
+);
+
+
+sendQButton.addEventListener(
+  "click",
+  () => sendCommand("Q")
+);
+
 </script>
 
-
 </body>
-
 </html>
