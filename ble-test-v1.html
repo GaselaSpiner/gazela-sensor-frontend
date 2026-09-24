@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="pl">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>Gazela BLE Test v1</title>
+
+  <style>
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #f7f7f5;
+      padding: 30px 16px;
+      margin: 0;
+    }
+
+    main {
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: #ffffff;
+      border: 1px solid #ddd;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.05);
+    }
+
+    button {
+      padding: 12px 18px;
+      border: 0;
+      border-radius: 10px;
+      margin: 4px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    #connect {
+      background: #2563eb;
+      color: white;
+    }
+
+    #disconnect {
+      background: #e5e7eb;
+    }
+
+    #notify {
+      background: #111827;
+      color: white;
+    }
+
+    pre {
+      background: #f1f5f9;
+      padding: 14px;
+      border-radius: 10px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+  </style>
+
+</head>
+
+
+<body>
+
+<main>
+
+  <div class="card">
+
+    <h1>GAZELA SPINER SENSOR</h1>
+
+    <p>
+      BLE Test v1 — połączenie i odczyt HELLO.
+    </p>
+
+
+    <button id="connect">
+      CONNECT BLE
+    </button>
+
+
+    <button
+      id="disconnect"
+      disabled
+    >
+      DISCONNECT
+    </button>
+
+
+    <button
+      id="notify"
+      disabled
+    >
+      WŁĄCZ NOTIFY
+    </button>
+
+
+    <h3>Status</h3>
+
+    <pre id="status">
+Niepołączony.
+    </pre>
+
+
+    <h3>Characteristic</h3>
+
+    <pre id="value">
+—
+    </pre>
+
+
+    <h3>Log</h3>
+
+    <pre id="log">
+Gotowy.
+    </pre>
+
+  </div>
+
+</main>
+
+
+<script>
+
+
+  // =====================================================
+  // GAZELA SENSOR BLE
+  // =====================================================
+
+  const SERVICE_UUID =
+    "7a1e0001-5a9a-4c71-9b3a-47415a5a0001";
+
+
+  const CHARACTERISTIC_UUID =
+    "7a1e0002-5a9a-4c71-9b3a-47415a5a0001";
+
+
+  // =====================================================
+  // CONNECTION VARIABLES
+  // =====================================================
+
+  let device = null;
+
+  let server = null;
+
+  let characteristic = null;
+
+
+  // =====================================================
+  // DOM
+  // =====================================================
+
+  const connectButton =
+    document.getElementById("connect");
+
+
+  const disconnectButton =
+    document.getElementById("disconnect");
+
+
+  const notifyButton =
+    document.getElementById("notify");
+
+
+  const status =
+    document.getElementById("status");
+
+
+  const value =
+    document.getElementById("value");
+
+
+  const log =
+    document.getElementById("log");
+
+
+  // =====================================================
+  // LOG
+  // =====================================================
+
+  function addLog(text) {
+
+    log.textContent +=
+      "\n" + text;
+
+  }
+
+
+  // =====================================================
+  // DECODE BLE DATA
+  // =====================================================
+
+  function decodeValue(dataView) {
+
+    return new TextDecoder().decode(
+
+      new Uint8Array(
+
+        dataView.buffer,
+
+        dataView.byteOffset,
+
+        dataView.byteLength
+
+      )
+
+    );
+
+  }
+
+
+  // =====================================================
+  // CONNECT
+  // =====================================================
+
+  connectButton.addEventListener(
+    "click",
+    async () => {
+
+      try {
+
+        if (!navigator.bluetooth) {
+
+          throw new Error(
+            "Web Bluetooth nie jest dostępny w tej przeglądarce."
+          );
+
+        }
+
+
+        status.textContent =
+          "Otwieram wybór urządzenia BLE...";
+
+
+        // -----------------------------------------------
+        // DEVICE SELECTION
+        // -----------------------------------------------
+
+        device =
+          await navigator.bluetooth.requestDevice({
+
+            filters: [
+
+              {
+                name: "GAZELA SENSOR"
+              }
+
+            ],
+
+            optionalServices: [
+
+              SERVICE_UUID
+
+            ]
+
+          });
+
+
+        addLog(
+          "Wybrano: " + device.name
+        );
+
+
+        // -----------------------------------------------
+        // DISCONNECT EVENT
+        // -----------------------------------------------
+
+        device.addEventListener(
+          "gattserverdisconnected",
+          () => {
+
+            status.textContent =
+              "Sensor rozłączony.";
+
+            addLog(
+              "GATT DISCONNECTED"
+            );
+
+          }
+        );
+
+
+        status.textContent =
+          "Łączenie z GAZELA SENSOR...";
+
+
+        // -----------------------------------------------
+        // GATT CONNECT
+        // -----------------------------------------------
+
+        server =
+          await device.gatt.connect();
+
+
+        addLog(
+          "GATT CONNECTED"
+        );
+
+
+        // -----------------------------------------------
+        // FIND SERVICE
+        // -----------------------------------------------
+
+        const service =
+          await server.getPrimaryService(
+            SERVICE_UUID
+          );
+
+
+        addLog(
+          "SERVICE znaleziony."
+        );
+
+
+        // -----------------------------------------------
+        // FIND CHARACTERISTIC
+        // -----------------------------------------------
+
+        characteristic =
+          await service.getCharacteristic(
+            CHARACTERISTIC_UUID
+          );
+
+
+        addLog(
+          "CHARACTERISTIC znaleziona."
+        );
+
+
+        // -----------------------------------------------
+        // READ
+        // -----------------------------------------------
+
+        const data =
+          await characteristic.readValue();
+
+
+        const text =
+          decodeValue(data);
+
+
+        value.textContent =
+          text;
+
+
+        addLog(
+          "READ → " + text
+        );
+
+
+        // -----------------------------------------------
+        // SUCCESS
+        // -----------------------------------------------
+
+        status.textContent =
+          "POŁĄCZONO — GAZELA SENSOR";
+
+
+        connectButton.disabled =
+          true;
+
+
+        disconnectButton.disabled =
+          false;
+
+
+        notifyButton.disabled =
+          false;
+
+
+      }
+
+      catch (error) {
+
+        console.error(error);
+
+
+        status.textContent =
+          "BŁĄD: " +
+          error.message;
+
+
+        addLog(
+          "ERROR → " +
+          error.message
+        );
+
+      }
+
+    }
+  );
+
+
+  // =====================================================
+  // NOTIFICATIONS
+  // =====================================================
+
+  notifyButton.addEventListener(
+    "click",
+    async () => {
+
+      try {
+
+        await characteristic.startNotifications();
+
+
+        characteristic.addEventListener(
+          "characteristicvaluechanged",
+          event => {
+
+            const text =
+              decodeValue(
+                event.target.value
+              );
+
+
+            value.textContent =
+              text;
+
+
+            addLog(
+              "NOTIFY → " +
+              text
+            );
+
+          }
+        );
+
+
+        addLog(
+          "NOTIFY WŁĄCZONE."
+        );
+
+
+        notifyButton.disabled =
+          true;
+
+      }
+
+      catch (error) {
+
+        addLog(
+          "NOTIFY ERROR → " +
+          error.message
+        );
+
+      }
+
+    }
+  );
+
+
+  // =====================================================
+  // DISCONNECT
+  // =====================================================
+
+  disconnectButton.addEventListener(
+    "click",
+    () => {
+
+      if (
+        device &&
+        device.gatt &&
+        device.gatt.connected
+      ) {
+
+        device.gatt.disconnect();
+
+      }
+
+    }
+  );
+
+
+</script>
+
+</body>
+
+</html>
