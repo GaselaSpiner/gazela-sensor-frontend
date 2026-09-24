@@ -10,7 +10,7 @@
     content="width=device-width, initial-scale=1.0"
   >
 
-  <title>Gazela BLE Test v2</title>
+  <title>Gazela BLE Test v3</title>
 
   <style>
 
@@ -43,6 +43,11 @@
       font-weight: 600;
     }
 
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
     #connect {
       background: #2563eb;
       color: white;
@@ -50,6 +55,11 @@
 
     #disconnect {
       background: #e5e7eb;
+    }
+
+    #sendL {
+      background: #111827;
+      color: white;
     }
 
     pre {
@@ -74,9 +84,13 @@
     <h1>GAZELA SPINER SENSOR</h1>
 
     <p>
-      BLE Test v2 — automatyczne NOTIFY i LIVE DATA.
+      BLE Test v3 — LIVE DATA + COMMAND.
     </p>
 
+
+    <!-- =================================================
+         CONNECTION
+         ================================================= -->
 
     <button id="connect">
       CONNECT BLE
@@ -91,6 +105,25 @@
     </button>
 
 
+    <!-- =================================================
+         COMMAND
+         ================================================= -->
+
+    <h3>COMMAND</h3>
+
+
+    <button
+      id="sendL"
+      disabled
+    >
+      SEND L
+    </button>
+
+
+    <!-- =================================================
+         STATUS
+         ================================================= -->
+
     <h3>Status</h3>
 
     <pre id="status">
@@ -98,12 +131,20 @@ Niepołączony.
     </pre>
 
 
-    <h3>Characteristic</h3>
+    <!-- =================================================
+         LIVE VALUE
+         ================================================= -->
+
+    <h3>LIVE DATA</h3>
 
     <pre id="value">
 —
     </pre>
 
+
+    <!-- =================================================
+         LOG
+         ================================================= -->
 
     <h3>Log</h3>
 
@@ -123,12 +164,37 @@ Gotowy.
   // GAZELA SENSOR BLE
   // =====================================================
 
-  const SERVICE_UUID =
+
+  // -----------------------------------------------------
+  // SENSOR DATA SERVICE
+  // -----------------------------------------------------
+
+  const SENSOR_SERVICE_UUID =
     "7a1e0001-5a9a-4c71-9b3a-47415a5a0001";
 
 
-  const CHARACTERISTIC_UUID =
+  // -----------------------------------------------------
+  // LIVE DATA CHARACTERISTIC
+  // -----------------------------------------------------
+
+  const LIVE_CHARACTERISTIC_UUID =
     "7a1e0002-5a9a-4c71-9b3a-47415a5a0001";
+
+
+  // -----------------------------------------------------
+  // CONTROL SERVICE
+  // -----------------------------------------------------
+
+  const CONTROL_SERVICE_UUID =
+    "7a1e0010-5a9a-4c71-9b3a-47415a5a0001";
+
+
+  // -----------------------------------------------------
+  // COMMAND CHARACTERISTIC
+  // -----------------------------------------------------
+
+  const COMMAND_CHARACTERISTIC_UUID =
+    "7a1e0011-5a9a-4c71-9b3a-47415a5a0001";
 
 
   // =====================================================
@@ -139,7 +205,9 @@ Gotowy.
 
   let server = null;
 
-  let characteristic = null;
+  let liveCharacteristic = null;
+
+  let commandCharacteristic = null;
 
 
   // =====================================================
@@ -152,6 +220,10 @@ Gotowy.
 
   const disconnectButton =
     document.getElementById("disconnect");
+
+
+  const sendLButton =
+    document.getElementById("sendL");
 
 
   const status =
@@ -202,7 +274,7 @@ Gotowy.
 
 
   // =====================================================
-  // NOTIFICATION HANDLER
+  // LIVE NOTIFICATION HANDLER
   // =====================================================
 
   function handleNotification(event) {
@@ -269,7 +341,9 @@ Gotowy.
 
             optionalServices: [
 
-              SERVICE_UUID
+              SENSOR_SERVICE_UUID,
+
+              CONTROL_SERVICE_UUID
 
             ]
 
@@ -308,42 +382,42 @@ Gotowy.
         );
 
 
-        // -----------------------------------------------
-        // FIND SERVICE
-        // -----------------------------------------------
+        // =================================================
+        // SENSOR SERVICE
+        // =================================================
 
-        const service =
+        const sensorService =
           await server.getPrimaryService(
-            SERVICE_UUID
+            SENSOR_SERVICE_UUID
           );
 
 
         addLog(
-          "SERVICE znaleziony."
+          "SENSOR SERVICE znaleziony."
         );
 
 
-        // -----------------------------------------------
-        // FIND CHARACTERISTIC
-        // -----------------------------------------------
+        // -------------------------------------------------
+        // LIVE CHARACTERISTIC
+        // -------------------------------------------------
 
-        characteristic =
-          await service.getCharacteristic(
-            CHARACTERISTIC_UUID
+        liveCharacteristic =
+          await sensorService.getCharacteristic(
+            LIVE_CHARACTERISTIC_UUID
           );
 
 
         addLog(
-          "CHARACTERISTIC znaleziona."
+          "LIVE CHARACTERISTIC znaleziona."
         );
 
 
-        // -----------------------------------------------
+        // -------------------------------------------------
         // READ
-        // -----------------------------------------------
+        // -------------------------------------------------
 
         const data =
-          await characteristic.readValue();
+          await liveCharacteristic.readValue();
 
 
         const text =
@@ -359,21 +433,21 @@ Gotowy.
         );
 
 
-        // -----------------------------------------------
+        // -------------------------------------------------
         // NOTIFICATION EVENT
-        // -----------------------------------------------
+        // -------------------------------------------------
 
-        characteristic.addEventListener(
+        liveCharacteristic.addEventListener(
           "characteristicvaluechanged",
           handleNotification
         );
 
 
-        // -----------------------------------------------
+        // -------------------------------------------------
         // AUTOMATIC NOTIFY
-        // -----------------------------------------------
+        // -------------------------------------------------
 
-        await characteristic.startNotifications();
+        await liveCharacteristic.startNotifications();
 
 
         addLog(
@@ -381,12 +455,42 @@ Gotowy.
         );
 
 
-        // -----------------------------------------------
+        // =================================================
+        // CONTROL SERVICE
+        // =================================================
+
+        const controlService =
+          await server.getPrimaryService(
+            CONTROL_SERVICE_UUID
+          );
+
+
+        addLog(
+          "CONTROL SERVICE znaleziony."
+        );
+
+
+        // -------------------------------------------------
+        // COMMAND CHARACTERISTIC
+        // -------------------------------------------------
+
+        commandCharacteristic =
+          await controlService.getCharacteristic(
+            COMMAND_CHARACTERISTIC_UUID
+          );
+
+
+        addLog(
+          "COMMAND CHARACTERISTIC znaleziona."
+        );
+
+
+        // =================================================
         // SUCCESS
-        // -----------------------------------------------
+        // =================================================
 
         status.textContent =
-          "POŁĄCZONO — GAZELA SENSOR — LIVE";
+          "POŁĄCZONO — GAZELA SENSOR — LIVE + COMMAND";
 
 
         connectButton.disabled =
@@ -394,6 +498,10 @@ Gotowy.
 
 
         disconnectButton.disabled =
+          false;
+
+
+        sendLButton.disabled =
           false;
 
       }
@@ -410,6 +518,65 @@ Gotowy.
 
         addLog(
           "ERROR → " +
+          error.message
+        );
+
+      }
+
+    }
+  );
+
+
+  // =====================================================
+  // SEND COMMAND L
+  // =====================================================
+
+  sendLButton.addEventListener(
+    "click",
+    async () => {
+
+      try {
+
+        if (!commandCharacteristic) {
+
+          throw new Error(
+            "COMMAND characteristic nie jest dostępna."
+          );
+
+        }
+
+
+        // -----------------------------------------------
+        // COMMAND
+        // -----------------------------------------------
+
+        const command =
+          new TextEncoder().encode("L");
+
+
+        // -----------------------------------------------
+        // WRITE
+        // -----------------------------------------------
+
+        await commandCharacteristic.writeValue(
+          command
+        );
+
+
+        addLog(
+          "COMMAND → L"
+        );
+
+
+      }
+
+      catch (error) {
+
+        console.error(error);
+
+
+        addLog(
+          "COMMAND ERROR → " +
           error.message
         );
 
@@ -442,7 +609,15 @@ Gotowy.
       true;
 
 
-    characteristic =
+    sendLButton.disabled =
+      true;
+
+
+    liveCharacteristic =
+      null;
+
+
+    commandCharacteristic =
       null;
 
 
