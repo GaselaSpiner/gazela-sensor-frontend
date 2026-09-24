@@ -2,15 +2,31 @@
 // GAZELA SPINER SENSOR — SENSOR LAB
 // app.js
 //
-// Communication Layer + LIVE diagnostics
+// Communication Layer
 //
-// USB:
-//   PC      -> Web Serial
-//   Android -> WebUSB
+// TRANSPORTS:
+//   1. Web Serial    — PC / USB
+//   2. WebUSB        — Android / USB
+//   3. Web Bluetooth — PC + Android / BLE
 //
-// BLE:
-//   PC      -> Web Bluetooth
-//   Android -> Web Bluetooth
+// USB FIRMWARE PROTOCOL:
+//   L = LIVE MODE
+//   S = START MEASUREMENT
+//   Q = EXIT LIVE / STOP
+//
+// BLE TEST v5 PROTOCOL:
+//   L = START LIVE
+//   Q = STOP LIVE
+//
+// IMPORTANT:
+// USB connection can RESET Arduino.
+// Therefore USB does NOT send L immediately after connect.
+// It waits for:
+//   READY
+// or
+//   BLE READY
+//
+// Then it sends L.
 // ========================================================
 
 
@@ -32,7 +48,7 @@ const BLE_COMMAND_CHARACTERISTIC_UUID =
 
 
 // ========================================================
-// WEBUSB
+// WEBUSB DEVICE
 // ========================================================
 
 const USB_VENDOR_ID = 0x2341;
@@ -44,7 +60,9 @@ const USB_PRODUCT_ID = 0x805A;
 // ========================================================
 
 let sensorTransport = null;
+
 let transportType = null;
+
 let selectedTransport = "usb";
 
 let measuring = false;
@@ -57,13 +75,6 @@ let sessionEndTime = null;
 
 let sampleCount = 0;
 
-// --------------------------------------------------------
-// LIVE DIAGNOSTIC COUNTER
-// --------------------------------------------------------
-
-let liveSampleCount = 0;
-let lastLiveDiagnosticCount = 0;
-
 let lastHeartbeatTime = 0;
 let heartbeatMonitor = null;
 
@@ -71,7 +82,31 @@ const HEARTBEAT_TIMEOUT = 3000;
 
 
 // ========================================================
-// DOM
+// AUTO LIVE START STATE
+// ========================================================
+//
+// When USB connects, Arduino may reset.
+//
+// We wait for:
+//   READY
+// or
+//   BLE READY
+//
+// before sending L.
+//
+// This prevents the previous problem where:
+//   connect → 300 ms → L
+//
+// happened before Arduino finished setup().
+// ========================================================
+
+let liveStartPending = false;
+
+let liveStartTimeout = null;
+
+
+// ========================================================
+// DOM ELEMENTS
 // ========================================================
 
 const statusDot =
@@ -171,7 +206,10 @@ if (disconnectButton) {
 // STATUS
 // ========================================================
 
-function setStatus(text, state = "neutral") {
+function setStatus(
+    text,
+    state = "neutral"
+) {
 
     if (statusText) {
         statusText.textContent = text;
@@ -179,7 +217,8 @@ function setStatus(text, state = "neutral") {
 
     if (statusDot) {
 
-        statusDot.className = "status-dot";
+        statusDot.className =
+            "status-dot";
 
         if (state) {
             statusDot.classList.add(state);
@@ -188,10 +227,15 @@ function setStatus(text, state = "neutral") {
 }
 
 
+// ========================================================
+// TRANSPORT STATUS
+// ========================================================
+
 function setTransportStatus(text) {
 
     if (transportStatus) {
-        transportStatus.textContent = text;
+        transportStatus.textContent =
+            text;
     }
 }
 
@@ -217,7 +261,8 @@ function addSerialLine(
     line.textContent = text;
 
     if (className) {
-        line.className = className;
+        line.className =
+            className;
     }
 
     serialMonitor.appendChild(line);
@@ -261,17 +306,24 @@ function formatNumber(
 // FORMAT TIME
 // ========================================================
 
-function formatTime(milliseconds) {
+function formatTime(
+    milliseconds
+) {
 
     if (!Number.isFinite(milliseconds)) {
         return "00:00.000";
     }
 
     const totalMs =
-        Math.max(0, milliseconds);
+        Math.max(
+            0,
+            milliseconds
+        );
 
     const minutes =
-        Math.floor(totalMs / 60000);
+        Math.floor(
+            totalMs / 60000
+        );
 
     const seconds =
         Math.floor(
@@ -279,7 +331,9 @@ function formatTime(milliseconds) {
         );
 
     const ms =
-        Math.floor(totalMs % 1000);
+        Math.floor(
+            totalMs % 1000
+        );
 
     return (
         String(minutes).padStart(2, "0") +
@@ -299,35 +353,45 @@ class SensorTransport {
 
     constructor(onLine) {
 
-        this.onLine = onLine;
-        this.running = false;
-        this.readTask = null;
+        this.onLine =
+            onLine;
+
+        this.running =
+            false;
+
+        this.readTask =
+            null;
     }
 
     async connect() {
+
         throw new Error(
             "connect() not implemented"
         );
     }
 
     async send(command) {
+
         throw new Error(
             "send() not implemented"
         );
     }
 
     async disconnect() {
-        this.running = false;
+
+        this.running =
+            false;
     }
 
     get name() {
+
         return "Unknown";
     }
 }
 
 
 // ========================================================
-// WEB SERIAL
+// WEB SERIAL TRANSPORT
 // ========================================================
 
 class WebSerialTransport
@@ -337,11 +401,15 @@ class WebSerialTransport
 
         super(onLine);
 
-        this.port = null;
-        this.reader = null;
+        this.port =
+            null;
+
+        this.reader =
+            null;
     }
 
     get name() {
+
         return "Web Serial";
     }
 
@@ -361,7 +429,8 @@ class WebSerialTransport
             baudRate: 115200
         });
 
-        this.running = true;
+        this.running =
+            true;
 
         this.readTask =
             this.readLoop();
@@ -404,20 +473,26 @@ class WebSerialTransport
                     );
 
                 const lines =
-                    buffer.split(/\r?\n/);
+                    buffer.split(
+                        /\r?\n/
+                    );
 
                 buffer =
                     lines.pop() || "";
 
                 for (
-                    const line of lines
+                    const line
+                    of lines
                 ) {
 
                     const cleanLine =
                         line.trim();
 
                     if (cleanLine) {
-                        this.onLine(cleanLine);
+
+                        this.onLine(
+                            cleanLine
+                        );
                     }
                 }
             }
@@ -439,13 +514,17 @@ class WebSerialTransport
             if (this.reader) {
 
                 try {
+
                     this.reader.releaseLock();
+
                 }
                 catch (error) {
+
                     console.warn(error);
                 }
 
-                this.reader = null;
+                this.reader =
+                    null;
             }
         }
     }
@@ -482,15 +561,22 @@ class WebSerialTransport
 
     async disconnect() {
 
-        this.running = false;
+        this.running =
+            false;
 
         if (this.reader) {
 
             try {
+
                 await this.reader.cancel();
+
             }
             catch (error) {
-                console.warn(error);
+
+                console.warn(
+                    "Web Serial reader cancel:",
+                    error
+                );
             }
         }
 
@@ -499,6 +585,7 @@ class WebSerialTransport
             try {
 
                 await Promise.race([
+
                     this.readTask,
 
                     new Promise(
@@ -512,6 +599,7 @@ class WebSerialTransport
 
             }
             catch (error) {
+
                 console.warn(error);
             }
         }
@@ -519,22 +607,33 @@ class WebSerialTransport
         if (this.port) {
 
             try {
+
                 await this.port.close();
+
             }
             catch (error) {
-                console.warn(error);
+
+                console.warn(
+                    "Web Serial close:",
+                    error
+                );
             }
         }
 
-        this.reader = null;
-        this.port = null;
-        this.readTask = null;
+        this.reader =
+            null;
+
+        this.port =
+            null;
+
+        this.readTask =
+            null;
     }
 }
 
 
 // ========================================================
-// WEBUSB
+// WEBUSB TRANSPORT
 // ========================================================
 
 class WebUSBTransport
@@ -544,10 +643,14 @@ class WebUSBTransport
 
         super(onLine);
 
-        this.device = null;
+        this.device =
+            null;
 
-        this.interface0Claimed = false;
-        this.interface1Claimed = false;
+        this.interface0Claimed =
+            false;
+
+        this.interface1Claimed =
+            false;
 
         this.decoder =
             new TextDecoder();
@@ -555,10 +658,12 @@ class WebUSBTransport
         this.encoder =
             new TextEncoder();
 
-        this.buffer = "";
+        this.buffer =
+            "";
     }
 
     get name() {
+
         return "WebUSB";
     }
 
@@ -567,7 +672,7 @@ class WebUSBTransport
         if (!("usb" in navigator)) {
 
             throw new Error(
-                "WebUSB nie jest dostępne."
+                "WebUSB nie jest dostępne w tej przeglądarce."
             );
         }
 
@@ -603,10 +708,12 @@ class WebUSBTransport
         await this.device.open();
 
         if (
-            this.device.configuration === null
+            this.device.configuration ===
+            null
         ) {
 
-            await this.device.selectConfiguration(1);
+            await this.device
+                .selectConfiguration(1);
 
         }
         else if (
@@ -614,12 +721,15 @@ class WebUSBTransport
                 .configurationValue !== 1
         ) {
 
-            await this.device.selectConfiguration(1);
+            await this.device
+                .selectConfiguration(1);
         }
 
-        await this.device.claimInterface(0);
+        await this.device
+            .claimInterface(0);
 
-        this.interface0Claimed = true;
+        this.interface0Claimed =
+            true;
 
         const lineCoding =
             new Uint8Array([
@@ -632,32 +742,56 @@ class WebUSBTransport
                 0x08
             ]);
 
-        await this.device.controlTransferOut(
-            {
-                requestType: "class",
-                recipient: "interface",
-                request: 0x20,
-                value: 0x0000,
-                index: 0x0000
-            },
-            lineCoding
-        );
+        await this.device
+            .controlTransferOut(
+                {
+                    requestType:
+                        "class",
 
-        await this.device.controlTransferOut(
-            {
-                requestType: "class",
-                recipient: "interface",
-                request: 0x22,
-                value: 0x0001,
-                index: 0x0000
-            }
-        );
+                    recipient:
+                        "interface",
 
-        await this.device.claimInterface(1);
+                    request:
+                        0x20,
 
-        this.interface1Claimed = true;
+                    value:
+                        0x0000,
 
-        this.running = true;
+                    index:
+                        0x0000
+                },
+
+                lineCoding
+            );
+
+        await this.device
+            .controlTransferOut(
+                {
+                    requestType:
+                        "class",
+
+                    recipient:
+                        "interface",
+
+                    request:
+                        0x22,
+
+                    value:
+                        0x0001,
+
+                    index:
+                        0x0000
+                }
+            );
+
+        await this.device
+            .claimInterface(1);
+
+        this.interface1Claimed =
+            true;
+
+        this.running =
+            true;
 
         this.readTask =
             this.readLoop();
@@ -670,16 +804,18 @@ class WebUSBTransport
             while (this.running) {
 
                 const result =
-                    await this.device.transferIn(
-                        1,
-                        64
-                    );
+                    await this.device
+                        .transferIn(
+                            1,
+                            64
+                        );
 
                 if (
                     !result ||
                     !result.data ||
                     result.data.byteLength === 0
                 ) {
+
                     continue;
                 }
 
@@ -688,7 +824,8 @@ class WebUSBTransport
                         result.data
                     );
 
-                this.buffer += text;
+                this.buffer +=
+                    text;
 
                 const lines =
                     this.buffer.split(
@@ -699,14 +836,18 @@ class WebUSBTransport
                     lines.pop() || "";
 
                 for (
-                    const line of lines
+                    const line
+                    of lines
                 ) {
 
                     const cleanLine =
                         line.trim();
 
                     if (cleanLine) {
-                        this.onLine(cleanLine);
+
+                        this.onLine(
+                            cleanLine
+                        );
                     }
                 }
             }
@@ -742,21 +883,24 @@ class WebUSBTransport
                 command + "\n"
             );
 
-        await this.device.transferOut(
-            1,
-            data
-        );
+        await this.device
+            .transferOut(
+                1,
+                data
+            );
     }
 
     async disconnect() {
 
-        this.running = false;
+        this.running =
+            false;
 
         if (this.readTask) {
 
             try {
 
                 await Promise.race([
+
                     this.readTask,
 
                     new Promise(
@@ -770,53 +914,85 @@ class WebUSBTransport
 
             }
             catch (error) {
+
                 console.warn(error);
             }
         }
 
         if (this.device) {
 
-            if (this.interface1Claimed) {
+            if (
+                this.interface1Claimed
+            ) {
 
                 try {
-                    await this.device.releaseInterface(1);
+
+                    await this.device
+                        .releaseInterface(1);
+
                 }
                 catch (error) {
-                    console.warn(error);
+
+                    console.warn(
+                        "WebUSB release interface 1:",
+                        error
+                    );
                 }
 
-                this.interface1Claimed = false;
+                this.interface1Claimed =
+                    false;
             }
 
-            if (this.interface0Claimed) {
+            if (
+                this.interface0Claimed
+            ) {
 
                 try {
-                    await this.device.releaseInterface(0);
+
+                    await this.device
+                        .releaseInterface(0);
+
                 }
                 catch (error) {
-                    console.warn(error);
+
+                    console.warn(
+                        "WebUSB release interface 0:",
+                        error
+                    );
                 }
 
-                this.interface0Claimed = false;
+                this.interface0Claimed =
+                    false;
             }
 
             try {
+
                 await this.device.close();
+
             }
             catch (error) {
-                console.warn(error);
+
+                console.warn(
+                    "WebUSB close:",
+                    error
+                );
             }
         }
 
-        this.device = null;
-        this.readTask = null;
-        this.buffer = "";
+        this.device =
+            null;
+
+        this.readTask =
+            null;
+
+        this.buffer =
+            "";
     }
 }
 
 
 // ========================================================
-// WEB BLUETOOTH
+// WEB BLUETOOTH TRANSPORT
 // ========================================================
 
 class WebBluetoothTransport
@@ -826,14 +1002,23 @@ class WebBluetoothTransport
 
         super(onLine);
 
-        this.device = null;
-        this.server = null;
+        this.device =
+            null;
 
-        this.sensorService = null;
-        this.liveCharacteristic = null;
+        this.server =
+            null;
 
-        this.controlService = null;
-        this.commandCharacteristic = null;
+        this.sensorService =
+            null;
+
+        this.liveCharacteristic =
+            null;
+
+        this.controlService =
+            null;
+
+        this.commandCharacteristic =
+            null;
 
         this.decoder =
             new TextDecoder();
@@ -846,6 +1031,7 @@ class WebBluetoothTransport
     }
 
     get name() {
+
         return "Web Bluetooth";
     }
 
@@ -854,24 +1040,26 @@ class WebBluetoothTransport
         if (!("bluetooth" in navigator)) {
 
             throw new Error(
-                "Web Bluetooth nie jest dostępny."
+                "Web Bluetooth nie jest dostępny w tej przeglądarce."
             );
         }
 
         this.device =
-            await navigator.bluetooth.requestDevice({
+            await navigator.bluetooth
+                .requestDevice({
 
-                filters: [
-                    {
-                        name: "GAZELA SENSOR"
-                    }
-                ],
+                    filters: [
+                        {
+                            name:
+                                "GAZELA SENSOR"
+                        }
+                    ],
 
-                optionalServices: [
-                    BLE_SENSOR_SERVICE_UUID,
-                    BLE_CONTROL_SERVICE_UUID
-                ]
-            });
+                    optionalServices: [
+                        BLE_SENSOR_SERVICE_UUID,
+                        BLE_CONTROL_SERVICE_UUID
+                    ]
+                });
 
         this.device.addEventListener(
             "gattserverdisconnected",
@@ -882,33 +1070,40 @@ class WebBluetoothTransport
             await this.device.gatt.connect();
 
         this.sensorService =
-            await this.server.getPrimaryService(
-                BLE_SENSOR_SERVICE_UUID
-            );
+            await this.server
+                .getPrimaryService(
+                    BLE_SENSOR_SERVICE_UUID
+                );
 
         this.liveCharacteristic =
-            await this.sensorService.getCharacteristic(
-                BLE_LIVE_CHARACTERISTIC_UUID
-            );
+            await this.sensorService
+                .getCharacteristic(
+                    BLE_LIVE_CHARACTERISTIC_UUID
+                );
 
         this.controlService =
-            await this.server.getPrimaryService(
-                BLE_CONTROL_SERVICE_UUID
-            );
+            await this.server
+                .getPrimaryService(
+                    BLE_CONTROL_SERVICE_UUID
+                );
 
         this.commandCharacteristic =
-            await this.controlService.getCharacteristic(
-                BLE_COMMAND_CHARACTERISTIC_UUID
+            await this.controlService
+                .getCharacteristic(
+                    BLE_COMMAND_CHARACTERISTIC_UUID
+                );
+
+        await this.liveCharacteristic
+            .startNotifications();
+
+        this.liveCharacteristic
+            .addEventListener(
+                "characteristicvaluechanged",
+                this.boundNotificationHandler
             );
 
-        await this.liveCharacteristic.startNotifications();
-
-        this.liveCharacteristic.addEventListener(
-            "characteristicvaluechanged",
-            this.boundNotificationHandler
-        );
-
-        this.running = true;
+        this.running =
+            true;
     }
 
     handleNotification(event) {
@@ -919,20 +1114,28 @@ class WebBluetoothTransport
                 event.target.value;
 
             const text =
-                this.decoder.decode(value);
+                this.decoder.decode(
+                    value
+                );
 
             const lines =
-                text.split(/\r?\n/);
+                text.split(
+                    /\r?\n/
+                );
 
             for (
-                const line of lines
+                const line
+                of lines
             ) {
 
                 const cleanLine =
                     line.trim();
 
                 if (cleanLine) {
-                    this.onLine(cleanLine);
+
+                    this.onLine(
+                        cleanLine
+                    );
                 }
             }
 
@@ -958,41 +1161,51 @@ class WebBluetoothTransport
         }
 
         // BLE v5:
-        // wysyłamy "L" lub "Q"
-        // bez \n
+        // command without newline
 
         const data =
             new TextEncoder().encode(
                 command
             );
 
-        await this.commandCharacteristic.writeValue(
-            data
-        );
+        await this.commandCharacteristic
+            .writeValue(data);
     }
 
     async disconnect() {
 
-        this.running = false;
+        this.running =
+            false;
 
-        if (this.liveCharacteristic) {
+        if (
+            this.liveCharacteristic
+        ) {
 
             try {
-                await this.liveCharacteristic.stopNotifications();
+
+                await this.liveCharacteristic
+                    .stopNotifications();
+
             }
             catch (error) {
-                console.warn(error);
-            }
 
-            try {
-
-                this.liveCharacteristic.removeEventListener(
-                    "characteristicvaluechanged",
-                    this.boundNotificationHandler
+                console.warn(
+                    "BLE stopNotifications:",
+                    error
                 );
+            }
+
+            try {
+
+                this.liveCharacteristic
+                    .removeEventListener(
+                        "characteristicvaluechanged",
+                        this.boundNotificationHandler
+                    );
 
             }
             catch (error) {
+
                 console.warn(error);
             }
         }
@@ -1004,10 +1217,16 @@ class WebBluetoothTransport
         ) {
 
             try {
+
                 this.device.gatt.disconnect();
+
             }
             catch (error) {
-                console.warn(error);
+
+                console.warn(
+                    "BLE disconnect:",
+                    error
+                );
             }
         }
 
@@ -1015,28 +1234,42 @@ class WebBluetoothTransport
 
             try {
 
-                this.device.removeEventListener(
-                    "gattserverdisconnected",
-                    this.boundDisconnectHandler
-                );
+                this.device
+                    .removeEventListener(
+                        "gattserverdisconnected",
+                        this.boundDisconnectHandler
+                    );
 
             }
             catch (error) {
+
                 console.warn(error);
             }
         }
 
-        this.device = null;
-        this.server = null;
-        this.sensorService = null;
-        this.liveCharacteristic = null;
-        this.controlService = null;
-        this.commandCharacteristic = null;
+        this.device =
+            null;
+
+        this.server =
+            null;
+
+        this.sensorService =
+            null;
+
+        this.liveCharacteristic =
+            null;
+
+        this.controlService =
+            null;
+
+        this.commandCharacteristic =
+            null;
     }
 
     handleDisconnected() {
 
-        this.running = false;
+        this.running =
+            false;
 
         addSerialLine(
             "BLE device disconnected.",
@@ -1047,27 +1280,35 @@ class WebBluetoothTransport
             sensorTransport === this
         ) {
 
-            sensorTransport = null;
-            transportType = null;
+            sensorTransport =
+                null;
+
+            transportType =
+                null;
 
             stopHeartbeatMonitor();
 
-            measuring = false;
+            measuring =
+                false;
 
             if (connectButton) {
-                connectButton.disabled = false;
+                connectButton.disabled =
+                    false;
             }
 
             if (disconnectButton) {
-                disconnectButton.disabled = true;
+                disconnectButton.disabled =
+                    true;
             }
 
             if (startButton) {
-                startButton.disabled = true;
+                startButton.disabled =
+                    true;
             }
 
             if (stopButton) {
-                stopButton.disabled = true;
+                stopButton.disabled =
+                    true;
             }
 
             setStatus(
@@ -1099,7 +1340,8 @@ class WebBluetoothTransport
 async function createSensorTransport() {
 
     if (
-        selectedTransport === "usb"
+        selectedTransport ===
+        "usb"
     ) {
 
         const isAndroid =
@@ -1141,7 +1383,8 @@ async function createSensorTransport() {
     }
 
     if (
-        selectedTransport === "ble"
+        selectedTransport ===
+        "ble"
     ) {
 
         if (
@@ -1154,18 +1397,148 @@ async function createSensorTransport() {
         }
 
         throw new Error(
-            "Web Bluetooth nie jest dostępny."
+            "Web Bluetooth nie jest dostępny w tej przeglądarce."
         );
     }
 
     throw new Error(
-        "Nieznany transport."
+        "Nieznany transport: " +
+        selectedTransport
     );
 }
 
 
 // ========================================================
-// HEARTBEAT
+// CANCEL PENDING LIVE
+// ========================================================
+
+function cancelPendingLiveStart() {
+
+    liveStartPending =
+        false;
+
+    if (liveStartTimeout) {
+
+        clearTimeout(
+            liveStartTimeout
+        );
+
+        liveStartTimeout =
+            null;
+    }
+}
+
+
+// ========================================================
+// ARM AUTO LIVE
+// ========================================================
+//
+// USB:
+// Wait for Arduino READY.
+//
+// BLE:
+// BLE connection itself is enough.
+// ========================================================
+
+function armAutoLiveStart() {
+
+    cancelPendingLiveStart();
+
+    liveStartPending =
+        true;
+
+    setStatus(
+        "Waiting for sensor...",
+        "connected"
+    );
+
+    if (measurementStatus) {
+
+        measurementStatus.textContent =
+            "Waiting for sensor initialization...";
+
+        measurementStatus.className =
+            "measurement-status active";
+    }
+
+    addSerialLine(
+        "Waiting for sensor READY...",
+        "serial-info"
+    );
+
+    // Safety timeout.
+    //
+    // If Arduino does not send READY within
+    // 5 seconds, we do NOT blindly send L.
+    //
+    // This is intentional.
+    liveStartTimeout =
+        setTimeout(
+            () => {
+
+                if (
+                    liveStartPending &&
+                    sensorTransport
+                ) {
+
+                    liveStartPending =
+                        false;
+
+                    liveStartTimeout =
+                        null;
+
+                    setStatus(
+                        "Sensor not ready",
+                        "error"
+                    );
+
+                    if (measurementStatus) {
+
+                        measurementStatus.textContent =
+                            "No READY signal received from sensor.";
+
+                        measurementStatus.className =
+                            "measurement-status";
+                    }
+
+                    addSerialLine(
+                        "LIVE NOT STARTED: READY signal not received.",
+                        "serial-error"
+                    );
+                }
+
+            },
+            5000
+        );
+}
+
+
+// ========================================================
+// SEND AUTO LIVE AFTER READY
+// ========================================================
+
+async function startLiveAfterReady() {
+
+    if (
+        !liveStartPending ||
+        !sensorTransport
+    ) {
+        return;
+    }
+
+    cancelPendingLiveStart();
+
+    addSerialLine(
+        "Sensor ready → starting LIVE.",
+        "serial-info"
+    );
+
+    await startLiveMode();
+}
+
+
+// ========================================================
+// HEARTBEAT MONITOR
 // ========================================================
 
 function startHeartbeatMonitor() {
@@ -1183,12 +1556,12 @@ function startHeartbeatMonitor() {
                     return;
                 }
 
-                const elapsed =
+                const timeSinceHeartbeat =
                     Date.now() -
                     lastHeartbeatTime;
 
                 if (
-                    elapsed >
+                    timeSinceHeartbeat >
                     HEARTBEAT_TIMEOUT
                 ) {
 
@@ -1207,6 +1580,10 @@ function startHeartbeatMonitor() {
 }
 
 
+// ========================================================
+// STOP HEARTBEAT MONITOR
+// ========================================================
+
 function stopHeartbeatMonitor() {
 
     if (heartbeatMonitor) {
@@ -1215,66 +1592,76 @@ function stopHeartbeatMonitor() {
             heartbeatMonitor
         );
 
-        heartbeatMonitor = null;
+        heartbeatMonitor =
+            null;
     }
 }
 
 
 // ========================================================
-// RESET LIVE
+// RESET LIVE VALUES
 // ========================================================
 
 function resetLiveValues() {
 
-    liveSampleCount = 0;
-    lastLiveDiagnosticCount = 0;
-
     if (movementValue) {
-        movementValue.textContent = "--";
+        movementValue.textContent =
+            "--";
     }
 
     if (timeValue) {
-        timeValue.textContent = "--";
+        timeValue.textContent =
+            "--";
     }
 
     if (samplesValue) {
-        samplesValue.textContent = "0";
+        samplesValue.textContent =
+            "0";
     }
 
     if (axValue) {
-        axValue.textContent = "--";
+        axValue.textContent =
+            "--";
     }
 
     if (ayValue) {
-        ayValue.textContent = "--";
+        ayValue.textContent =
+            "--";
     }
 
     if (azValue) {
-        azValue.textContent = "--";
+        azValue.textContent =
+            "--";
     }
 
     if (gValue) {
-        gValue.textContent = "--";
+        gValue.textContent =
+            "--";
     }
 
     if (angleValue) {
-        angleValue.textContent = "--";
+        angleValue.textContent =
+            "--";
     }
 
     if (gxValue) {
-        gxValue.textContent = "--";
+        gxValue.textContent =
+            "--";
     }
 
     if (gyValue) {
-        gyValue.textContent = "--";
+        gyValue.textContent =
+            "--";
     }
 
     if (gzValue) {
-        gzValue.textContent = "--";
+        gzValue.textContent =
+            "--";
     }
 
     if (angleyValue) {
-        angleyValue.textContent = "--";
+        angleyValue.textContent =
+            "--";
     }
 }
 
@@ -1292,7 +1679,10 @@ function parseLiveData(line) {
         return;
     }
 
-    if (parts[0] !== "LIVE") {
+    if (
+        parts[0] !==
+        "LIVE"
+    ) {
         return;
     }
 
@@ -1323,40 +1713,6 @@ function parseLiveData(line) {
     const AngleY =
         parseFloat(parts[9]);
 
-
-    // ====================================================
-    // DIAGNOSTIC COUNTER
-    // ====================================================
-
-    liveSampleCount++;
-
-    if (samplesValue) {
-
-        samplesValue.textContent =
-            liveSampleCount;
-    }
-
-    // Co 50 ramek pokazujemy tylko jeden wpis.
-
-    if (
-        liveSampleCount -
-        lastLiveDiagnosticCount >= 50
-    ) {
-
-        lastLiveDiagnosticCount =
-            liveSampleCount;
-
-        addSerialLine(
-            "LIVE DATA RECEIVED: " +
-            liveSampleCount,
-            "serial-info"
-        );
-    }
-
-
-    // ====================================================
-    // LIVE SENSOR VALUES
-    // ====================================================
 
     if (axValue) {
 
@@ -1418,8 +1774,7 @@ function parseLiveData(line) {
             );
     }
 
-
-    // LIVE = communication confirmed
+    // LIVE confirms active communication.
 
     lastHeartbeatTime =
         Date.now();
@@ -1437,36 +1792,25 @@ function processSerialLine(line) {
     }
 
 
-    // ----------------------------------------------------
-    // LIVE DATA
-    //
-    // We deliberately handle it before adding it
-    // to Serial Monitor.
-    // ----------------------------------------------------
+    // ====================================================
+    // SERIAL MONITOR
+    // ====================================================
 
     if (
-        line.startsWith("LIVE,")
+        !line.startsWith("LIVE,")
     ) {
 
-        parseLiveData(line);
-
-        return;
+        addSerialLine(line);
     }
 
 
-    // ----------------------------------------------------
-    // ALL OTHER LINES
-    // ----------------------------------------------------
-
-    addSerialLine(line);
-
-
-    // ----------------------------------------------------
+    // ====================================================
     // HEARTBEAT
-    // ----------------------------------------------------
+    // ====================================================
 
     if (
-        line === "HEARTBEAT"
+        line ===
+        "HEARTBEAT"
     ) {
 
         lastHeartbeatTime =
@@ -1480,19 +1824,32 @@ function processSerialLine(line) {
             );
         }
 
+        // If startup is waiting for READY,
+        // HEARTBEAT also proves Arduino is alive.
+
+        if (
+            liveStartPending
+        ) {
+
+            startLiveAfterReady();
+
+        }
+
         return;
     }
 
 
-    // ----------------------------------------------------
+    // ====================================================
     // READY
-    // ----------------------------------------------------
+    // ====================================================
 
     if (
-        line === "READY"
+        line ===
+        "READY"
     ) {
 
-        measuring = false;
+        measuring =
+            false;
 
         lastHeartbeatTime =
             Date.now();
@@ -1512,27 +1869,105 @@ function processSerialLine(line) {
         }
 
         if (startButton) {
-            startButton.disabled = false;
+
+            startButton.disabled =
+                false;
         }
 
         if (stopButton) {
-            stopButton.disabled = true;
+
+            stopButton.disabled =
+                true;
+        }
+
+        // -----------------------------------------------
+        // IMPORTANT:
+        //
+        // Arduino v18 sends READY after USB connection.
+        // Only now send L.
+        // -----------------------------------------------
+
+        if (
+            liveStartPending
+        ) {
+
+            startLiveAfterReady();
         }
 
         return;
     }
 
 
-    // ----------------------------------------------------
-    // LIVE MODE
-    // ----------------------------------------------------
+    // ====================================================
+    // BLE READY
+    // ====================================================
+    //
+    // Gazela_BLE_Test_v5 prints:
+    //
+    // GAZELA SENSOR BLE TEST v5
+    // BLE READY
+    // ADVERTISING
+    // LIVE OFF
+    //
+    // This can also arrive through USB serial.
+    // ====================================================
 
     if (
-        line === "INFO,LIVE_MODE" ||
-        line === "INFO,LIVE_START"
+        line ===
+        "BLE READY"
     ) {
 
-        measuring = false;
+        lastHeartbeatTime =
+            Date.now();
+
+        setStatus(
+            "Sensor ready",
+            "connected"
+        );
+
+        if (measurementStatus) {
+
+            measurementStatus.textContent =
+                "Sensor ready.";
+
+            measurementStatus.className =
+                "measurement-status";
+        }
+
+        if (startButton) {
+
+            startButton.disabled =
+                false;
+        }
+
+        if (stopButton) {
+
+            stopButton.disabled =
+                true;
+        }
+
+        if (
+            liveStartPending
+        ) {
+
+            startLiveAfterReady();
+        }
+
+        return;
+    }
+
+
+    // ====================================================
+    // LIVE MODE
+    // ====================================================
+
+    if (
+        line ===
+        "INFO,LIVE_MODE"
+    ) {
+
+        measuring =
+            false;
 
         setStatus(
             "Live sensor",
@@ -1549,48 +1984,140 @@ function processSerialLine(line) {
         }
 
         if (startButton) {
-            startButton.disabled = false;
+
+            startButton.disabled =
+                false;
         }
 
         if (stopButton) {
-            stopButton.disabled = true;
+
+            stopButton.disabled =
+                true;
         }
 
         return;
     }
 
 
-    // ----------------------------------------------------
-    // LIVE STOP
-    // ----------------------------------------------------
+    // ====================================================
+    // LIVE START
+    // ====================================================
 
     if (
-        line === "INFO,LIVE_STOP"
+        line ===
+        "INFO,LIVE_START"
+    ) {
+
+        measuring =
+            false;
+
+        setStatus(
+            "Live sensor",
+            "connected"
+        );
+
+        if (measurementStatus) {
+
+            measurementStatus.textContent =
+                "Live sensor mode active.";
+
+            measurementStatus.className =
+                "measurement-status active";
+        }
+
+        if (startButton) {
+
+            startButton.disabled =
+                false;
+        }
+
+        if (stopButton) {
+
+            stopButton.disabled =
+                true;
+        }
+
+        return;
+    }
+
+
+    // ====================================================
+    // LIVE STOP
+    // ====================================================
+
+    if (
+        line ===
+        "INFO,LIVE_STOP"
     ) {
 
         return;
     }
 
 
-    // ----------------------------------------------------
-    // MEASUREMENT START
-    // ----------------------------------------------------
+    // ====================================================
+    // BLE LIVE START
+    // ====================================================
+    //
+    // BLE v5 sends these through USB Serial:
+    //
+    // COMMAND L RECEIVED
+    // LIVE START
+    //
+    // We keep them visible in Serial Monitor.
+    // ====================================================
 
     if (
-        line === "INFO,START"
+        line ===
+        "LIVE START"
     ) {
 
-        measuring = true;
+        measuring =
+            false;
+
+        setStatus(
+            "Live sensor",
+            "connected"
+        );
+
+        if (measurementStatus) {
+
+            measurementStatus.textContent =
+                "Live sensor mode active.";
+
+            measurementStatus.className =
+                "measurement-status active";
+        }
+
+        return;
+    }
+
+
+    // ====================================================
+    // MEASUREMENT START
+    // ====================================================
+
+    if (
+        line ===
+        "INFO,START"
+    ) {
+
+        measuring =
+            true;
 
         sessionStartTime =
             Date.now();
 
-        sessionEndTime = null;
+        sessionEndTime =
+            null;
 
-        sampleCount = 0;
-        currentMovement = 0;
+        sampleCount =
+            0;
+
+        currentMovement =
+            0;
 
         if (sessionBadge) {
+
             sessionBadge.textContent =
                 "Measurement";
         }
@@ -1610,23 +2137,28 @@ function processSerialLine(line) {
         }
 
         if (startButton) {
-            startButton.disabled = true;
+
+            startButton.disabled =
+                true;
         }
 
         if (stopButton) {
-            stopButton.disabled = false;
+
+            stopButton.disabled =
+                false;
         }
 
         return;
     }
 
 
-    // ----------------------------------------------------
+    // ====================================================
     // PREPARE
-    // ----------------------------------------------------
+    // ====================================================
 
     if (
-        line === "INFO,PREPARE"
+        line ===
+        "INFO,PREPARE"
     ) {
 
         if (measurementStatus) {
@@ -1642,9 +2174,9 @@ function processSerialLine(line) {
     }
 
 
-    // ----------------------------------------------------
+    // ====================================================
     // COUNTDOWN
-    // ----------------------------------------------------
+    // ====================================================
 
     if (
         line.startsWith(
@@ -1666,9 +2198,9 @@ function processSerialLine(line) {
     }
 
 
-    // ----------------------------------------------------
+    // ====================================================
     // MOVEMENT
-    // ----------------------------------------------------
+    // ====================================================
 
     if (
         line.startsWith(
@@ -1679,7 +2211,9 @@ function processSerialLine(line) {
         const parts =
             line.split(",");
 
-        if (parts.length >= 2) {
+        if (
+            parts.length >= 2
+        ) {
 
             currentMovement =
                 parseInt(
@@ -1698,9 +2232,40 @@ function processSerialLine(line) {
     }
 
 
-    // ----------------------------------------------------
+    // ====================================================
+    // WAIT
+    // ====================================================
+
+    if (
+        line.startsWith(
+            "INFO,WAIT"
+        )
+    ) {
+
+        return;
+    }
+
+
+    // ====================================================
+    // MOVEMENT COMPLETE
+    // ====================================================
+
+    if (
+        line.startsWith(
+            "INFO,MOVEMENT_"
+        ) &&
+        line.endsWith(
+            "_COMPLETE"
+        )
+    ) {
+
+        return;
+    }
+
+
+    // ====================================================
     // CSV HEADER
-    // ----------------------------------------------------
+    // ====================================================
 
     if (
         line.startsWith(
@@ -1712,9 +2277,9 @@ function processSerialLine(line) {
     }
 
 
-    // ----------------------------------------------------
+    // ====================================================
     // CSV SAMPLE
-    // ----------------------------------------------------
+    // ====================================================
 
     if (
         /^\d+,/.test(line)
@@ -1731,7 +2296,9 @@ function processSerialLine(line) {
         const parts =
             line.split(",");
 
-        if (parts.length >= 11) {
+        if (
+            parts.length >= 11
+        ) {
 
             const movement =
                 parseInt(
@@ -1786,26 +2353,31 @@ function processSerialLine(line) {
             }
 
             if (axValue) {
+
                 axValue.textContent =
                     formatNumber(AX);
             }
 
             if (ayValue) {
+
                 ayValue.textContent =
                     formatNumber(AY);
             }
 
             if (azValue) {
+
                 azValue.textContent =
                     formatNumber(AZ);
             }
 
             if (gValue) {
+
                 gValue.textContent =
                     formatNumber(G);
             }
 
             if (angleValue) {
+
                 angleValue.textContent =
                     formatNumber(
                         Angle,
@@ -1814,21 +2386,25 @@ function processSerialLine(line) {
             }
 
             if (gxValue) {
+
                 gxValue.textContent =
                     formatNumber(GX);
             }
 
             if (gyValue) {
+
                 gyValue.textContent =
                     formatNumber(GY);
             }
 
             if (gzValue) {
+
                 gzValue.textContent =
                     formatNumber(GZ);
             }
 
             if (angleyValue) {
+
                 angleyValue.textContent =
                     formatNumber(
                         AngleY,
@@ -1841,15 +2417,32 @@ function processSerialLine(line) {
     }
 
 
-    // ----------------------------------------------------
-    // END
-    // ----------------------------------------------------
+    // ====================================================
+    // END OF SESSION
+    // ====================================================
 
     if (
-        line === "END,ALL_MOVEMENTS"
+        line ===
+        "END,ALL_MOVEMENTS"
     ) {
 
         finishSession();
+
+        return;
+    }
+
+
+    // ====================================================
+    // LIVE DATA
+    // ====================================================
+
+    if (
+        line.startsWith(
+            "LIVE,"
+        )
+    ) {
+
+        parseLiveData(line);
 
         return;
     }
@@ -1860,7 +2453,9 @@ function processSerialLine(line) {
 // SEND COMMAND
 // ========================================================
 
-async function sendCommand(command) {
+async function sendCommand(
+    command
+) {
 
     if (!sensorTransport) {
 
@@ -1900,7 +2495,7 @@ async function sendCommand(command) {
 
 
 // ========================================================
-// START LIVE
+// START LIVE MODE
 // ========================================================
 
 async function startLiveMode() {
@@ -1911,12 +2506,12 @@ async function startLiveMode() {
 
     try {
 
-        await sendCommand("L");
+        await sendCommand(
+            "L"
+        );
 
-        measuring = false;
-
-        liveSampleCount = 0;
-        lastLiveDiagnosticCount = 0;
+        measuring =
+            false;
 
         lastHeartbeatTime =
             Date.now();
@@ -1936,11 +2531,15 @@ async function startLiveMode() {
         }
 
         if (startButton) {
-            startButton.disabled = false;
+
+            startButton.disabled =
+                false;
         }
 
         if (stopButton) {
-            stopButton.disabled = true;
+
+            stopButton.disabled =
+                true;
         }
 
     }
@@ -1981,6 +2580,8 @@ async function connectSensor() {
         return;
     }
 
+    cancelPendingLiveStart();
+
     try {
 
         sensorTransport =
@@ -1994,20 +2595,27 @@ async function connectSensor() {
             transportType
         );
 
+        // ------------------------------------------------
+        // CONNECT
+        // ------------------------------------------------
+
         await sensorTransport.connect();
 
+        // ------------------------------------------------
+        // UI
+        // ------------------------------------------------
+
         if (connectButton) {
-            connectButton.disabled = true;
+
+            connectButton.disabled =
+                true;
         }
 
         if (disconnectButton) {
-            disconnectButton.disabled = false;
-        }
 
-        setStatus(
-            "Sensor connected",
-            "connected"
-        );
+            disconnectButton.disabled =
+                false;
+        }
 
         addSerialLine(
             "Transport connected: " +
@@ -2019,18 +2627,44 @@ async function connectSensor() {
 
         startHeartbeatMonitor();
 
-        // Start LIVE after connection.
 
-        setTimeout(
-            () => {
+        // =================================================
+        // BLE
+        // =================================================
+        //
+        // BLE GATT connection does not reset the Arduino
+        // in our current test.
+        //
+        // Therefore we can start LIVE directly.
+        // =================================================
 
-                if (sensorTransport) {
-                    startLiveMode();
-                }
+        if (
+            selectedTransport ===
+            "ble"
+        ) {
 
-            },
-            300
-        );
+            await startLiveMode();
+
+            return;
+        }
+
+
+        // =================================================
+        // USB
+        // =================================================
+        //
+        // USB can reset Arduino.
+        //
+        // WAIT FOR:
+        //   READY
+        // or
+        //   BLE READY
+        //
+        // THEN:
+        //   L
+        // =================================================
+
+        armAutoLiveStart();
 
     }
     catch (error) {
@@ -2040,20 +2674,29 @@ async function connectSensor() {
             error
         );
 
+        cancelPendingLiveStart();
+
         if (sensorTransport) {
 
             try {
-                await sensorTransport.disconnect();
+
+                await sensorTransport
+                    .disconnect();
+
             }
             catch (disconnectError) {
+
                 console.warn(
                     disconnectError
                 );
             }
         }
 
-        sensorTransport = null;
-        transportType = null;
+        sensorTransport =
+            null;
+
+        transportType =
+            null;
 
         setTransportStatus(
             "Transport: not connected"
@@ -2071,11 +2714,15 @@ async function connectSensor() {
         );
 
         if (connectButton) {
-            connectButton.disabled = false;
+
+            connectButton.disabled =
+                false;
         }
 
         if (disconnectButton) {
-            disconnectButton.disabled = true;
+
+            disconnectButton.disabled =
+                true;
         }
     }
 }
@@ -2091,10 +2738,13 @@ async function startMeasurement() {
         return;
     }
 
-    // BLE v5 currently supports LIVE only.
+    // ----------------------------------------------------
+    // BLE CURRENT LIMITATION
+    // ----------------------------------------------------
 
     if (
-        selectedTransport === "ble"
+        selectedTransport ===
+        "ble"
     ) {
 
         setStatus(
@@ -2105,7 +2755,7 @@ async function startMeasurement() {
         if (measurementStatus) {
 
             measurementStatus.textContent =
-                "BLE currently supports LIVE only.";
+                "BLE currently supports LIVE only. Measurement protocol will be added later.";
 
             measurementStatus.className =
                 "measurement-status";
@@ -2120,37 +2770,54 @@ async function startMeasurement() {
     }
 
 
-    // USB measurement
+    // ----------------------------------------------------
+    // USB MEASUREMENT
+    // ----------------------------------------------------
 
     try {
 
-        measuring = true;
+        measuring =
+            true;
 
-        sampleCount = 0;
-        currentMovement = 0;
+        sampleCount =
+            0;
+
+        currentMovement =
+            0;
 
         sessionStartTime =
             Date.now();
 
-        sessionEndTime = null;
+        sessionEndTime =
+            null;
+
 
         if (samplesValue) {
-            samplesValue.textContent = "0";
+
+            samplesValue.textContent =
+                "0";
         }
 
         if (movementValue) {
-            movementValue.textContent = "--";
+
+            movementValue.textContent =
+                "--";
         }
 
         if (timeValue) {
-            timeValue.textContent = "--";
+
+            timeValue.textContent =
+                "--";
         }
 
         if (movementList) {
-            movementList.innerHTML = "";
+
+            movementList.innerHTML =
+                "";
         }
 
         if (sessionBadge) {
+
             sessionBadge.textContent =
                 "Measurement";
         }
@@ -2170,21 +2837,31 @@ async function startMeasurement() {
         }
 
         if (startButton) {
-            startButton.disabled = true;
+
+            startButton.disabled =
+                true;
         }
 
         if (stopButton) {
-            stopButton.disabled = false;
+
+            stopButton.disabled =
+                false;
         }
 
-        await sendCommand("S");
+        await sendCommand(
+            "S"
+        );
 
     }
     catch (error) {
 
-        console.error(error);
+        console.error(
+            "Measurement start error:",
+            error
+        );
 
-        measuring = false;
+        measuring =
+            false;
 
         setStatus(
             "Measurement error",
@@ -2201,11 +2878,15 @@ async function startMeasurement() {
         }
 
         if (startButton) {
-            startButton.disabled = false;
+
+            startButton.disabled =
+                false;
         }
 
         if (stopButton) {
-            stopButton.disabled = true;
+
+            stopButton.disabled =
+                true;
         }
     }
 }
@@ -2217,7 +2898,8 @@ async function startMeasurement() {
 
 function finishSession() {
 
-    measuring = false;
+    measuring =
+        false;
 
     sessionEndTime =
         Date.now();
@@ -2243,28 +2925,33 @@ function finishSession() {
     }
 
     if (startButton) {
-        startButton.disabled = false;
+
+        startButton.disabled =
+            false;
     }
 
     if (stopButton) {
-        stopButton.disabled = true;
+
+        stopButton.disabled =
+            true;
     }
 
-    setTimeout(
-        () => {
+    // USB firmware returns to READY.
+    // Start LIVE again after READY.
 
-            if (sensorTransport) {
-                startLiveMode();
-            }
+    if (
+        sensorTransport &&
+        selectedTransport ===
+            "usb"
+    ) {
 
-        },
-        300
-    );
+        armAutoLiveStart();
+    }
 }
 
 
 // ========================================================
-// STOP
+// STOP MEASUREMENT
 // ========================================================
 
 async function stopMeasurement() {
@@ -2275,9 +2962,12 @@ async function stopMeasurement() {
 
     try {
 
-        measuring = false;
+        measuring =
+            false;
 
-        await sendCommand("Q");
+        await sendCommand(
+            "Q"
+        );
 
         if (measurementStatus) {
 
@@ -2289,7 +2979,7 @@ async function stopMeasurement() {
     catch (error) {
 
         console.error(
-            "Stop error:",
+            "Stop measurement error:",
             error
         );
     }
@@ -2297,18 +2987,23 @@ async function stopMeasurement() {
 
 
 // ========================================================
-// DISCONNECT
+// DISCONNECT SENSOR
 // ========================================================
 
 async function disconnectSensor() {
 
     stopHeartbeatMonitor();
 
+    cancelPendingLiveStart();
+
     const transport =
         sensorTransport;
 
-    sensorTransport = null;
-    transportType = null;
+    sensorTransport =
+        null;
+
+    transportType =
+        null;
 
     try {
 
@@ -2316,7 +3011,9 @@ async function disconnectSensor() {
 
             try {
 
-                await transport.send("Q");
+                await transport.send(
+                    "Q"
+                );
 
                 addSerialLine(
                     "> Q",
@@ -2346,22 +3043,31 @@ async function disconnectSensor() {
     }
     finally {
 
-        measuring = false;
+        measuring =
+            false;
 
         if (connectButton) {
-            connectButton.disabled = false;
+
+            connectButton.disabled =
+                false;
         }
 
         if (disconnectButton) {
-            disconnectButton.disabled = true;
+
+            disconnectButton.disabled =
+                true;
         }
 
         if (startButton) {
-            startButton.disabled = true;
+
+            startButton.disabled =
+                true;
         }
 
         if (stopButton) {
-            stopButton.disabled = true;
+
+            stopButton.disabled =
+                true;
         }
 
         setStatus(
@@ -2391,6 +3097,40 @@ async function disconnectSensor() {
 
 
 // ========================================================
+// USB BUTTON
+// ========================================================
+
+if (usbButton) {
+
+    usbButton.addEventListener(
+        "click",
+        () => {
+
+            selectUSBTransport();
+
+        }
+    );
+}
+
+
+// ========================================================
+// BLE BUTTON
+// ========================================================
+
+if (bleButton) {
+
+    bleButton.addEventListener(
+        "click",
+        () => {
+
+            selectBLETransport();
+
+        }
+    );
+}
+
+
+// ========================================================
 // SELECT USB
 // ========================================================
 
@@ -2400,14 +3140,21 @@ function selectUSBTransport() {
         return;
     }
 
-    selectedTransport = "usb";
+    selectedTransport =
+        "usb";
 
     if (usbButton) {
-        usbButton.classList.add("active");
+
+        usbButton.classList.add(
+            "active"
+        );
     }
 
     if (bleButton) {
-        bleButton.classList.remove("active");
+
+        bleButton.classList.remove(
+            "active"
+        );
     }
 
     setTransportStatus(
@@ -2431,14 +3178,21 @@ function selectBLETransport() {
         return;
     }
 
-    selectedTransport = "ble";
+    selectedTransport =
+        "ble";
 
     if (bleButton) {
-        bleButton.classList.add("active");
+
+        bleButton.classList.add(
+            "active"
+        );
     }
 
     if (usbButton) {
-        usbButton.classList.remove("active");
+
+        usbButton.classList.remove(
+            "active"
+        );
     }
 
     setTransportStatus(
@@ -2453,24 +3207,8 @@ function selectBLETransport() {
 
 
 // ========================================================
-// EVENTS
+// CONNECT BUTTON
 // ========================================================
-
-if (usbButton) {
-
-    usbButton.addEventListener(
-        "click",
-        selectUSBTransport
-    );
-}
-
-if (bleButton) {
-
-    bleButton.addEventListener(
-        "click",
-        selectBLETransport
-    );
-}
 
 if (connectButton) {
 
@@ -2480,6 +3218,11 @@ if (connectButton) {
     );
 }
 
+
+// ========================================================
+// DISCONNECT BUTTON
+// ========================================================
+
 if (disconnectButton) {
 
     disconnectButton.addEventListener(
@@ -2488,6 +3231,11 @@ if (disconnectButton) {
     );
 }
 
+
+// ========================================================
+// START BUTTON
+// ========================================================
+
 if (startButton) {
 
     startButton.addEventListener(
@@ -2495,6 +3243,11 @@ if (startButton) {
         startMeasurement
     );
 }
+
+
+// ========================================================
+// STOP BUTTON
+// ========================================================
 
 if (stopButton) {
 
@@ -2506,10 +3259,8 @@ if (stopButton) {
 
 
 // ========================================================
-// INITIAL STATE
+// INITIAL STATUS
 // ========================================================
-
-selectUSBTransport();
 
 setStatus(
     "Sensor not connected",
@@ -2524,7 +3275,23 @@ resetLiveValues();
 
 
 // ========================================================
-// DEBUG
+// INITIAL TRANSPORT BUTTONS
+// ========================================================
+
+selectUSBTransport();
+
+
+// ========================================================
+// DEBUG ACCESS
+// ========================================================
+//
+// Browser console:
+//
+// gazelaSensor.getTransport()
+// gazelaSensor.getTransportType()
+// gazelaSensor.getSelectedTransport()
+// gazelaSensor.send("L")
+// gazelaSensor.send("Q")
 // ========================================================
 
 window.gazelaSensor = {
@@ -2538,10 +3305,8 @@ window.gazelaSensor = {
     getSelectedTransport: () =>
         selectedTransport,
 
-    getLiveSampleCount: () =>
-        liveSampleCount,
-
     send: sendCommand
+
 };
 
 
