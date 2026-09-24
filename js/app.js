@@ -18,16 +18,7 @@
 //
 // IMPORTANT:
 //   USB does NOT send L after a fixed delay.
-//   The application waits for READY from the sensor.
-//
-//   After END,ALL_MOVEMENTS:
-//   END
-//     ↓
-//   READY
-//     ↓
-//   L
-//     ↓
-//   LIVE
+//   The application waits for READY / HEARTBEAT.
 // ========================================================
 
 
@@ -81,13 +72,10 @@ let sampleCount = 0;
 // SENSOR READY STATE
 // ========================================================
 
-// True when Arduino has reported that it is ready.
 let sensorReady = false;
 
-// Used after USB connection.
 let waitingForInitialReady = false;
 
-// Used after measurement END.
 let returnToLiveAfterReady = false;
 
 
@@ -238,12 +226,6 @@ function setTransportStatus(text) {
 
 // ========================================================
 // SERIAL MONITOR
-// ========================================================
-//
-// LIVE,... is deliberately NOT displayed here.
-//
-// This prevents thousands of DOM elements being created.
-// Maximum 500 control/status lines.
 // ========================================================
 
 const SERIAL_MONITOR_MAX_LINES = 500;
@@ -415,20 +397,14 @@ class WebSerialTransport
             );
         }
 
-        // User chooses the serial port.
-
         this.port =
             await navigator.serial.requestPort();
-
-        // Opening the port may reset Arduino.
 
         await this.port.open({
             baudRate: 115200
         });
 
         this.running = true;
-
-        // Start reader immediately.
 
         this.readTask =
             this.readLoop();
@@ -720,15 +696,11 @@ class WebUSBTransport
                 .selectConfiguration(1);
         }
 
-        // CDC communication interface
-
         await this.device
             .claimInterface(0);
 
         this.interface0Claimed =
             true;
-
-        // 115200 baud, 8N1
 
         const lineCoding =
             new Uint8Array([
@@ -753,8 +725,6 @@ class WebUSBTransport
                 lineCoding
             );
 
-        // DTR = 1
-
         await this.device
             .controlTransferOut(
                 {
@@ -765,8 +735,6 @@ class WebUSBTransport
                     index: 0x0000
                 }
             );
-
-        // CDC data interface
 
         await this.device
             .claimInterface(1);
@@ -977,14 +945,6 @@ class WebUSBTransport
 // ========================================================
 // WEB BLUETOOTH TRANSPORT
 // ========================================================
-//
-// BLE v5 currently supports:
-//
-//   L = LIVE
-//   Q = STOP LIVE
-//
-// Measurement S will be added later to BLE firmware.
-// ========================================================
 
 class WebBluetoothTransport
     extends SensorTransport {
@@ -1089,29 +1049,6 @@ class WebBluetoothTransport
         this.running = true;
     }
 
-    async reconnectGattIfNeeded() {
-
-        if (
-            !this.device ||
-            !this.device.gatt
-        ) {
-
-            throw new Error(
-                "BLE device nie istnieje."
-            );
-        }
-
-        if (
-            !this.device.gatt.connected
-        ) {
-
-            this.server =
-                await this.device.gatt.connect();
-        }
-
-        return this.server;
-    }
-
     handleNotification(event) {
 
         try {
@@ -1165,9 +1102,6 @@ class WebBluetoothTransport
                 "BLE command characteristic nie jest gotowa."
             );
         }
-
-        // BLE v5 uses raw command.
-        // No newline.
 
         const data =
             new TextEncoder().encode(
@@ -1326,20 +1260,11 @@ class WebBluetoothTransport
 
 
 // ========================================================
-// WAIT FOR READY
-// ========================================================
-//
-// USB:
-//   v18 sends READY after startup.
-//
-// BLE TEST v5:
-//   sends "BLE READY".
-//
-// We treat both as a readiness signal.
+// WAIT FOR SENSOR READY
 // ========================================================
 
 function waitForSensorReady(
-    timeout = 5000
+    timeout = 7000
 ) {
 
     if (sensorReady) {
@@ -1361,6 +1286,9 @@ function waitForSensorReady(
                         }
 
                         finished = true;
+
+                        window.__gazelaReadyWaiter =
+                            null;
 
                         reject(
                             new Error(
@@ -1401,20 +1329,15 @@ function waitForSensorReady(
 
 async function createSensorTransport() {
 
-    // ----------------------------------------------------
-    // USB
-    // ----------------------------------------------------
-
     if (
-        selectedTransport === "usb"
+        selectedTransport ===
+        "usb"
     ) {
 
         const isAndroid =
             /Android/i.test(
                 navigator.userAgent
             );
-
-        // Android → WebUSB
 
         if (
             isAndroid &&
@@ -1426,8 +1349,6 @@ async function createSensorTransport() {
             );
         }
 
-        // PC → Web Serial
-
         if (
             "serial" in navigator
         ) {
@@ -1436,8 +1357,6 @@ async function createSensorTransport() {
                 processSerialLine
             );
         }
-
-        // Fallback → WebUSB
 
         if (
             "usb" in navigator
@@ -1454,12 +1373,9 @@ async function createSensorTransport() {
     }
 
 
-    // ----------------------------------------------------
-    // BLE
-    // ----------------------------------------------------
-
     if (
-        selectedTransport === "ble"
+        selectedTransport ===
+        "ble"
     ) {
 
         if (
@@ -1615,20 +1531,6 @@ function resetLiveValues() {
 // ========================================================
 // PARSE LIVE DATA
 // ========================================================
-//
-// LIVE format:
-//
-// LIVE,
-// AX,
-// AY,
-// AZ,
-// G,
-// Angle,
-// GX,
-// GY,
-// GZ,
-// AngleY
-// ========================================================
 
 function parseLiveData(line) {
 
@@ -1740,15 +1642,11 @@ function parseLiveData(line) {
     }
 
 
-    // LIVE data proves communication.
-
     lastHeartbeatTime =
         Date.now();
 
 
-    if (
-        !measuring
-    ) {
+    if (!measuring) {
 
         setStatus(
             "Live sensor",
@@ -1770,7 +1668,7 @@ async function handleSensorReady() {
         Date.now();
 
 
-    // Resolve a pending waitForSensorReady().
+    // Resolve waiting connection.
 
     if (
         typeof window.__gazelaReadyWaiter ===
@@ -1791,18 +1689,17 @@ async function handleSensorReady() {
     // AFTER MEASUREMENT
     // ----------------------------------------------------
     //
-    // Firmware v18:
-    //
     // END,ALL_MOVEMENTS
     // READY
-    //
-    // Only now do we send L.
+    // L
+    // LIVE
     // ----------------------------------------------------
 
     if (
         returnToLiveAfterReady &&
         sensorTransport &&
-        selectedTransport === "usb"
+        selectedTransport ===
+            "usb"
     ) {
 
         returnToLiveAfterReady =
@@ -1852,6 +1749,15 @@ function processSerialLine(line) {
     // ====================================================
     // HEARTBEAT
     // ====================================================
+    //
+    // IMPORTANT FIX:
+    //
+    // Firmware v18 sends HEARTBEAT only while
+    // the sensor is in READY/waiting state.
+    //
+    // Therefore HEARTBEAT is also accepted as
+    // confirmation that the sensor is ready.
+    // ====================================================
 
     if (
         line ===
@@ -1860,6 +1766,51 @@ function processSerialLine(line) {
 
         lastHeartbeatTime =
             Date.now();
+
+        sensorReady =
+            true;
+
+        // If connectSensor() is waiting for READY,
+        // HEARTBEAT can complete that wait.
+
+        if (
+            typeof window.__gazelaReadyWaiter ===
+            "function"
+        ) {
+
+            const waiter =
+                window.__gazelaReadyWaiter;
+
+            window.__gazelaReadyWaiter =
+                null;
+
+            waiter();
+        }
+
+        // If measurement has ended and we are
+        // waiting to return to LIVE, do it now.
+
+        if (
+            returnToLiveAfterReady &&
+            sensorTransport &&
+            selectedTransport ===
+                "usb"
+        ) {
+
+            returnToLiveAfterReady =
+                false;
+
+            startLiveMode()
+                .catch(
+                    error => {
+
+                        console.error(
+                            "Automatic return to LIVE failed:",
+                            error
+                        );
+                    }
+                );
+        }
 
         if (!measuring) {
 
@@ -1920,7 +1871,8 @@ function processSerialLine(line) {
         "BLE READY"
     ) {
 
-        sensorReady = true;
+        sensorReady =
+            true;
 
         lastHeartbeatTime =
             Date.now();
@@ -2520,15 +2472,13 @@ async function connectSensor() {
 
     sensorReady = false;
 
-    waitingForInitialReady = true;
+    waitingForInitialReady =
+        true;
 
-    returnToLiveAfterReady = false;
+    returnToLiveAfterReady =
+        false;
 
     try {
-
-        // ------------------------------------------------
-        // CREATE TRANSPORT
-        // ------------------------------------------------
 
         sensorTransport =
             await createSensorTransport();
@@ -2584,17 +2534,14 @@ async function connectSensor() {
         // ------------------------------------------------
         // BLE
         // ------------------------------------------------
-        //
-        // BLE v5 does not need READY to start.
-        // The GATT connection itself is ready.
-        // ------------------------------------------------
 
         if (
             selectedTransport ===
             "ble"
         ) {
 
-            sensorReady = true;
+            sensorReady =
+                true;
 
             waitingForInitialReady =
                 false;
@@ -2607,10 +2554,6 @@ async function connectSensor() {
 
         // ------------------------------------------------
         // USB
-        // ------------------------------------------------
-        //
-        // Wait for actual Arduino READY.
-        // No arbitrary 300 ms delay.
         // ------------------------------------------------
 
         if (
@@ -2641,9 +2584,6 @@ async function connectSensor() {
 
             waitingForInitialReady =
                 false;
-
-            // READY arrived.
-            // Now send L.
 
             await startLiveMode();
         }
@@ -2731,13 +2671,6 @@ async function connectSensor() {
 // ========================================================
 // START MEASUREMENT
 // ========================================================
-//
-// USB:
-//   S supported.
-//
-// BLE:
-//   NOT YET implemented in BLE v5.
-// ========================================================
 
 async function startMeasurement() {
 
@@ -2747,7 +2680,7 @@ async function startMeasurement() {
 
 
     // ----------------------------------------------------
-    // BLE
+    // BLE CURRENT LIMITATION
     // ----------------------------------------------------
 
     if (
@@ -2779,7 +2712,7 @@ async function startMeasurement() {
 
 
     // ----------------------------------------------------
-    // USB
+    // USB MEASUREMENT
     // ----------------------------------------------------
 
     try {
@@ -2901,21 +2834,6 @@ async function startMeasurement() {
 // ========================================================
 // FINISH SESSION
 // ========================================================
-//
-// IMPORTANT:
-//
-// We do NOT send L here.
-//
-// Firmware v18 sends:
-//
-//   END,ALL_MOVEMENTS
-//   READY
-//
-// processSerialLine() sees READY and calls
-// handleSensorReady().
-//
-// Only then is L sent.
-// ========================================================
 
 function finishSession() {
 
@@ -2960,14 +2878,10 @@ function finishSession() {
             true;
     }
 
-
-    // ----------------------------------------------------
-    // Important:
+    // NO setTimeout().
     //
-    // Do NOT use setTimeout().
-    //
-    // READY will trigger automatic LIVE.
-    // ----------------------------------------------------
+    // Arduino will send READY.
+    // READY / HEARTBEAT will trigger L.
 }
 
 
@@ -2996,7 +2910,6 @@ async function stopMeasurement() {
 
             measurementStatus.textContent =
                 "Stopping...";
-
         }
 
     }
@@ -3037,10 +2950,6 @@ async function disconnectSensor() {
 
         if (transport) {
 
-            // ------------------------------------------------
-            // STOP LIVE / MEASUREMENT
-            // ------------------------------------------------
-
             try {
 
                 await transport.send(
@@ -3060,11 +2969,6 @@ async function disconnectSensor() {
                     error
                 );
             }
-
-
-            // ------------------------------------------------
-            // DISCONNECT
-            // ------------------------------------------------
 
             await transport.disconnect();
         }
@@ -3220,7 +3124,6 @@ if (usbButton) {
     );
 }
 
-
 if (bleButton) {
 
     bleButton.addEventListener(
@@ -3228,7 +3131,6 @@ if (bleButton) {
         selectBLETransport
     );
 }
-
 
 if (connectButton) {
 
@@ -3238,7 +3140,6 @@ if (connectButton) {
     );
 }
 
-
 if (disconnectButton) {
 
     disconnectButton.addEventListener(
@@ -3247,7 +3148,6 @@ if (disconnectButton) {
     );
 }
 
-
 if (startButton) {
 
     startButton.addEventListener(
@@ -3255,7 +3155,6 @@ if (startButton) {
         startMeasurement
     );
 }
-
 
 if (stopButton) {
 
@@ -3291,15 +3190,6 @@ resetLiveValues();
 
 // ========================================================
 // DEBUG ACCESS
-// ========================================================
-//
-// Browser console:
-//
-// gazelaSensor.getTransport()
-// gazelaSensor.getTransportType()
-// gazelaSensor.getSelectedTransport()
-// gazelaSensor.send("L")
-// gazelaSensor.send("Q")
 // ========================================================
 
 window.gazelaSensor = {
