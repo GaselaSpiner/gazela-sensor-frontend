@@ -1,6 +1,6 @@
 // ========================================================
 // GAZELA SPINER SENSOR — SENSOR LAB
-// app.js — V36 WEBUSB CLAIM-ONLY DIAGNOSTIC
+// app.js — V37 WEBUSB DESCRIPTOR DIAGNOSTIC
 // ========================================================
 //
 // V33 TEST PURPOSE
@@ -11,7 +11,7 @@
 //
 // This version isolates the WebUSB initialization itself.
 //
-// V36 WebUSB:
+// V37 WebUSB:
 //   - open()
 //   - observe existing configuration only
 //   - claim DATA interface 1 only
@@ -33,15 +33,16 @@
 //      -> WebUSB disconnect
 //      -> BLE
 //
-// V36 test:
+// V37 test:
 //   - open()
-//   - observe existing configuration only
-//   - claim interface 1 only
+//   - observe active configuration
+//   - inspect interfaces / alternate settings / endpoints
+//   - NO claimInterface()
 //   - NO transferIn()
 //   - NO transferOut()
 //   - NO CDC control transfers
 //   - NO readLoop()
-//   - disconnect releases interface 1 and closes device
+//   - disconnect closes device
 //
 // This is a diagnostic build, not the production WebUSB
 // implementation.
@@ -707,7 +708,7 @@ class WebUSBTransport
 
 
         addSerialLine(
-            "V36 TEST: WebUSB device.open() START",
+            "V37 TEST: WebUSB device.open() START",
             "serial-info"
         );
 
@@ -716,7 +717,7 @@ class WebUSBTransport
 
 
         addSerialLine(
-            "V36 TEST: WebUSB device.open() OK",
+            "V37 TEST: WebUSB device.open() OK",
             "serial-info"
         );
 
@@ -733,7 +734,7 @@ class WebUSBTransport
         if (this.device.configuration) {
 
             addSerialLine(
-                "V36 TEST: configuration = " +
+                "V37 TEST: configuration = " +
                 this.device.configuration.configurationValue,
                 "serial-info"
             );
@@ -742,7 +743,7 @@ class WebUSBTransport
         else {
 
             addSerialLine(
-                "V36 TEST: configuration = null",
+                "V37 TEST: configuration = null",
                 "serial-info"
             );
 
@@ -750,82 +751,134 @@ class WebUSBTransport
 
 
         // ----------------------------------------------------
-        // V36 — CLAIM INTERFACE 1 ONLY
+        // V37 — USB DESCRIPTOR DIAGNOSTIC ONLY
         // ----------------------------------------------------
         //
-        // This is the only new USB operation compared with V35.
+        // V37 deliberately performs NO claimInterface().
+        // V37 deliberately performs NO transferIn().
+        // V37 deliberately performs NO transferOut().
+        // V37 deliberately performs NO CDC control transfers.
         //
-        // We deliberately DO NOT:
-        //   - claim interface 0
-        //   - perform transferIn()
-        //   - perform transferOut()
-        //   - perform CDC control transfers
-        //   - start readLoop()
-        //
-        // The purpose is to isolate claimInterface(1).
+        // The goal is to inspect the active configuration,
+        // interfaces, alternate settings and endpoints before
+        // attempting another WebUSB claim.
         // ----------------------------------------------------
 
+        const configuration =
+            this.device.configuration;
+
+        if (!configuration) {
+
+            throw new Error(
+                "V37: brak aktywnej konfiguracji USB."
+            );
+        }
+
         addSerialLine(
-            "V36 TEST: interface 0 NOT claimed",
+            "V37 TEST: configuration value = " +
+            configuration.configurationValue,
             "serial-info"
         );
 
         addSerialLine(
-            "V36 TEST: claimInterface(1) START",
+            "V37 TEST: interfaces = " +
+            configuration.interfaces.length,
             "serial-info"
         );
 
-        try {
-
-            await this.device.claimInterface(1);
-
-            this.interface1Claimed = true;
+        for (
+            const usbInterface
+            of configuration.interfaces
+        ) {
 
             addSerialLine(
-                "V36 TEST: claimInterface(1) OK",
+                "V37 TEST: interface " +
+                usbInterface.interfaceNumber +
+                " alternate settings = " +
+                usbInterface.alternates.length,
                 "serial-info"
             );
 
+            for (
+                const alternate
+                of usbInterface.alternates
+            ) {
+
+                addSerialLine(
+                    "V37 TEST: interface " +
+                    usbInterface.interfaceNumber +
+                    " alt " +
+                    alternate.alternateSetting +
+                    " class=" +
+                    alternate.interfaceClass +
+                    " subclass=" +
+                    alternate.interfaceSubclass +
+                    " protocol=" +
+                    alternate.interfaceProtocol +
+                    " endpoints=" +
+                    alternate.endpoints.length,
+                    "serial-info"
+                );
+
+                for (
+                    const endpoint
+                    of alternate.endpoints
+                ) {
+
+                    addSerialLine(
+                        "V37 TEST: interface " +
+                        usbInterface.interfaceNumber +
+                        " alt " +
+                        alternate.alternateSetting +
+                        " endpoint=" +
+                        endpoint.endpointNumber +
+                        " direction=" +
+                        endpoint.direction +
+                        " type=" +
+                        endpoint.type +
+                        " packetSize=" +
+                        endpoint.packetSize,
+                        "serial-info"
+                    );
+                }
+            }
         }
-        catch (error) {
-
-            addSerialLine(
-                "V36 TEST: claimInterface(1) ERROR: " +
-                error.message,
-                "serial-error"
-            );
-
-            throw error;
-        }
-
 
         addSerialLine(
-            "V36 TEST: USB transfers SKIPPED",
+            "V37 TEST: interface 0 NOT claimed",
             "serial-info"
         );
 
         addSerialLine(
-            "V36 TEST: CDC control transfers SKIPPED",
+            "V37 TEST: interface 1 NOT claimed",
             "serial-info"
         );
 
         addSerialLine(
-            "V36 TEST: readLoop SKIPPED",
+            "V37 TEST: claimInterface SKIPPED",
             "serial-info"
         );
 
+        addSerialLine(
+            "V37 TEST: USB transfers SKIPPED",
+            "serial-info"
+        );
 
-        // ----------------------------------------------------
-        // V36 — NO READ LOOP
-        // ----------------------------------------------------
+        addSerialLine(
+            "V37 TEST: CDC control transfers SKIPPED",
+            "serial-info"
+        );
+
+        addSerialLine(
+            "V37 TEST: readLoop SKIPPED",
+            "serial-info"
+        );
 
         this.running = false;
-
         this.readTask = null;
 
-
         addSerialLine(
-            "V36 TEST: WebUSB CLAIM-ONLY COMPLETE",
+            "V37 TEST: WebUSB DESCRIPTOR DIAGNOSTIC COMPLETE",
             "serial-info"
         );
     }
@@ -841,7 +894,7 @@ class WebUSBTransport
     async send(command) {
 
         throw new Error(
-            "V36 WebUSB CLAIM-ONLY: transferOut() jest wyłączony w tym teście."
+            "V37 WebUSB DESCRIPTOR DIAGNOSTIC: transferOut() jest wyłączony w tym teście."
         );
     }
 
@@ -851,7 +904,7 @@ class WebUSBTransport
 
 
         addSerialLine(
-            "V36 TEST: WebUSB disconnect START",
+            "V37 TEST: WebUSB disconnect START",
             "serial-info"
         );
 
@@ -871,7 +924,7 @@ class WebUSBTransport
                     this.interface1Claimed = false;
 
                     addSerialLine(
-                        "V36 TEST: interface 1 released",
+                        "V37 TEST: interface 1 released",
                         "serial-info"
                     );
 
@@ -879,12 +932,12 @@ class WebUSBTransport
                 catch (error) {
 
                     console.warn(
-                        "V36 WebUSB releaseInterface(1):",
+                        "V37 WebUSB releaseInterface(1):",
                         error
                     );
 
                     addSerialLine(
-                        "V36 TEST: interface 1 release ERROR: " +
+                        "V37 TEST: interface 1 release ERROR: " +
                         error.message,
                         "serial-error"
                     );
@@ -897,7 +950,7 @@ class WebUSBTransport
                 await this.device.close();
 
                 addSerialLine(
-                    "V36 TEST: WebUSB device.close() called",
+                    "V37 TEST: WebUSB device.close() called",
                     "serial-info"
                 );
 
@@ -905,12 +958,12 @@ class WebUSBTransport
             catch (error) {
 
                 console.warn(
-                    "V36 WebUSB close:",
+                    "V37 WebUSB close:",
                     error
                 );
 
                 addSerialLine(
-                    "V36 TEST: WebUSB close ERROR: " +
+                    "V37 TEST: WebUSB close ERROR: " +
                     error.message,
                     "serial-error"
                 );
@@ -931,7 +984,7 @@ class WebUSBTransport
 
 
         addSerialLine(
-            "V36 TEST: WebUSB disconnect COMPLETE",
+            "V37 TEST: WebUSB disconnect COMPLETE",
             "serial-info"
         );
     }
