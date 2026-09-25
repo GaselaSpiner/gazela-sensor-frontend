@@ -1,5 +1,5 @@
 // GAZELA SPINER SENSOR — SENSOR LAB
-// app.js — V46 WEBUSB DETECTION DIAGNOSTIC + TRANSPORT LAYER + USB SERIAL/WEBUSB + BLE
+// app.js — V47 LIVE RECONNECT READY + WEBUSB DETECTION + TRANSPORT LAYER + USB SERIAL/WEBUSB + BLE
 // ========================================================
 //
 // V40 TEST PURPOSE
@@ -24,10 +24,11 @@
 //   7. transferIn endpoint 1
 //   8. transferOut endpoint 1
 //
-// V46 DIAGNOSTIC:
-// 1. Shows exact USB RX bytes before line parsing.
-// 2. Web Serial and WebUSB use the same bounded RAW RX diagnostic.
-// 3. No commands, firmware protocol, BLE logic or measurement logic changed.
+// V47 CHANGES:
+// 1. Keeps the V46 USB RX byte diagnostic.
+// 2. A valid LIVE frame can satisfy initial CONNECT readiness.
+// 3. If LIVE is already active after USB reconnect, CONNECT does not send L again.
+// 4. No firmware, BLE or measurement protocol changes.
 //
 // V43 FIXES:
 // 1. PC + USB uses Web Serial. Android + USB uses WebUSB.
@@ -100,6 +101,9 @@ let waitingForInitialReady = false;
 let returnToLiveAfterReady = false;
  
 let measurementCommandSent = false;
+ 
+// V47: true when a valid LIVE frame arrives while CONNECT is waiting for READY/HEARTBEAT.
+let liveDetectedDuringInitialConnect = false;
  
  
 // ========================================================
@@ -2997,6 +3001,30 @@ function processSerialLine(line) {
         )
     ) {
  
+        // V47: LIVE itself proves that the sensor is reachable and already
+        // running. After USB reconnect the firmware may remain in LIVE and
+        // may not emit a new HEARTBEAT/READY transition.
+        if (waitingForInitialReady) {
+ 
+            liveDetectedDuringInitialConnect =
+                true;
+ 
+            sensorReady =
+                true;
+ 
+            if (typeof window.__gazelaReadyWaiter ===
+                "function") {
+ 
+                const waiter =
+                    window.__gazelaReadyWaiter;
+ 
+                window.__gazelaReadyWaiter =
+                    null;
+ 
+                waiter();
+            }
+        }
+ 
         parseLiveData(line);
  
         return;
@@ -3120,6 +3148,9 @@ async function connectSensor() {
  
     sensorReady = false;
  
+    liveDetectedDuringInitialConnect =
+        false;
+ 
     waitingForInitialReady =
         true;
  
@@ -3236,10 +3267,35 @@ async function connectSensor() {
             waitingForInitialReady =
                 false;
  
-            // V40:
-            // USB CONNECT enters LIVE after sensor readiness.
-            // V39 only waited for READY/HEARTBEAT and did not send L.
-            await startLiveMode();
+            // V47: if LIVE was already streaming during CONNECT,
+            // keep the existing stream and do not send L again.
+            if (!liveDetectedDuringInitialConnect) {
+ 
+                await startLiveMode();
+ 
+            }
+            else {
+ 
+                setStatus(
+                    "Live sensor",
+                    "connected"
+                );
+ 
+                if (measurementStatus) {
+                    measurementStatus.textContent =
+                        "Live sensor mode active.";
+                    measurementStatus.className =
+                        "measurement-status active";
+                }
+ 
+                if (startButton) {
+                    startButton.disabled = false;
+                }
+ 
+                if (stopButton) {
+                    stopButton.disabled = true;
+                }
+            }
         
         }
  
