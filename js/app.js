@@ -1,51 +1,29 @@
 // ========================================================
 // GAZELA SPINER SENSOR — SENSOR LAB
-// app.js — V37 WEBUSB DESCRIPTOR DIAGNOSTIC
+// app.js — V38 WEBSERIAL-ONLY USB DIAGNOSTIC
 // ========================================================
 //
-// V33 TEST PURPOSE
+// V38 TEST PURPOSE
 // --------------------------------------------------------
-// Previous tests show:
-//   Fresh BLE -> full GATT discovery works.
-//   After WebUSB -> BLE fails at getPrimaryService().
+// V37 confirmed the USB descriptor:
+//   configuration = 1
+//   interface 0 = CDC control
+//   interface 1 = CDC data
+//   interface 1 = bulk IN + bulk OUT
+//   claimInterface(1) fails with:
+//   "Unable to claim interface."
 //
-// This version isolates the WebUSB initialization itself.
+// V38 changes the USB transport for this diagnostic:
+//   - USB selected in Sensor Lab uses Web Serial ONLY.
+//   - WebUSB is NOT used by the USB transport.
+//   - Web Serial opens the CDC port at 115200.
+//   - The existing Web Serial read loop receives sensor lines.
+//   - Commands are sent through Web Serial.
+//   - READY / HEARTBEAT are handled by the existing app logic.
 //
-// V37 WebUSB:
-//   - open()
-//   - observe existing configuration only
-//   - claim DATA interface 1 only
-//   - NO interface 0 claim
-//   - NO transferIn()
-//   - NO transferOut()
-//   - NO CDC control transfers
-//   - NO readLoop()
+// BLE remains unchanged.
 //
-// V33 test behavior:
-//   - USB connect does NOT automatically send L.
-//   - USB disconnect does NOT send Q.
-//   - No BLE recovery is triggered by app.js.
-//
-// The goal is:
-//   Arduino restart
-//      -> WebUSB connect
-//      -> READY
-//      -> WebUSB disconnect
-//      -> BLE
-//
-// V37 test:
-//   - open()
-//   - observe active configuration
-//   - inspect interfaces / alternate settings / endpoints
-//   - NO claimInterface()
-//   - NO transferIn()
-//   - NO transferOut()
-//   - NO CDC control transfers
-//   - NO readLoop()
-//   - disconnect closes device
-//
-// This is a diagnostic build, not the production WebUSB
-// implementation.
+// This is a diagnostic build, not the production implementation.
 // ========================================================
 // ========================================================
 // BLE UUIDs
@@ -384,6 +362,11 @@ class SensorTransport {
 
     async disconnect() {
 
+        addSerialLine(
+            "V38 TEST: Web Serial disconnect START",
+            "serial-info"
+        );
+
         this.running = false;
     }
 
@@ -424,14 +407,39 @@ class WebSerialTransport
             );
         }
 
+        addSerialLine(
+            "V38 TEST: Web Serial requestPort() START",
+            "serial-info"
+        );
+
         this.port =
             await navigator.serial.requestPort();
+
+        addSerialLine(
+            "V38 TEST: Web Serial requestPort() OK",
+            "serial-info"
+        );
+
+        addSerialLine(
+            "V38 TEST: Web Serial port.open(115200) START",
+            "serial-info"
+        );
 
         await this.port.open({
             baudRate: 115200
         });
 
+        addSerialLine(
+            "V38 TEST: Web Serial port.open(115200) OK",
+            "serial-info"
+        );
+
         this.running = true;
+
+        addSerialLine(
+            "V38 TEST: Web Serial readLoop START",
+            "serial-info"
+        );
 
         this.readTask =
             this.readLoop();
@@ -491,6 +499,12 @@ class WebSerialTransport
 
                     if (cleanLine) {
 
+                        addSerialLine(
+                            "V38 TEST: USB RX " +
+                            cleanLine,
+                            "serial-info"
+                        );
+
                         this.onLine(
                             cleanLine
                         );
@@ -546,6 +560,11 @@ class WebSerialTransport
                 "Web Serial nie jest gotowy do wysyłania."
             );
         }
+
+        addSerialLine(
+            "V38 TEST: USB TX " + command,
+            "serial-info"
+        );
 
         const writer =
             this.port.writable.getWriter();
@@ -630,12 +649,17 @@ class WebSerialTransport
         this.port = null;
 
         this.readTask = null;
+
+        addSerialLine(
+            "V38 TEST: Web Serial disconnect COMPLETE",
+            "serial-info"
+        );
     }
 }
 
 
 // ========================================================
-// WEBUSB TRANSPORT
+// WEBUSB TRANSPORT — RETAINED FOR SOURCE HISTORY; NOT USED BY V38 USB
 // ========================================================
 
 class WebUSBTransport
@@ -1537,41 +1561,46 @@ async function createSensorTransport() {
         "usb"
     ) {
 
-        const isAndroid =
-            /Android/i.test(
-                navigator.userAgent
-            );
+        // ----------------------------------------------------
+        // V38 — USB = WEB SERIAL ONLY
+        // ----------------------------------------------------
+        //
+        // WebUSB is intentionally disabled in this test.
+        // We want to isolate the Arduino CDC path through
+        // the browser's Web Serial API.
+        // ----------------------------------------------------
 
-        if (
-            isAndroid &&
-            "usb" in navigator
-        ) {
+        addSerialLine(
+            "V38 TEST: USB transport = Web Serial ONLY",
+            "serial-info"
+        );
 
-            return new WebUSBTransport(
-                processSerialLine
-            );
-        }
+        addSerialLine(
+            "V38 TEST: WebUSB transport DISABLED",
+            "serial-info"
+        );
 
         if (
             "serial" in navigator
         ) {
+
+            addSerialLine(
+                "V38 TEST: navigator.serial AVAILABLE",
+                "serial-info"
+            );
 
             return new WebSerialTransport(
                 processSerialLine
             );
         }
 
-        if (
-            "usb" in navigator
-        ) {
-
-            return new WebUSBTransport(
-                processSerialLine
-            );
-        }
+        addSerialLine(
+            "V38 TEST: navigator.serial NOT AVAILABLE",
+            "serial-error"
+        );
 
         throw new Error(
-            "Brak Web Serial oraz WebUSB."
+            "V38: Web Serial API nie jest dostępne w tej przeglądarce."
         );
     }
 
