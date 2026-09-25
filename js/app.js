@@ -1,9 +1,9 @@
 // ========================================================
 // GAZELA SPINER SENSOR — SENSOR LAB
-// app.js — V34 WEBUSB MINIMAL USB→BLE DIAGNOSTIC
+// app.js — V33 WEBUSB MINIMAL DIAGNOSTIC
 // ========================================================
 //
-// V34 TEST PURPOSE
+// V33 TEST PURPOSE
 // --------------------------------------------------------
 // Previous tests show:
 //   Fresh BLE -> full GATT discovery works.
@@ -11,7 +11,7 @@
 //
 // This version isolates the WebUSB initialization itself.
 //
-// V34 WebUSB:
+// V33 WebUSB:
 //   - open()
 //   - select configuration 1 if needed
 //   - claim DATA interface 1 only
@@ -20,7 +20,7 @@
 //   - NO CDC control-line-state controlTransferOut()
 //   - start readLoop()
 //
-// V34 test behavior:
+// V33 test behavior:
 //   - USB connect does NOT automatically send L.
 //   - USB disconnect does NOT send Q.
 //   - No BLE recovery is triggered by app.js.
@@ -35,23 +35,6 @@
 // This is a diagnostic build, not the production WebUSB
 // implementation.
 // ========================================================
-// V34 TEST SEQUENCE
-// --------------------------------------------------------
-// 1. Restart Arduino.
-// 2. USB -> Connect Sensor.
-// 3. Wait for READY.
-// 4. Do NOT press START, STOP or any sensor command.
-// 5. USB -> Disconnect.
-// 6. BLE -> Connect Sensor.
-// --------------------------------------------------------
-// Expected diagnostic checkpoints:
-//   V34 TEST: WebUSB device.open() OK
-//   V34 TEST: claimInterface(1) OK
-//   V34 TEST: interface 1 released
-//   V34 TEST: WebUSB device.close() called
-// Then observe exactly where BLE discovery stops.
-// ========================================================
-
 // ========================================================
 // BLE UUIDs
 // ========================================================
@@ -713,202 +696,100 @@ class WebUSBTransport
 
 
         addSerialLine(
-            "V34 TEST: WebUSB device.open() START",
+            "V35 TEST: WebUSB device.open() START",
             "serial-info"
         );
+
 
         await this.device.open();
 
+
         addSerialLine(
-            "V34 TEST: WebUSB device.open() OK",
+            "V35 TEST: WebUSB device.open() OK",
             "serial-info"
         );
 
 
-        if (
-            this.device.configuration ===
-            null
-        ) {
+        // ----------------------------------------------------
+        // V35 — CONFIGURATION OBSERVATION ONLY
+        // ----------------------------------------------------
+        //
+        // We do not change configuration here.
+        // We only report the configuration already exposed
+        // by the USB device after open().
+        // ----------------------------------------------------
+
+        if (this.device.configuration) {
 
             addSerialLine(
-                "V34 TEST: selectConfiguration(1) START",
-                "serial-info"
-            );
-
-            await this.device
-                .selectConfiguration(1);
-
-            addSerialLine(
-                "V34 TEST: selectConfiguration(1) OK",
+                "V35 TEST: configuration = " +
+                this.device.configuration.configurationValue,
                 "serial-info"
             );
 
         }
-        else if (
-            this.device.configuration
-                .configurationValue !== 1
-        ) {
+        else {
 
             addSerialLine(
-                "V34 TEST: configuration change -> 1 START",
+                "V35 TEST: configuration = null",
                 "serial-info"
             );
 
-            await this.device
-                .selectConfiguration(1);
-
-            addSerialLine(
-                "V34 TEST: configuration change -> 1 OK",
-                "serial-info"
-            );
         }
 
 
-        // ====================================================
-        // V33 — MINIMAL WEBUSB
-        // ====================================================
-        //
-        // We intentionally do NOT claim interface 0.
-        // We intentionally do NOT send CDC line coding.
-        // We intentionally do NOT send CDC control-line state.
-        //
-        // Only the USB DATA interface is claimed so that
-        // transferIn()/transferOut() can be tested.
-        // ====================================================
+        // ----------------------------------------------------
+        // V35 — NO USB INTERFACE CLAIM
+        // ----------------------------------------------------
 
         addSerialLine(
-            "V34 TEST: claimInterface(1) START",
-            "serial-info"
-        );
-
-        await this.device
-            .claimInterface(1);
-
-        this.interface1Claimed =
-            true;
-
-        addSerialLine(
-            "V34 TEST: claimInterface(1) OK",
-            "serial-info"
-        );
-
-
-        addSerialLine(
-            "V34 TEST: WebUSB minimal mode",
+            "V35 TEST: interface 0 NOT claimed",
             "serial-info"
         );
 
         addSerialLine(
-            "V33 TEST: interface 0 NOT claimed",
+            "V35 TEST: interface 1 NOT claimed",
             "serial-info"
         );
 
         addSerialLine(
-            "V33 TEST: CDC control transfers SKIPPED",
+            "V35 TEST: USB transfers SKIPPED",
+            "serial-info"
+        );
+
+        addSerialLine(
+            "V35 TEST: CDC control transfers SKIPPED",
             "serial-info"
         );
 
 
-        this.running = true;
+        // ----------------------------------------------------
+        // V35 — NO READ LOOP
+        // ----------------------------------------------------
 
-        this.readTask =
-            this.readLoop();
+        this.running = false;
+
+        this.readTask = null;
+
+
+        addSerialLine(
+            "V35 TEST: WebUSB OPEN-ONLY COMPLETE",
+            "serial-info"
+        );
     }
 
     async readLoop() {
 
-        try {
+        // V35 intentionally does not start USB reading.
+        // No transferIn() is performed in this diagnostic version.
 
-            while (this.running) {
-
-                const result =
-                    await this.device
-                        .transferIn(
-                            1,
-                            64
-                        );
-
-                if (
-                    !result ||
-                    !result.data ||
-                    result.data.byteLength === 0
-                ) {
-
-                    continue;
-                }
-
-                const text =
-                    this.decoder.decode(
-                        result.data
-                    );
-
-                this.buffer += text;
-
-                const lines =
-                    this.buffer.split(
-                        /\r?\n/
-                    );
-
-                this.buffer =
-                    lines.pop() || "";
-
-                for (
-                    const line
-                    of lines
-                ) {
-
-                    const cleanLine =
-                        line.trim();
-
-                    if (cleanLine) {
-
-                        this.onLine(
-                            cleanLine
-                        );
-                    }
-                }
-            }
-
-        }
-        catch (error) {
-
-            if (this.running) {
-
-                console.error(
-                    "WebUSB read error:",
-                    error
-                );
-
-                addSerialLine(
-                    "WebUSB read error: " +
-                    error.message,
-                    "serial-error"
-                );
-            }
-        }
+        return;
     }
 
     async send(command) {
 
-        if (
-            !this.device ||
-            !this.device.opened ||
-            !this.interface1Claimed
-        ) {
-
-            throw new Error(
-                "WebUSB nie jest gotowy do wysyłania."
-            );
-        }
-
-        const data =
-            this.encoder.encode(
-                command + "\n"
-            );
-
-        await this.device.transferOut(
-            1,
-            data
+        throw new Error(
+            "V35 WebUSB OPEN-ONLY: transferOut() jest wyłączony w tym teście."
         );
     }
 
@@ -917,50 +798,14 @@ class WebUSBTransport
         this.running = false;
 
 
-        // ====================================================
-        // V34 — STOP USB READ LOOP
-        // ====================================================
-        //
-        // We deliberately do not wait for transferIn() here.
-        // The transport is already marked as stopped. The following
-        // releaseInterface()/close() sequence is the part being tested.
-        // ====================================================
-
         addSerialLine(
-            "V34 TEST: readLoop stopped",
+            "V35 TEST: WebUSB disconnect START",
             "serial-info"
         );
 
 
-        // ====================================================
-        // V34 — CLEAN USB CLOSE
-        // ====================================================
-        //
-        // The previous V30 test deliberately skipped release
-        // and close. V33 intentionally performs normal cleanup,
-        // but WITHOUT sending Q before disconnect.
-        // ====================================================
-
-        if (
-            this.interface1Claimed
-        ) {
-
-            try {
-
-                await this.device
-                    .releaseInterface(1);
-
-            }
-
-            catch (error) {
-
-                console.warn(
-                    "V34 releaseInterface(1):",
-                    error
-                );
-
-            }
-        }
+        // No interface was claimed in V35.
+        // Therefore there is no releaseInterface().
 
 
         if (this.device) {
@@ -969,28 +814,27 @@ class WebUSBTransport
 
                 await this.device.close();
 
-            }
+                addSerialLine(
+                    "V35 TEST: WebUSB device.close() called",
+                    "serial-info"
+                );
 
+            }
             catch (error) {
 
                 console.warn(
-                    "V34 WebUSB close:",
+                    "V35 WebUSB close:",
                     error
+                );
+
+                addSerialLine(
+                    "V35 TEST: WebUSB close ERROR: " +
+                    error.message,
+                    "serial-error"
                 );
 
             }
         }
-
-
-        addSerialLine(
-            "V34 TEST: interface 1 released",
-            "serial-info"
-        );
-
-        addSerialLine(
-            "V34 TEST: WebUSB device.close() called",
-            "serial-info"
-        );
 
 
         this.device = null;
@@ -1002,6 +846,12 @@ class WebUSBTransport
         this.readTask = null;
 
         this.buffer = "";
+
+
+        addSerialLine(
+            "V35 TEST: WebUSB disconnect COMPLETE",
+            "serial-info"
+        );
     }
 }
 
@@ -3204,7 +3054,7 @@ async function disconnectSensor() {
 
 
             // ------------------------------------------------
-            // V34 DIAGNOSTIC DISCONNECT
+            // V33 DIAGNOSTIC DISCONNECT
             // ------------------------------------------------
             //
             // Do NOT send Q here.
