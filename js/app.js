@@ -1,5 +1,5 @@
 // GAZELA SPINER SENSOR — SENSOR LAB
-// app.js — V43 TRANSPORT LAYER + USB SERIAL/WEBUSB + BLE
+// app.js — V45 USB RX DIAGNOSTIC + TRANSPORT LAYER + USB SERIAL/WEBUSB + BLE
 // ========================================================
 //
 // V40 TEST PURPOSE
@@ -23,6 +23,11 @@
 //   6. claim CDC data interface 1
 //   7. transferIn endpoint 1
 //   8. transferOut endpoint 1
+//
+// V45 DIAGNOSTIC:
+// 1. Shows exact USB RX bytes before line parsing.
+// 2. Web Serial and WebUSB use the same bounded RAW RX diagnostic.
+// 3. No commands, firmware protocol, BLE logic or measurement logic changed.
 //
 // V43 FIXES:
 // 1. PC + USB uses Web Serial. Android + USB uses WebUSB.
@@ -361,6 +366,48 @@ function isSensorDataLine(line) {
 
 
 // ========================================================
+// V45 USB RAW RX DIAGNOSTIC
+// ========================================================
+// Shows exact bytes received from USB before text-line parsing.
+// Limited to the first 40 non-empty USB transfers per connection.
+// ========================================================
+
+const V45_RAW_RX_MAX_CHUNKS = 40;
+
+function v45BytesToHex(bytes) {
+    return Array.from(bytes)
+        .map(byte => byte.toString(16).padStart(2, "0").toUpperCase())
+        .join(" ");
+}
+
+function v45BytesToAscii(bytes) {
+    return Array.from(bytes)
+        .map(byte => {
+            if (byte >= 32 && byte <= 126) return String.fromCharCode(byte);
+            if (byte === 10) return "\\n";
+            if (byte === 13) return "\\r";
+            return ".";
+        })
+        .join("");
+}
+
+function v45LogRawUSB(bytes, transportName, chunkNumber) {
+    if (!bytes || bytes.length === 0) return;
+    if (chunkNumber > V45_RAW_RX_MAX_CHUNKS) return;
+
+    addSerialLine(
+        "V45 RAW RX " +
+        transportName +
+        " #" + chunkNumber +
+        " LEN=" + bytes.length +
+        " HEX=[" + v45BytesToHex(bytes) + "]" +
+        " ASCII=[" + v45BytesToAscii(bytes) + "]",
+        "serial-info"
+    );
+}
+
+
+// ========================================================
 // TRANSPORT BASE
 // ========================================================
  
@@ -420,6 +467,7 @@ class WebSerialTransport
         this.port = null;
  
         this.reader = null;
+        this.v45RxChunkCount = 0;
     }
  
     get name() {
@@ -437,7 +485,7 @@ class WebSerialTransport
         }
  
         addSerialLine(
-            "V43: Web Serial requestPort() START",
+            "V45: Web Serial requestPort() START",
             "serial-info"
         );
  
@@ -445,12 +493,12 @@ class WebSerialTransport
             await navigator.serial.requestPort();
  
         addSerialLine(
-            "V43: Web Serial requestPort() OK",
+            "V45: Web Serial requestPort() OK",
             "serial-info"
         );
  
         addSerialLine(
-            "V43: Web Serial port.open(115200) START",
+            "V45: Web Serial port.open(115200) START",
             "serial-info"
         );
  
@@ -459,14 +507,15 @@ class WebSerialTransport
         });
  
         addSerialLine(
-            "V43: Web Serial port.open(115200) OK",
+            "V45: Web Serial port.open(115200) OK",
             "serial-info"
         );
  
         this.running = true;
+        this.v45RxChunkCount = 0;
  
         addSerialLine(
-            "V43: Web Serial readLoop START",
+            "V45: Web Serial readLoop START",
             "serial-info"
         );
  
@@ -502,6 +551,15 @@ class WebSerialTransport
                     continue;
                 }
  
+                
+                this.v45RxChunkCount++;
+
+                v45LogRawUSB(
+                    value,
+                    "WebSerial",
+                    this.v45RxChunkCount
+                );
+
                 buffer +=
                     decoder.decode(
                         value,
@@ -685,7 +743,7 @@ class WebSerialTransport
         this.readTask = null;
  
         addSerialLine(
-            "V43: Web Serial disconnect COMPLETE",
+            "V45: Web Serial disconnect COMPLETE",
             "serial-info"
         );
     }
@@ -716,6 +774,7 @@ class WebUSBTransport
             new TextEncoder();
  
         this.buffer = "";
+        this.v45RxChunkCount = 0;
     }
  
     get name() {
@@ -733,7 +792,7 @@ class WebUSBTransport
         }
  
         addSerialLine(
-            "V43: WebUSB transport START",
+            "V45: WebUSB transport START",
             "serial-info"
         );
  
@@ -752,7 +811,7 @@ class WebUSBTransport
         if (this.device) {
  
             addSerialLine(
-                "V43: WebUSB authorized device FOUND",
+                "V45: WebUSB authorized device FOUND",
                 "serial-info"
             );
  
@@ -760,7 +819,7 @@ class WebUSBTransport
         else {
  
             addSerialLine(
-                "V43: WebUSB requestDevice() START",
+                "V45: WebUSB requestDevice() START",
                 "serial-info"
             );
  
@@ -779,7 +838,7 @@ class WebUSBTransport
                 });
  
             addSerialLine(
-                "V43: WebUSB requestDevice() OK",
+                "V45: WebUSB requestDevice() OK",
                 "serial-info"
             );
         }
@@ -1031,9 +1090,10 @@ class WebUSBTransport
             );
  
             this.running = true;
+            this.v45RxChunkCount = 0;
  
             addSerialLine(
-                "V43: WebUSB readLoop START",
+                "V45: WebUSB readLoop START",
                 "serial-info"
             );
  
@@ -1044,7 +1104,7 @@ class WebUSBTransport
         catch (error) {
  
             addSerialLine(
-                "V43: WebUSB CONNECT ERROR: " +
+                "V45: WebUSB CONNECT ERROR: " +
                 error.message,
                 "serial-error"
             );
@@ -1077,6 +1137,22 @@ class WebUSBTransport
                     continue;
                 }
  
+
+                const receivedBytes =
+                    new Uint8Array(
+                        result.data.buffer,
+                        result.data.byteOffset,
+                        result.data.byteLength
+                    );
+
+                this.v45RxChunkCount++;
+
+                v45LogRawUSB(
+                    receivedBytes,
+                    "WebUSB",
+                    this.v45RxChunkCount
+                );
+
                 const text =
                     this.decoder.decode(
                         result.data
@@ -1238,7 +1314,7 @@ class WebUSBTransport
         this.running = false;
  
         addSerialLine(
-            "V43: WebUSB disconnect START",
+            "V45: WebUSB disconnect START",
             "serial-info"
         );
  
@@ -1329,7 +1405,7 @@ class WebUSBTransport
                 await this.device.close();
  
                 addSerialLine(
-                    "V43: WebUSB device.close() OK",
+                    "V45: WebUSB device.close() OK",
                     "serial-info"
                 );
  
@@ -1349,7 +1425,7 @@ class WebUSBTransport
         this.buffer = "";
  
         addSerialLine(
-            "V43: WebUSB disconnect COMPLETE",
+            "V45: WebUSB disconnect COMPLETE",
             "serial-info"
         );
     }
@@ -3827,4 +3903,3 @@ window.gazelaSensor = {
 // ========================================================
 // END OF APP.JS
 // ========================================================
-
