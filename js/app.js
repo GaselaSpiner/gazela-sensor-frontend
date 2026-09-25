@@ -854,7 +854,30 @@ class WebUSBTransport
 
     async disconnect() {
 
+        // ====================================================
+        // V30 TEST — MINIMAL WEBUSB DISCONNECT
+        // ====================================================
+        //
+        // Diagnostic purpose:
+        // Test whether the full WebUSB cleanup sequence
+        // (releaseInterface + close) is responsible for the
+        // subsequent BLE failure on Android.
+        //
+        // For this test:
+        //   1. Stop the WebUSB read loop.
+        //   2. Wait briefly for the read task.
+        //   3. DO NOT call releaseInterface().
+        //   4. DO NOT call device.close().
+        //
+        // The USB device object is only detached from the
+        // application-side transport object.
+        //
+        // This is intentionally NOT a production disconnect
+        // implementation. It is a diagnostic experiment.
+        // ====================================================
+
         this.running = false;
+
 
         if (this.readTask) {
 
@@ -871,76 +894,49 @@ class WebUSBTransport
                                 1200
                             )
                     )
+
                 ]);
 
             }
-            catch (error) {
 
-                console.warn(error);
-            }
-        }
-
-        if (this.device) {
-
-            if (
-                this.interface1Claimed
-            ) {
-
-                try {
-
-                    await this.device
-                        .releaseInterface(1);
-
-                }
-                catch (error) {
-
-                    console.warn(
-                        "WebUSB release interface 1:",
-                        error
-                    );
-                }
-
-                this.interface1Claimed =
-                    false;
-            }
-
-            if (
-                this.interface0Claimed
-            ) {
-
-                try {
-
-                    await this.device
-                        .releaseInterface(0);
-
-                }
-                catch (error) {
-
-                    console.warn(
-                        "WebUSB release interface 0:",
-                        error
-                    );
-                }
-
-                this.interface0Claimed =
-                    false;
-            }
-
-            try {
-
-                await this.device.close();
-
-            }
             catch (error) {
 
                 console.warn(
-                    "WebUSB close:",
+                    "V30 WebUSB read task:",
                     error
                 );
+
             }
         }
 
+
+        // ----------------------------------------------------
+        // V30 TEST:
+        // releaseInterface(1) SKIPPED
+        // releaseInterface(0) SKIPPED
+        // device.close() SKIPPED
+        // ----------------------------------------------------
+
+        addSerialLine(
+            "V30 TEST: WebUSB interfaces NOT released",
+            "serial-info"
+        );
+
+        addSerialLine(
+            "V30 TEST: WebUSB device.close() NOT called",
+            "serial-info"
+        );
+
+
+        // ----------------------------------------------------
+        // Clear application references.
+        // ----------------------------------------------------
+
         this.device = null;
+
+        this.interface1Claimed = false;
+
+        this.interface0Claimed = false;
 
         this.readTask = null;
 
