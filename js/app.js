@@ -3120,8 +3120,10 @@ async function disconnectSensor() {
 
     stopHeartbeatMonitor();
 
+
     const transport =
         sensorTransport;
+
 
     sensorTransport = null;
 
@@ -3138,9 +3140,61 @@ async function disconnectSensor() {
     measurementCommandSent =
         false;
 
+
     try {
 
         if (transport) {
+
+
+            // ------------------------------------------------
+            // USB / WebUSB
+            // ------------------------------------------------
+            //
+            // Na Androidzie najpierw uruchamiamy kontrolowany
+            // BLE recovery w Arduino, a dopiero potem zamykamy
+            // WebUSB.
+            // ------------------------------------------------
+
+            if (
+                transport instanceof WebUSBTransport
+            ) {
+
+                try {
+
+                    await transport.send(
+                        "B"
+                    );
+
+                    addSerialLine(
+                        "> B",
+                        "serial-command"
+                    );
+
+                    // Arduino wykonuje BLE.end() -> BLE.begin()
+                    // -> configureBLE() -> BLE.advertise().
+                    await new Promise(
+                        resolve =>
+                            setTimeout(
+                                resolve,
+                                800
+                            )
+                    );
+
+                }
+                catch (error) {
+
+                    console.warn(
+                        "Unable to send BLE recovery command B:",
+                        error
+                    );
+
+                }
+            }
+
+
+            // ------------------------------------------------
+            // STOP / EXIT LIVE
+            // ------------------------------------------------
 
             try {
 
@@ -3162,7 +3216,13 @@ async function disconnectSensor() {
                 );
             }
 
+
+            // ------------------------------------------------
+            // DISCONNECT USB / SERIAL / BLE
+            // ------------------------------------------------
+
             await transport.disconnect();
+
         }
 
     }
