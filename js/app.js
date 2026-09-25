@@ -1,32 +1,40 @@
 // ========================================================
 // GAZELA SPINER SENSOR — SENSOR LAB
-// app.js
-//
-// TRANSPORTS:
-//   1. Web Serial    — PC / USB
-//   2. WebUSB        — Android / USB
-//   3. Web Bluetooth — PC + Android / BLE
-//
-// USB FIRMWARE v18:
-//   L = LIVE
-//   S = START MEASUREMENT
-//   Q = STOP / EXIT LIVE
-//
-// CURRENT BLE RECOVERY TEST:
-//   WebUSB disconnect sends Q only.
-//   No automatic B command is sent by app.js.
-//   Arduino firmware v27 handles delayed BLE recovery after Q.
-//
-// BLE TEST v5:
-//   L = LIVE ON
-//   Q = LIVE OFF
-//
-// IMPORTANT:
-//   USB does NOT send L after a fixed delay.
-//   The application waits for READY / HEARTBEAT.
+// app.js — V33 WEBUSB MINIMAL DIAGNOSTIC
 // ========================================================
-
-
+//
+// V33 TEST PURPOSE
+// --------------------------------------------------------
+// Previous tests show:
+//   Fresh BLE -> full GATT discovery works.
+//   After WebUSB -> BLE fails at getPrimaryService().
+//
+// This version isolates the WebUSB initialization itself.
+//
+// V33 WebUSB:
+//   - open()
+//   - select configuration 1 if needed
+//   - claim DATA interface 1 only
+//   - NO interface 0 claim
+//   - NO CDC line-coding controlTransferOut()
+//   - NO CDC control-line-state controlTransferOut()
+//   - start readLoop()
+//
+// V33 test behavior:
+//   - USB connect does NOT automatically send L.
+//   - USB disconnect does NOT send Q.
+//   - No BLE recovery is triggered by app.js.
+//
+// The goal is:
+//   Arduino restart
+//      -> WebUSB connect
+//      -> READY
+//      -> WebUSB disconnect
+//      -> BLE
+//
+// This is a diagnostic build, not the production WebUSB
+// implementation.
+// ========================================================
 // ========================================================
 // BLE UUIDs
 // ========================================================
@@ -654,8 +662,10 @@ class WebUSBTransport
             );
         }
 
+
         const devices =
             await navigator.usb.getDevices();
+
 
         this.device =
             devices.find(
@@ -665,6 +675,7 @@ class WebUSBTransport
                     device.productId ===
                         USB_PRODUCT_ID
             );
+
 
         if (!this.device) {
 
@@ -683,7 +694,9 @@ class WebUSBTransport
                 });
         }
 
+
         await this.device.open();
+
 
         if (
             this.device.configuration ===
@@ -703,51 +716,41 @@ class WebUSBTransport
                 .selectConfiguration(1);
         }
 
-        await this.device
-            .claimInterface(0);
 
-        this.interface0Claimed =
-            true;
-
-        const lineCoding =
-            new Uint8Array([
-                0x00,
-                0xC2,
-                0x01,
-                0x00,
-                0x00,
-                0x00,
-                0x08
-            ]);
-
-        await this.device
-            .controlTransferOut(
-                {
-                    requestType: "class",
-                    recipient: "interface",
-                    request: 0x20,
-                    value: 0x0000,
-                    index: 0x0000
-                },
-                lineCoding
-            );
-
-        await this.device
-            .controlTransferOut(
-                {
-                    requestType: "class",
-                    recipient: "interface",
-                    request: 0x22,
-                    value: 0x0001,
-                    index: 0x0000
-                }
-            );
+        // ====================================================
+        // V33 — MINIMAL WEBUSB
+        // ====================================================
+        //
+        // We intentionally do NOT claim interface 0.
+        // We intentionally do NOT send CDC line coding.
+        // We intentionally do NOT send CDC control-line state.
+        //
+        // Only the USB DATA interface is claimed so that
+        // transferIn()/transferOut() can be tested.
+        // ====================================================
 
         await this.device
             .claimInterface(1);
 
         this.interface1Claimed =
             true;
+
+
+        addSerialLine(
+            "V33 TEST: WebUSB minimal mode",
+            "serial-info"
+        );
+
+        addSerialLine(
+            "V33 TEST: interface 0 NOT claimed",
+            "serial-info"
+        );
+
+        addSerialLine(
+            "V33 TEST: CDC control transfers SKIPPED",
+            "serial-info"
+        );
+
 
         this.running = true;
 
@@ -854,28 +857,6 @@ class WebUSBTransport
 
     async disconnect() {
 
-        // ====================================================
-        // V30 TEST — MINIMAL WEBUSB DISCONNECT
-        // ====================================================
-        //
-        // Diagnostic purpose:
-        // Test whether the full WebUSB cleanup sequence
-        // (releaseInterface + close) is responsible for the
-        // subsequent BLE failure on Android.
-        //
-        // For this test:
-        //   1. Stop the WebUSB read loop.
-        //   2. Wait briefly for the read task.
-        //   3. DO NOT call releaseInterface().
-        //   4. DO NOT call device.close().
-        //
-        // The USB device object is only detached from the
-        // application-side transport object.
-        //
-        // This is intentionally NOT a production disconnect
-        // implementation. It is a diagnostic experiment.
-        // ====================================================
-
         this.running = false;
 
 
@@ -902,7 +883,7 @@ class WebUSBTransport
             catch (error) {
 
                 console.warn(
-                    "V30 WebUSB read task:",
+                    "V33 WebUSB read task:",
                     error
                 );
 
@@ -910,27 +891,66 @@ class WebUSBTransport
         }
 
 
-        // ----------------------------------------------------
-        // V30 TEST:
-        // releaseInterface(1) SKIPPED
-        // releaseInterface(0) SKIPPED
-        // device.close() SKIPPED
-        // ----------------------------------------------------
+        // ====================================================
+        // V33 — CLEAN USB CLOSE
+        // ====================================================
+        //
+        // The previous V30 test deliberately skipped release
+        // and close. V33 intentionally performs normal cleanup,
+        // but WITHOUT sending Q before disconnect.
+        // ====================================================
+
+        if (
+            this.interface1Claimed
+        ) {
+
+            try {
+
+                await this.device
+                    .releaseInterface(1);
+
+            }
+
+            catch (error) {
+
+                console.warn(
+                    "V33 releaseInterface(1):",
+                    error
+                );
+
+            }
+        }
+
+
+        if (this.device) {
+
+            try {
+
+                await this.device.close();
+
+            }
+
+            catch (error) {
+
+                console.warn(
+                    "V33 WebUSB close:",
+                    error
+                );
+
+            }
+        }
+
 
         addSerialLine(
-            "V30 TEST: WebUSB interfaces NOT released",
+            "V33 TEST: interface 1 released",
             "serial-info"
         );
 
         addSerialLine(
-            "V30 TEST: WebUSB device.close() NOT called",
+            "V33 TEST: WebUSB device.close() called",
             "serial-info"
         );
 
-
-        // ----------------------------------------------------
-        // Clear application references.
-        // ----------------------------------------------------
 
         this.device = null;
 
@@ -942,12 +962,6 @@ class WebUSBTransport
 
         this.buffer = "";
     }
-}
-
-
-// ========================================================
-// WEB BLUETOOTH TRANSPORT
-// ========================================================
 
 class WebBluetoothTransport
     extends SensorTransport {
@@ -2751,11 +2765,11 @@ async function connectSensor() {
                 false;
 
             /*
-             * CONNECT always ends in LIVE.
-             * No measurement command S is sent here.
+             * V33 DIAGNOSTIC:
+             * USB CONNECT ends at READY.
+             * Do NOT automatically send L.
              */
-
-            await startLiveMode();
+        
         }
 
     }
@@ -3148,32 +3162,12 @@ async function disconnectSensor() {
 
 
             // ------------------------------------------------
-            // STOP / EXIT LIVE
+            // V33 DIAGNOSTIC DISCONNECT
             // ------------------------------------------------
-
-            try {
-
-                await transport.send(
-                    "Q"
-                );
-
-                addSerialLine(
-                    "> Q",
-                    "serial-command"
-                );
-
-            }
-            catch (error) {
-
-                console.warn(
-                    "Unable to send Q:",
-                    error
-                );
-            }
-
-
-            // ------------------------------------------------
-            // DISCONNECT USB / SERIAL / BLE
+            //
+            // Do NOT send Q here.
+            // The purpose is to test pure WebUSB connect ->
+            // disconnect -> BLE without a sensor command.
             // ------------------------------------------------
 
             await transport.disconnect();
