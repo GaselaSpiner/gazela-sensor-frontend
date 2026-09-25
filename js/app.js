@@ -991,6 +991,13 @@ class WebBluetoothTransport
             );
         }
 
+
+        addSerialLine(
+            "BLE: requestDevice...",
+            "serial-info"
+        );
+
+
         this.device =
             await navigator.bluetooth.requestDevice({
 
@@ -1007,13 +1014,40 @@ class WebBluetoothTransport
                 ]
             });
 
+
+        addSerialLine(
+            "BLE: requestDevice OK",
+            "serial-info"
+        );
+
+
         this.device.addEventListener(
             "gattserverdisconnected",
             this.boundDisconnectHandler
         );
 
+
+        addSerialLine(
+            "BLE: GATT connect...",
+            "serial-info"
+        );
+
+
         this.server =
             await this.device.gatt.connect();
+
+
+        addSerialLine(
+            "BLE: GATT connected",
+            "serial-info"
+        );
+
+
+        addSerialLine(
+            "BLE: get sensor service...",
+            "serial-info"
+        );
+
 
         this.sensorService =
             await this.server
@@ -1021,11 +1055,37 @@ class WebBluetoothTransport
                     BLE_SENSOR_SERVICE_UUID
                 );
 
+
+        addSerialLine(
+            "BLE: sensor service OK",
+            "serial-info"
+        );
+
+
+        addSerialLine(
+            "BLE: get live characteristic...",
+            "serial-info"
+        );
+
+
         this.liveCharacteristic =
             await this.sensorService
                 .getCharacteristic(
                     BLE_LIVE_CHARACTERISTIC_UUID
                 );
+
+
+        addSerialLine(
+            "BLE: live characteristic OK",
+            "serial-info"
+        );
+
+
+        addSerialLine(
+            "BLE: get control service...",
+            "serial-info"
+        );
+
 
         this.controlService =
             await this.server
@@ -1033,14 +1093,47 @@ class WebBluetoothTransport
                     BLE_CONTROL_SERVICE_UUID
                 );
 
+
+        addSerialLine(
+            "BLE: control service OK",
+            "serial-info"
+        );
+
+
+        addSerialLine(
+            "BLE: get command characteristic...",
+            "serial-info"
+        );
+
+
         this.commandCharacteristic =
             await this.controlService
                 .getCharacteristic(
                     BLE_COMMAND_CHARACTERISTIC_UUID
                 );
 
+
+        addSerialLine(
+            "BLE: command characteristic OK",
+            "serial-info"
+        );
+
+
+        addSerialLine(
+            "BLE: start notifications...",
+            "serial-info"
+        );
+
+
         await this.liveCharacteristic
             .startNotifications();
+
+
+        addSerialLine(
+            "BLE: notifications OK",
+            "serial-info"
+        );
+
 
         this.liveCharacteristic
             .addEventListener(
@@ -1048,7 +1141,14 @@ class WebBluetoothTransport
                 this.boundNotificationHandler
             );
 
+
         this.running = true;
+
+
+        addSerialLine(
+            "BLE: CONNECT COMPLETE",
+            "serial-info"
+        );
     }
 
     handleNotification(event) {
