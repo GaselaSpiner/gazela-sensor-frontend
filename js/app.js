@@ -12,6 +12,11 @@
 //   S = START MEASUREMENT
 //   Q = STOP / EXIT LIVE
 //
+// CURRENT BLE RECOVERY TEST:
+//   WebUSB disconnect sends Q only.
+//   No automatic B command is sent by app.js.
+//   Arduino firmware v27 handles delayed BLE recovery after Q.
+//
 // BLE TEST v5:
 //   L = LIVE ON
 //   Q = LIVE OFF
@@ -3144,52 +3149,6 @@ async function disconnectSensor() {
     try {
 
         if (transport) {
-
-
-            // ------------------------------------------------
-            // USB / WebUSB
-            // ------------------------------------------------
-            //
-            // Na Androidzie najpierw uruchamiamy kontrolowany
-            // BLE recovery w Arduino, a dopiero potem zamykamy
-            // WebUSB.
-            // ------------------------------------------------
-
-            if (
-                transport instanceof WebUSBTransport
-            ) {
-
-                try {
-
-                    await transport.send(
-                        "B"
-                    );
-
-                    addSerialLine(
-                        "> B",
-                        "serial-command"
-                    );
-
-                    // Arduino wykonuje BLE.end() -> BLE.begin()
-                    // -> configureBLE() -> BLE.advertise().
-                    await new Promise(
-                        resolve =>
-                            setTimeout(
-                                resolve,
-                                800
-                            )
-                    );
-
-                }
-                catch (error) {
-
-                    console.warn(
-                        "Unable to send BLE recovery command B:",
-                        error
-                    );
-
-                }
-            }
 
 
             // ------------------------------------------------
