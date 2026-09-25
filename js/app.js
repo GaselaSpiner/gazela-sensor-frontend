@@ -975,6 +975,9 @@ class WebBluetoothTransport
 
         this.boundDisconnectHandler =
             this.handleDisconnected.bind(this);
+
+        // Prevent duplicate handling of the same BLE disconnect event.
+        this.disconnectHandled = false;
     }
 
     get name() {
@@ -983,6 +986,9 @@ class WebBluetoothTransport
     }
 
     async connect() {
+
+        // This transport instance is starting a new connection attempt.
+        this.disconnectHandled = false;
 
         if (!("bluetooth" in navigator)) {
 
@@ -1302,12 +1308,62 @@ class WebBluetoothTransport
 
     handleDisconnected() {
 
+        // The browser can deliver more than one disconnect notification
+        // while a GATT connection is being torn down. Handle this transport
+        // instance only once.
+        if (this.disconnectHandled) {
+            return;
+        }
+
+        this.disconnectHandled = true;
         this.running = false;
 
         addSerialLine(
             "BLE device disconnected.",
             "serial-error"
         );
+
+        // ----------------------------------------------------
+        // CLEAN UP THIS BLE TRANSPORT INSTANCE
+        // ----------------------------------------------------
+        //
+        // When the peripheral disconnects by itself, disconnect() is not
+        // called by the application. Therefore the old event listeners
+        // must be removed here as well. Otherwise an old transport object
+        // can remain subscribed to the same BluetoothDevice and react to
+        // later disconnects.
+
+        if (this.liveCharacteristic) {
+
+            try {
+                this.liveCharacteristic.removeEventListener(
+                    "characteristicvaluechanged",
+                    this.boundNotificationHandler
+                );
+            }
+            catch (error) {
+                console.warn(error);
+            }
+        }
+
+        if (this.device) {
+
+            try {
+                this.device.removeEventListener(
+                    "gattserverdisconnected",
+                    this.boundDisconnectHandler
+                );
+            }
+            catch (error) {
+                console.warn(error);
+            }
+        }
+
+        this.server = null;
+        this.sensorService = null;
+        this.liveCharacteristic = null;
+        this.controlService = null;
+        this.commandCharacteristic = null;
 
         if (
             sensorTransport === this
