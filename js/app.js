@@ -1,5 +1,5 @@
 // GAZELA SPINER SENSOR — SENSOR LAB
-// app.js — V45 USB RX DIAGNOSTIC + TRANSPORT LAYER + USB SERIAL/WEBUSB + BLE
+// app.js — V46 WEBUSB DETECTION DIAGNOSTIC + TRANSPORT LAYER + USB SERIAL/WEBUSB + BLE
 // ========================================================
 //
 // V40 TEST PURPOSE
@@ -24,7 +24,7 @@
 //   7. transferIn endpoint 1
 //   8. transferOut endpoint 1
 //
-// V45 DIAGNOSTIC:
+// V46 DIAGNOSTIC:
 // 1. Shows exact USB RX bytes before line parsing.
 // 2. Web Serial and WebUSB use the same bounded RAW RX diagnostic.
 // 3. No commands, firmware protocol, BLE logic or measurement logic changed.
@@ -355,7 +355,7 @@ function formatTime(milliseconds) {
 // LIVE and measurement sample lines are processed normally
 // but are not printed one-by-one in the Status Monitor.
 // ========================================================
-
+ 
 function isSensorDataLine(line) {
     if (!line) return false;
     if (line.startsWith("LIVE,")) return true;
@@ -363,23 +363,23 @@ function isSensorDataLine(line) {
     if (/^\d+,/.test(line)) return true;
     return false;
 }
-
-
+ 
+ 
 // ========================================================
-// V45 USB RAW RX DIAGNOSTIC
+// V46 USB RAW RX DIAGNOSTIC
 // ========================================================
 // Shows exact bytes received from USB before text-line parsing.
 // Limited to the first 40 non-empty USB transfers per connection.
 // ========================================================
-
-const V45_RAW_RX_MAX_CHUNKS = 40;
-
+ 
+const V46_RAW_RX_MAX_CHUNKS = 40;
+ 
 function v45BytesToHex(bytes) {
     return Array.from(bytes)
         .map(byte => byte.toString(16).padStart(2, "0").toUpperCase())
         .join(" ");
 }
-
+ 
 function v45BytesToAscii(bytes) {
     return Array.from(bytes)
         .map(byte => {
@@ -390,13 +390,13 @@ function v45BytesToAscii(bytes) {
         })
         .join("");
 }
-
+ 
 function v45LogRawUSB(bytes, transportName, chunkNumber) {
     if (!bytes || bytes.length === 0) return;
-    if (chunkNumber > V45_RAW_RX_MAX_CHUNKS) return;
-
+    if (chunkNumber > V46_RAW_RX_MAX_CHUNKS) return;
+ 
     addSerialLine(
-        "V45 RAW RX " +
+        "V46 RAW RX " +
         transportName +
         " #" + chunkNumber +
         " LEN=" + bytes.length +
@@ -405,8 +405,8 @@ function v45LogRawUSB(bytes, transportName, chunkNumber) {
         "serial-info"
     );
 }
-
-
+ 
+ 
 // ========================================================
 // TRANSPORT BASE
 // ========================================================
@@ -485,7 +485,7 @@ class WebSerialTransport
         }
  
         addSerialLine(
-            "V45: Web Serial requestPort() START",
+            "V46: Web Serial requestPort() START",
             "serial-info"
         );
  
@@ -493,12 +493,12 @@ class WebSerialTransport
             await navigator.serial.requestPort();
  
         addSerialLine(
-            "V45: Web Serial requestPort() OK",
+            "V46: Web Serial requestPort() OK",
             "serial-info"
         );
  
         addSerialLine(
-            "V45: Web Serial port.open(115200) START",
+            "V46: Web Serial port.open(115200) START",
             "serial-info"
         );
  
@@ -507,7 +507,7 @@ class WebSerialTransport
         });
  
         addSerialLine(
-            "V45: Web Serial port.open(115200) OK",
+            "V46: Web Serial port.open(115200) OK",
             "serial-info"
         );
  
@@ -515,7 +515,7 @@ class WebSerialTransport
         this.v45RxChunkCount = 0;
  
         addSerialLine(
-            "V45: Web Serial readLoop START",
+            "V46: Web Serial readLoop START",
             "serial-info"
         );
  
@@ -553,13 +553,13 @@ class WebSerialTransport
  
                 
                 this.v45RxChunkCount++;
-
+ 
                 v45LogRawUSB(
                     value,
                     "WebSerial",
                     this.v45RxChunkCount
                 );
-
+ 
                 buffer +=
                     decoder.decode(
                         value,
@@ -589,7 +589,7 @@ class WebSerialTransport
                         if (
                             !isSensorDataLine(cleanLine)
                         ) {
-
+ 
                             addSerialLine(
                                 "V43: USB RX " +
                                 cleanLine,
@@ -743,7 +743,7 @@ class WebSerialTransport
         this.readTask = null;
  
         addSerialLine(
-            "V45: Web Serial disconnect COMPLETE",
+            "V46: Web Serial disconnect COMPLETE",
             "serial-info"
         );
     }
@@ -792,12 +792,24 @@ class WebUSBTransport
         }
  
         addSerialLine(
-            "V45: WebUSB transport START",
+            "V46: WebUSB transport START",
             "serial-info"
         );
  
         const devices =
             await navigator.usb.getDevices();
+ 
+        addSerialLine(
+            `V46: WebUSB getDevices() count=${devices.length}`,
+            "serial-info"
+        );
+ 
+        devices.forEach((device, index) => {
+            addSerialLine(
+                `V46: USB device #${index + 1} VID=0x${device.vendorId.toString(16).toUpperCase().padStart(4, "0")} PID=0x${device.productId.toString(16).toUpperCase().padStart(4, "0")} manufacturer=${device.manufacturerName || "?"} product=${device.productName || "?"}`,
+                "serial-info"
+            );
+        });
  
         this.device =
             devices.find(
@@ -811,7 +823,7 @@ class WebUSBTransport
         if (this.device) {
  
             addSerialLine(
-                "V45: WebUSB authorized device FOUND",
+                "V46: WebUSB authorized device FOUND",
                 "serial-info"
             );
  
@@ -819,26 +831,30 @@ class WebUSBTransport
         else {
  
             addSerialLine(
-                "V45: WebUSB requestDevice() START",
+                "V46: WebUSB requestDevice() START",
                 "serial-info"
             );
  
+            addSerialLine(
+                `V46: WebUSB requestDevice() FILTER = vendorId 0x${USB_VENDOR_ID.toString(16).toUpperCase()}, productId 0x${USB_PRODUCT_ID.toString(16).toUpperCase()}`,
+                "serial-info"
+            );
+ 
+            // V46: diagnostic fallback — filter by Arduino vendor only.
+            // This lets Android show the board even if its PID differs.
             this.device =
                 await navigator.usb.requestDevice({
  
                     filters: [
                         {
                             vendorId:
-                                USB_VENDOR_ID,
- 
-                            productId:
-                                USB_PRODUCT_ID
+                                USB_VENDOR_ID
                         }
                     ]
                 });
  
             addSerialLine(
-                "V45: WebUSB requestDevice() OK",
+                "V46: WebUSB requestDevice() OK",
                 "serial-info"
             );
         }
@@ -1093,7 +1109,7 @@ class WebUSBTransport
             this.v45RxChunkCount = 0;
  
             addSerialLine(
-                "V45: WebUSB readLoop START",
+                "V46: WebUSB readLoop START",
                 "serial-info"
             );
  
@@ -1104,7 +1120,7 @@ class WebUSBTransport
         catch (error) {
  
             addSerialLine(
-                "V45: WebUSB CONNECT ERROR: " +
+                "V46: WebUSB CONNECT ERROR: " +
                 error.message,
                 "serial-error"
             );
@@ -1137,22 +1153,22 @@ class WebUSBTransport
                     continue;
                 }
  
-
+ 
                 const receivedBytes =
                     new Uint8Array(
                         result.data.buffer,
                         result.data.byteOffset,
                         result.data.byteLength
                     );
-
+ 
                 this.v45RxChunkCount++;
-
+ 
                 v45LogRawUSB(
                     receivedBytes,
                     "WebUSB",
                     this.v45RxChunkCount
                 );
-
+ 
                 const text =
                     this.decoder.decode(
                         result.data
@@ -1181,7 +1197,7 @@ class WebUSBTransport
                         if (
                             !isSensorDataLine(cleanLine)
                         ) {
-
+ 
                             addSerialLine(
                                 "V43: USB RX " +
                                 cleanLine,
@@ -1314,7 +1330,7 @@ class WebUSBTransport
         this.running = false;
  
         addSerialLine(
-            "V45: WebUSB disconnect START",
+            "V46: WebUSB disconnect START",
             "serial-info"
         );
  
@@ -1405,7 +1421,7 @@ class WebUSBTransport
                 await this.device.close();
  
                 addSerialLine(
-                    "V45: WebUSB device.close() OK",
+                    "V46: WebUSB device.close() OK",
                     "serial-info"
                 );
  
@@ -1425,7 +1441,7 @@ class WebUSBTransport
         this.buffer = "";
  
         addSerialLine(
-            "V45: WebUSB disconnect COMPLETE",
+            "V46: WebUSB disconnect COMPLETE",
             "serial-info"
         );
     }
@@ -1970,22 +1986,22 @@ function waitForSensorReady(
 // ========================================================
 // TRANSPORT FACTORY
 // ========================================================
-
+ 
 function isAndroidDevice() {
     if (navigator.userAgentData && navigator.userAgentData.platform && /Android/i.test(navigator.userAgentData.platform)) {
         return true;
     }
     return /Android/i.test(navigator.userAgent || "");
 }
-
-
+ 
+ 
 async function createSensorTransport() {
-
+ 
     // USB: PC -> Web Serial | Android -> WebUSB
     if (selectedTransport === "usb") {
-
+ 
         const android = isAndroidDevice();
-
+ 
         if (android) {
             if (!("usb" in navigator)) {
                 throw new Error("Android: WebUSB nie jest dostępne w tej przeglądarce.");
@@ -1993,20 +2009,20 @@ async function createSensorTransport() {
             addSerialLine("V43: USB transport = WebUSB (Android)", "serial-info");
             return new WebUSBTransport(processSerialLine);
         }
-
+ 
         if ("serial" in navigator) {
             addSerialLine("V43: USB transport = Web Serial (PC)", "serial-info");
             return new WebSerialTransport(processSerialLine);
         }
-
+ 
         if ("usb" in navigator) {
             addSerialLine("V43: USB transport = WebUSB fallback (PC)", "serial-info");
             return new WebUSBTransport(processSerialLine);
         }
-
+ 
         throw new Error("USB: brak Web Serial oraz WebUSB.");
     }
-
+ 
     // BLE: PC + Android -> Web Bluetooth
     if (selectedTransport === "ble") {
         if ("bluetooth" in navigator) {
@@ -2015,10 +2031,10 @@ async function createSensorTransport() {
         }
         throw new Error("Web Bluetooth nie jest dostępny w tej przeglądarce.");
     }
-
+ 
     throw new Error("Nieznany transport: " + selectedTransport);
 }
-
+ 
 // ========================================================
 // HEARTBEAT MONITOR
 // ========================================================
@@ -3544,72 +3560,72 @@ function finishSession() {
 // ========================================================
 // STOP MEASUREMENT
 // ========================================================
-
+ 
 async function stopMeasurement() {
-
+ 
     if (!sensorTransport) {
         return;
     }
-
+ 
     try {
-
+ 
         measuring = false;
-
+ 
         measurementCommandSent =
             false;
-
+ 
         // Manual STOP follows the same state machine as the
         // natural end of a measurement:
         // Q -> READY/HEARTBEAT -> L -> LIVE.
         returnToLiveAfterReady =
             true;
-
+ 
         await sendCommand(
             "Q"
         );
-
+ 
         if (measurementStatus) {
-
+ 
             measurementStatus.textContent =
                 "Stopping... Waiting for sensor READY...";
-
+ 
             measurementStatus.className =
                 "measurement-status active";
         }
-
+ 
         setStatus(
             "Stopping measurement",
             "connected"
         );
-
+ 
         if (startButton) {
-
+ 
             startButton.disabled =
                 true;
         }
-
+ 
         if (stopButton) {
-
+ 
             stopButton.disabled =
                 true;
         }
-
+ 
     }
     catch (error) {
-
+ 
         console.error(
             "Stop measurement error:",
             error
         );
-
+ 
         returnToLiveAfterReady =
             false;
-
+ 
         setStatus(
             "Stop error",
             "error"
         );
-
+ 
         addSerialLine(
             "STOP ERROR: " +
             error.message,
@@ -3617,8 +3633,8 @@ async function stopMeasurement() {
         );
     }
 }
-
-
+ 
+ 
 // ========================================================
 // DISCONNECT SENSOR
 // ========================================================
