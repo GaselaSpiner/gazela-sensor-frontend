@@ -1,9 +1,9 @@
 // ========================================================
 // GAZELA SPINER SENSOR — SENSOR LAB
-// app.js — V33 WEBUSB MINIMAL DIAGNOSTIC
+// app.js — V34 WEBUSB MINIMAL USB→BLE DIAGNOSTIC
 // ========================================================
 //
-// V33 TEST PURPOSE
+// V34 TEST PURPOSE
 // --------------------------------------------------------
 // Previous tests show:
 //   Fresh BLE -> full GATT discovery works.
@@ -11,7 +11,7 @@
 //
 // This version isolates the WebUSB initialization itself.
 //
-// V33 WebUSB:
+// V34 WebUSB:
 //   - open()
 //   - select configuration 1 if needed
 //   - claim DATA interface 1 only
@@ -20,7 +20,7 @@
 //   - NO CDC control-line-state controlTransferOut()
 //   - start readLoop()
 //
-// V33 test behavior:
+// V34 test behavior:
 //   - USB connect does NOT automatically send L.
 //   - USB disconnect does NOT send Q.
 //   - No BLE recovery is triggered by app.js.
@@ -35,6 +35,23 @@
 // This is a diagnostic build, not the production WebUSB
 // implementation.
 // ========================================================
+// V34 TEST SEQUENCE
+// --------------------------------------------------------
+// 1. Restart Arduino.
+// 2. USB -> Connect Sensor.
+// 3. Wait for READY.
+// 4. Do NOT press START, STOP or any sensor command.
+// 5. USB -> Disconnect.
+// 6. BLE -> Connect Sensor.
+// --------------------------------------------------------
+// Expected diagnostic checkpoints:
+//   V34 TEST: WebUSB device.open() OK
+//   V34 TEST: claimInterface(1) OK
+//   V34 TEST: interface 1 released
+//   V34 TEST: WebUSB device.close() called
+// Then observe exactly where BLE discovery stops.
+// ========================================================
+
 // ========================================================
 // BLE UUIDs
 // ========================================================
@@ -695,7 +712,17 @@ class WebUSBTransport
         }
 
 
+        addSerialLine(
+            "V34 TEST: WebUSB device.open() START",
+            "serial-info"
+        );
+
         await this.device.open();
+
+        addSerialLine(
+            "V34 TEST: WebUSB device.open() OK",
+            "serial-info"
+        );
 
 
         if (
@@ -703,8 +730,18 @@ class WebUSBTransport
             null
         ) {
 
+            addSerialLine(
+                "V34 TEST: selectConfiguration(1) START",
+                "serial-info"
+            );
+
             await this.device
                 .selectConfiguration(1);
+
+            addSerialLine(
+                "V34 TEST: selectConfiguration(1) OK",
+                "serial-info"
+            );
 
         }
         else if (
@@ -712,8 +749,18 @@ class WebUSBTransport
                 .configurationValue !== 1
         ) {
 
+            addSerialLine(
+                "V34 TEST: configuration change -> 1 START",
+                "serial-info"
+            );
+
             await this.device
                 .selectConfiguration(1);
+
+            addSerialLine(
+                "V34 TEST: configuration change -> 1 OK",
+                "serial-info"
+            );
         }
 
 
@@ -729,15 +776,25 @@ class WebUSBTransport
         // transferIn()/transferOut() can be tested.
         // ====================================================
 
+        addSerialLine(
+            "V34 TEST: claimInterface(1) START",
+            "serial-info"
+        );
+
         await this.device
             .claimInterface(1);
 
         this.interface1Claimed =
             true;
 
+        addSerialLine(
+            "V34 TEST: claimInterface(1) OK",
+            "serial-info"
+        );
+
 
         addSerialLine(
-            "V33 TEST: WebUSB minimal mode",
+            "V34 TEST: WebUSB minimal mode",
             "serial-info"
         );
 
@@ -860,39 +917,23 @@ class WebUSBTransport
         this.running = false;
 
 
-        if (this.readTask) {
+        // ====================================================
+        // V34 — STOP USB READ LOOP
+        // ====================================================
+        //
+        // We deliberately do not wait for transferIn() here.
+        // The transport is already marked as stopped. The following
+        // releaseInterface()/close() sequence is the part being tested.
+        // ====================================================
 
-            try {
-
-                await Promise.race([
-
-                    this.readTask,
-
-                    new Promise(
-                        resolve =>
-                            setTimeout(
-                                resolve,
-                                1200
-                            )
-                    )
-
-                ]);
-
-            }
-
-            catch (error) {
-
-                console.warn(
-                    "V33 WebUSB read task:",
-                    error
-                );
-
-            }
-        }
+        addSerialLine(
+            "V34 TEST: readLoop stopped",
+            "serial-info"
+        );
 
 
         // ====================================================
-        // V33 — CLEAN USB CLOSE
+        // V34 — CLEAN USB CLOSE
         // ====================================================
         //
         // The previous V30 test deliberately skipped release
@@ -914,7 +955,7 @@ class WebUSBTransport
             catch (error) {
 
                 console.warn(
-                    "V33 releaseInterface(1):",
+                    "V34 releaseInterface(1):",
                     error
                 );
 
@@ -933,7 +974,7 @@ class WebUSBTransport
             catch (error) {
 
                 console.warn(
-                    "V33 WebUSB close:",
+                    "V34 WebUSB close:",
                     error
                 );
 
@@ -942,12 +983,12 @@ class WebUSBTransport
 
 
         addSerialLine(
-            "V33 TEST: interface 1 released",
+            "V34 TEST: interface 1 released",
             "serial-info"
         );
 
         addSerialLine(
-            "V33 TEST: WebUSB device.close() called",
+            "V34 TEST: WebUSB device.close() called",
             "serial-info"
         );
 
@@ -3163,7 +3204,7 @@ async function disconnectSensor() {
 
 
             // ------------------------------------------------
-            // V33 DIAGNOSTIC DISCONNECT
+            // V34 DIAGNOSTIC DISCONNECT
             // ------------------------------------------------
             //
             // Do NOT send Q here.
