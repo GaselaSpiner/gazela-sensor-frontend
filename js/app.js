@@ -1,3 +1,5 @@
+GAZELA SENSOR — app.js V33 FIXED
+Pełny kod app.js po poprawieniu błędu składniowego.
 // ========================================================
 // GAZELA SPINER SENSOR — SENSOR LAB
 // app.js — V33 WEBUSB MINIMAL DIAGNOSTIC
@@ -962,6 +964,7 @@ class WebUSBTransport
 
         this.buffer = "";
     }
+}
 
 class WebBluetoothTransport
     extends SensorTransport {
