@@ -1,8 +1,8 @@
 // GAZELA SPINER SENSOR — SENSOR LAB
-// app.js — V40 WEBUSB LIVE + START FIX
+// app.js — V41 WEBUSB LIVE + START + STOP FIX
 // ========================================================
 //
-// V40 TEST PURPOSE
+// V41 TEST PURPOSE
 // --------------------------------------------------------
 // V37 established that the Arduino exposes:
 //   configuration = 1
@@ -371,7 +371,7 @@ class SensorTransport {
     async disconnect() {
  
         addSerialLine(
-            "V40 TEST: Web Serial disconnect START",
+            "V41 TEST: Web Serial disconnect START",
             "serial-info"
         );
  
@@ -416,7 +416,7 @@ class WebSerialTransport
         }
  
         addSerialLine(
-            "V40 TEST: Web Serial requestPort() START",
+            "V41 TEST: Web Serial requestPort() START",
             "serial-info"
         );
  
@@ -424,12 +424,12 @@ class WebSerialTransport
             await navigator.serial.requestPort();
  
         addSerialLine(
-            "V40 TEST: Web Serial requestPort() OK",
+            "V41 TEST: Web Serial requestPort() OK",
             "serial-info"
         );
  
         addSerialLine(
-            "V40 TEST: Web Serial port.open(115200) START",
+            "V41 TEST: Web Serial port.open(115200) START",
             "serial-info"
         );
  
@@ -438,14 +438,14 @@ class WebSerialTransport
         });
  
         addSerialLine(
-            "V40 TEST: Web Serial port.open(115200) OK",
+            "V41 TEST: Web Serial port.open(115200) OK",
             "serial-info"
         );
  
         this.running = true;
  
         addSerialLine(
-            "V40 TEST: Web Serial readLoop START",
+            "V41 TEST: Web Serial readLoop START",
             "serial-info"
         );
  
@@ -507,11 +507,13 @@ class WebSerialTransport
  
                     if (cleanLine) {
  
-                        addSerialLine(
-                            "V40 TEST: USB RX " +
-                            cleanLine,
-                            "serial-info"
-                        );
+                        if (!cleanLine.startsWith("LIVE,")) {
+                            addSerialLine(
+                                "V41 TEST: USB RX " +
+                                cleanLine,
+                                "serial-info"
+                            );
+                        }
  
                         this.onLine(
                             cleanLine
@@ -570,7 +572,7 @@ class WebSerialTransport
         }
  
         addSerialLine(
-            "V40 TEST: USB TX " + command,
+            "V41 TEST: USB TX " + command,
             "serial-info"
         );
  
@@ -659,7 +661,7 @@ class WebSerialTransport
         this.readTask = null;
  
         addSerialLine(
-            "V40 TEST: Web Serial disconnect COMPLETE",
+            "V41 TEST: Web Serial disconnect COMPLETE",
             "serial-info"
         );
     }
@@ -707,7 +709,7 @@ class WebUSBTransport
         }
  
         addSerialLine(
-            "V40 TEST: WebUSB transport START",
+            "V41 TEST: WebUSB transport START",
             "serial-info"
         );
  
@@ -726,7 +728,7 @@ class WebUSBTransport
         if (this.device) {
  
             addSerialLine(
-                "V40 TEST: WebUSB authorized device FOUND",
+                "V41 TEST: WebUSB authorized device FOUND",
                 "serial-info"
             );
  
@@ -734,7 +736,7 @@ class WebUSBTransport
         else {
  
             addSerialLine(
-                "V40 TEST: WebUSB requestDevice() START",
+                "V41 TEST: WebUSB requestDevice() START",
                 "serial-info"
             );
  
@@ -753,7 +755,7 @@ class WebUSBTransport
                 });
  
             addSerialLine(
-                "V40 TEST: WebUSB requestDevice() OK",
+                "V41 TEST: WebUSB requestDevice() OK",
                 "serial-info"
             );
         }
@@ -761,14 +763,14 @@ class WebUSBTransport
         try {
  
             addSerialLine(
-                "V40 TEST: device.open() START",
+                "V41 TEST: device.open() START",
                 "serial-info"
             );
  
             await this.device.open();
  
             addSerialLine(
-                "V40 TEST: device.open() OK",
+                "V41 TEST: device.open() OK",
                 "serial-info"
             );
  
@@ -778,7 +780,7 @@ class WebUSBTransport
             ) {
  
                 addSerialLine(
-                    "V40 TEST: selectConfiguration(1) START",
+                    "V41 TEST: selectConfiguration(1) START",
                     "serial-info"
                 );
  
@@ -786,7 +788,7 @@ class WebUSBTransport
                     .selectConfiguration(1);
  
                 addSerialLine(
-                    "V40 TEST: selectConfiguration(1) OK",
+                    "V41 TEST: selectConfiguration(1) OK",
                     "serial-info"
                 );
  
@@ -797,12 +799,12 @@ class WebUSBTransport
             ) {
  
                 addSerialLine(
-                    "V40 TEST: active configuration != 1",
+                    "V41 TEST: active configuration != 1",
                     "serial-info"
                 );
  
                 addSerialLine(
-                    "V40 TEST: selectConfiguration(1) START",
+                    "V41 TEST: selectConfiguration(1) START",
                     "serial-info"
                 );
  
@@ -810,7 +812,7 @@ class WebUSBTransport
                     .selectConfiguration(1);
  
                 addSerialLine(
-                    "V40 TEST: selectConfiguration(1) OK",
+                    "V41 TEST: selectConfiguration(1) OK",
                     "serial-info"
                 );
  
@@ -818,7 +820,7 @@ class WebUSBTransport
             else {
  
                 addSerialLine(
-                    "V40 TEST: configuration 1 already active",
+                    "V41 TEST: configuration 1 already active",
                     "serial-info"
                 );
             }
@@ -834,7 +836,7 @@ class WebUSBTransport
             }
  
             addSerialLine(
-                "V40 TEST: interfaces = " +
+                "V41 TEST: interfaces = " +
                 configuration.interfaces.length,
                 "serial-info"
             );
@@ -850,7 +852,7 @@ class WebUSBTransport
                 ) {
  
                     addSerialLine(
-                        "V40 TEST: interface " +
+                        "V41 TEST: interface " +
                         usbInterface.interfaceNumber +
                         " alt " +
                         alternate.alternateSetting +
@@ -871,7 +873,7 @@ class WebUSBTransport
                     ) {
  
                         addSerialLine(
-                            "V40 TEST: endpoint " +
+                            "V41 TEST: endpoint " +
                             endpoint.endpointNumber +
                             " " +
                             endpoint.direction +
@@ -899,7 +901,7 @@ class WebUSBTransport
             // when interface 0 had not been claimed first.
  
             addSerialLine(
-                "V40 TEST: claimInterface(0) START",
+                "V41 TEST: claimInterface(0) START",
                 "serial-info"
             );
  
@@ -909,7 +911,7 @@ class WebUSBTransport
             this.interface0Claimed = true;
  
             addSerialLine(
-                "V40 TEST: claimInterface(0) OK",
+                "V41 TEST: claimInterface(0) OK",
                 "serial-info"
             );
  
@@ -927,7 +929,7 @@ class WebUSBTransport
                 ]);
  
             addSerialLine(
-                "V40 TEST: CDC SET_LINE_CODING START",
+                "V41 TEST: CDC SET_LINE_CODING START",
                 "serial-info"
             );
  
@@ -953,14 +955,14 @@ class WebUSBTransport
                 );
  
             addSerialLine(
-                "V40 TEST: CDC SET_LINE_CODING OK",
+                "V41 TEST: CDC SET_LINE_CODING OK",
                 "serial-info"
             );
  
             // CDC SET_CONTROL_LINE_STATE
             // DTR = 1.
             addSerialLine(
-                "V40 TEST: CDC SET_CONTROL_LINE_STATE START",
+                "V41 TEST: CDC SET_CONTROL_LINE_STATE START",
                 "serial-info"
             );
  
@@ -985,12 +987,12 @@ class WebUSBTransport
                 );
  
             addSerialLine(
-                "V40 TEST: CDC SET_CONTROL_LINE_STATE OK",
+                "V41 TEST: CDC SET_CONTROL_LINE_STATE OK",
                 "serial-info"
             );
  
             addSerialLine(
-                "V40 TEST: claimInterface(1) START",
+                "V41 TEST: claimInterface(1) START",
                 "serial-info"
             );
  
@@ -1000,14 +1002,14 @@ class WebUSBTransport
             this.interface1Claimed = true;
  
             addSerialLine(
-                "V40 TEST: claimInterface(1) OK",
+                "V41 TEST: claimInterface(1) OK",
                 "serial-info"
             );
  
             this.running = true;
  
             addSerialLine(
-                "V40 TEST: WebUSB readLoop START",
+                "V41 TEST: WebUSB readLoop START",
                 "serial-info"
             );
  
@@ -1018,7 +1020,7 @@ class WebUSBTransport
         catch (error) {
  
             addSerialLine(
-                "V40 TEST: WebUSB CONNECT ERROR: " +
+                "V41 TEST: WebUSB CONNECT ERROR: " +
                 error.message,
                 "serial-error"
             );
@@ -1076,11 +1078,13 @@ class WebUSBTransport
  
                     if (cleanLine) {
  
-                        addSerialLine(
-                            "V40 TEST: USB RX " +
-                            cleanLine,
-                            "serial-info"
-                        );
+                        if (!cleanLine.startsWith("LIVE,")) {
+                            addSerialLine(
+                                "V41 TEST: USB RX " +
+                                cleanLine,
+                                "serial-info"
+                            );
+                        }
  
                         this.onLine(
                             cleanLine
@@ -1100,7 +1104,7 @@ class WebUSBTransport
                 );
  
                 addSerialLine(
-                    "V40 TEST: WebUSB read error: " +
+                    "V41 TEST: WebUSB read error: " +
                     error.message,
                     "serial-error"
                 );
@@ -1128,7 +1132,7 @@ class WebUSBTransport
             );
  
         addSerialLine(
-            "V40 TEST: USB TX " +
+            "V41 TEST: USB TX " +
             command,
             "serial-info"
         );
@@ -1207,7 +1211,7 @@ class WebUSBTransport
         this.running = false;
  
         addSerialLine(
-            "V40 TEST: WebUSB disconnect START",
+            "V41 TEST: WebUSB disconnect START",
             "serial-info"
         );
  
@@ -1249,7 +1253,7 @@ class WebUSBTransport
                         .releaseInterface(1);
  
                     addSerialLine(
-                        "V40 TEST: interface 1 released",
+                        "V41 TEST: interface 1 released",
                         "serial-info"
                     );
  
@@ -1257,7 +1261,7 @@ class WebUSBTransport
                 catch (error) {
  
                     addSerialLine(
-                        "V40 TEST: interface 1 release ERROR: " +
+                        "V41 TEST: interface 1 release ERROR: " +
                         error.message,
                         "serial-error"
                     );
@@ -1275,7 +1279,7 @@ class WebUSBTransport
                         .releaseInterface(0);
  
                     addSerialLine(
-                        "V40 TEST: interface 0 released",
+                        "V41 TEST: interface 0 released",
                         "serial-info"
                     );
  
@@ -1283,7 +1287,7 @@ class WebUSBTransport
                 catch (error) {
  
                     addSerialLine(
-                        "V40 TEST: interface 0 release ERROR: " +
+                        "V41 TEST: interface 0 release ERROR: " +
                         error.message,
                         "serial-error"
                     );
@@ -1298,7 +1302,7 @@ class WebUSBTransport
                 await this.device.close();
  
                 addSerialLine(
-                    "V40 TEST: WebUSB device.close() OK",
+                    "V41 TEST: WebUSB device.close() OK",
                     "serial-info"
                 );
  
@@ -1306,7 +1310,7 @@ class WebUSBTransport
             catch (error) {
  
                 addSerialLine(
-                    "V40 TEST: WebUSB close ERROR: " +
+                    "V41 TEST: WebUSB close ERROR: " +
                     error.message,
                     "serial-error"
                 );
@@ -1318,7 +1322,7 @@ class WebUSBTransport
         this.buffer = "";
  
         addSerialLine(
-            "V40 TEST: WebUSB disconnect COMPLETE",
+            "V41 TEST: WebUSB disconnect COMPLETE",
             "serial-info"
         );
     }
@@ -1881,7 +1885,7 @@ async function createSensorTransport() {
         // ----------------------------------------------------
  
         addSerialLine(
-            "V40 TEST: USB transport = WebUSB ONLY",
+            "V41 TEST: USB transport = WebUSB ONLY",
             "serial-info"
         );
  
@@ -1890,7 +1894,7 @@ async function createSensorTransport() {
         ) {
  
             addSerialLine(
-                "V40 TEST: navigator.usb AVAILABLE",
+                "V41 TEST: navigator.usb AVAILABLE",
                 "serial-info"
             );
  
@@ -1900,7 +1904,7 @@ async function createSensorTransport() {
         }
  
         addSerialLine(
-            "V40 TEST: navigator.usb NOT AVAILABLE",
+            "V41 TEST: navigator.usb NOT AVAILABLE",
             "serial-error"
         );
  
@@ -3469,34 +3473,37 @@ function finishSession() {
 // ========================================================
  
 async function stopMeasurement() {
- 
+
     if (!sensorTransport) {
         return;
     }
- 
+
     try {
- 
+
         measuring = false;
- 
+
         measurementCommandSent =
             false;
- 
-        returnToLiveAfterReady =
-            true;
- 
+
+        // V41: manual STOP returns directly to LIVE.
+        // Do not wait for READY/HEARTBEAT after an explicit STOP.
+        returnToLiveAfterReady = false;
+
         await sendCommand(
             "Q"
         );
- 
+
         if (measurementStatus) {
- 
+
             measurementStatus.textContent =
                 "Stopping...";
         }
- 
+
+        await startLiveMode();
+
     }
     catch (error) {
- 
+
         console.error(
             "Stop measurement error:",
             error
