@@ -1,5 +1,6 @@
+APP
 // GAZELA SPINER SENSOR — SENSOR LAB
-// app.js — V49 USB LIVE FIX + BATTERY + WEBUSB/WEBSERIAL + BLE
+// app.js — V47 LIVE RECONNECT READY + WEBUSB DETECTION + TRANSPORT LAYER + USB SERIAL/WEBUSB + BLE
 // ========================================================
 //
 // V40 TEST PURPOSE
@@ -195,31 +196,6 @@ const movementList =
  
 const serialMonitor =
     document.getElementById("serialMonitor");
-// ========================================================
-// BATTERY UI
-// ========================================================
-// Firmware format: BAT,cell1,pack,cell2
-// ========================================================
-
-const batteryPackValue =
-    document.getElementById("batteryPack");
-
-const batteryCell1Value =
-    document.getElementById("batteryCell1");
-
-const batteryCell2Value =
-    document.getElementById("batteryCell2");
-
-const batteryDifferenceValue =
-    document.getElementById("batteryDifference");
-
-const batteryStatusValue =
-    document.getElementById("batteryStatus");
-
-const batteryUpdatedValue =
-    document.getElementById("batteryUpdated");
-
-
  
  
 // ========================================================
@@ -388,7 +364,6 @@ function formatTime(milliseconds) {
 function isSensorDataLine(line) {
     if (!line) return false;
     if (line.startsWith("LIVE,")) return true;
-    if (line.startsWith("BAT,")) return true;
     if (line.startsWith("MOVEMENT,TIME_ms")) return true;
     if (/^\d+,/.test(line)) return true;
     return false;
@@ -2193,95 +2168,10 @@ function resetLiveValues() {
 }
  
  
-
-// ========================================================
-// BATTERY DATA
-// ========================================================
-
-function resetBatteryValues() {
-
-    if (batteryPackValue) batteryPackValue.textContent = "--";
-    if (batteryCell1Value) batteryCell1Value.textContent = "--";
-    if (batteryCell2Value) batteryCell2Value.textContent = "--";
-    if (batteryDifferenceValue) batteryDifferenceValue.textContent = "--";
-
-    if (batteryStatusValue) {
-        batteryStatusValue.textContent = "--";
-        batteryStatusValue.className = "battery-status";
-    }
-
-    if (batteryUpdatedValue) {
-        batteryUpdatedValue.textContent = "Updated: --";
-    }
-}
-
-
-function parseBatteryData(line) {
-
-    const parts = line.split(",");
-
-    if (parts.length < 4 || parts[0] !== "BAT") {
-        return;
-    }
-
-    const cell1 = parseFloat(parts[1]);
-    const pack = parseFloat(parts[2]);
-    const cell2 = parseFloat(parts[3]);
-
-    if (
-        !Number.isFinite(cell1) ||
-        !Number.isFinite(pack) ||
-        !Number.isFinite(cell2)
-    ) {
-        return;
-    }
-
-    const difference = Math.abs(cell1 - cell2);
-
-    if (batteryPackValue) {
-        batteryPackValue.textContent =
-            formatNumber(pack, 2) + " V";
-    }
-
-    if (batteryCell1Value) {
-        batteryCell1Value.textContent =
-            formatNumber(cell1, 2) + " V";
-    }
-
-    if (batteryCell2Value) {
-        batteryCell2Value.textContent =
-            formatNumber(cell2, 2) + " V";
-    }
-
-    if (batteryDifferenceValue) {
-        batteryDifferenceValue.textContent =
-            formatNumber(difference, 2) + " V";
-    }
-
-    const status =
-        (pack < 7.0 || cell1 < 3.5 || cell2 < 3.5)
-            ? "LOW"
-            : "OK";
-
-    if (batteryStatusValue) {
-        batteryStatusValue.textContent = status;
-        batteryStatusValue.className =
-            status === "OK"
-                ? "battery-status ok"
-                : "battery-status low";
-    }
-
-    if (batteryUpdatedValue) {
-        batteryUpdatedValue.textContent =
-            "Updated: " + new Date().toLocaleTimeString();
-    }
-}
-
-
 // ========================================================
 // PARSE LIVE DATA
 // ========================================================
-
+ 
 function parseLiveData(line) {
  
     const parts =
@@ -3102,18 +2992,7 @@ function processSerialLine(line) {
     }
  
  
-    
     // ====================================================
-    // BATTERY DATA
-    // ====================================================
-
-    if (line.startsWith("BAT,")) {
-        parseBatteryData(line);
-        return;
-    }
-
-
-// ====================================================
     // LIVE DATA
     // ====================================================
  
@@ -3364,81 +3243,61 @@ async function connectSensor() {
             selectedTransport ===
             "usb"
         ) {
-
-            // V49 USB FIX:
-            // Do NOT wait for READY.
-            //
-            // USB connection sequence:
-            //   CONNECT -> short delay -> L -> LIVE
-            //
-            // We deliberately keep waitingForInitialReady = true
-            // for a short period so that an incoming LIVE frame can
-            // confirm that the sensor really entered LIVE mode.
-            //
-            // If the first L is lost during USB CDC startup, send L
-            // once more after 1.5 s.
-            //
-            // IMPORTANT:
-            // L = LIVE only.
-            // S = measurement.
-            // Q = stop LIVE.
-            //
-            // BLE flow and measurement protocol are unchanged.
-
+ 
+            if (!sensorReady) {
+ 
+                if (measurementStatus) {
+ 
+                    measurementStatus.textContent =
+                        "Waiting for sensor READY...";
+ 
+                    measurementStatus.className =
+                        "measurement-status active";
+                }
+ 
+                addSerialLine(
+                    "Waiting for sensor READY...",
+                    "serial-info"
+                );
+ 
+                await waitForSensorReady(
+                    7000
+                );
+            }
+ 
             waitingForInitialReady =
-                true;
-
-            await new Promise(
-                resolve =>
-                    setTimeout(
-                        resolve,
-                        300
-                    )
-            );
-
-            await startLiveMode();
-
-            setTimeout(
-                async () => {
-
-                    if (
-                        sensorTransport &&
-                        selectedTransport === "usb" &&
-                        !liveDetectedDuringInitialConnect
-                    ) {
-
-                        addSerialLine(
-                            "V49: LIVE not detected after first L - retrying L.",
-                            "serial-info"
-                        );
-
-                        try {
-
-                            await startLiveMode();
-
-                        }
-                        catch (error) {
-
-                            console.warn(
-                                "V49 USB LIVE retry error:",
-                                error
-                            );
-                        }
-                    }
-                },
-                1500
-            );
-
-            setTimeout(
-                () => {
-
-                    waitingForInitialReady =
-                        false;
-
-                },
-                4000
-            );
-
+                false;
+ 
+            // V47: if LIVE was already streaming during CONNECT,
+            // keep the existing stream and do not send L again.
+            if (!liveDetectedDuringInitialConnect) {
+ 
+                await startLiveMode();
+ 
+            }
+            else {
+ 
+                setStatus(
+                    "Live sensor",
+                    "connected"
+                );
+ 
+                if (measurementStatus) {
+                    measurementStatus.textContent =
+                        "Live sensor mode active.";
+                    measurementStatus.className =
+                        "measurement-status active";
+                }
+ 
+                if (startButton) {
+                    startButton.disabled = false;
+                }
+ 
+                if (stopButton) {
+                    stopButton.disabled = true;
+                }
+            }
+        
         }
  
     }
@@ -4092,7 +3951,6 @@ setTransportStatus(
 );
  
 resetLiveValues();
-resetBatteryValues();
  
  
 // ========================================================
