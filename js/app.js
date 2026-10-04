@@ -3364,61 +3364,21 @@ async function connectSensor() {
             selectedTransport ===
             "usb"
         ) {
- 
-            if (!sensorReady) {
- 
-                if (measurementStatus) {
- 
-                    measurementStatus.textContent =
-                        "Waiting for sensor READY...";
- 
-                    measurementStatus.className =
-                        "measurement-status active";
-                }
- 
-                addSerialLine(
-                    "Waiting for sensor READY...",
-                    "serial-info"
-                );
- 
-                await waitForSensorReady(
-                    7000
-                );
-            }
- 
+
+            // V48 FIX:
+            // Do NOT wait for READY after USB connect.
+            // The sensor may already be in LIVE mode and therefore
+            // may not send a new READY/HEARTBEAT transition.
+            //
+            // CONNECT -> send L -> LIVE
+            //
+            // This does not start a measurement.
+            // Measurement is still started only by the explicit S command.
             waitingForInitialReady =
                 false;
- 
-            // V47: if LIVE was already streaming during CONNECT,
-            // keep the existing stream and do not send L again.
-            if (!liveDetectedDuringInitialConnect) {
- 
-                await startLiveMode();
- 
-            }
-            else {
- 
-                setStatus(
-                    "Live sensor",
-                    "connected"
-                );
- 
-                if (measurementStatus) {
-                    measurementStatus.textContent =
-                        "Live sensor mode active.";
-                    measurementStatus.className =
-                        "measurement-status active";
-                }
- 
-                if (startButton) {
-                    startButton.disabled = false;
-                }
- 
-                if (stopButton) {
-                    stopButton.disabled = true;
-                }
-            }
-        
+
+            await startLiveMode();
+
         }
  
     }
