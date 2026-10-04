@@ -1,5 +1,5 @@
 // GAZELA SPINER SENSOR — SENSOR LAB
-// app.js — V47 LIVE RECONNECT READY + WEBUSB DETECTION + TRANSPORT LAYER + USB SERIAL/WEBUSB + BLE
+// app.js — V49 USB LIVE FIX + BATTERY + WEBUSB/WEBSERIAL + BLE
 // ========================================================
 //
 // V40 TEST PURPOSE
@@ -3365,19 +3365,79 @@ async function connectSensor() {
             "usb"
         ) {
 
-            // V48 FIX:
-            // Do NOT wait for READY after USB connect.
-            // The sensor may already be in LIVE mode and therefore
-            // may not send a new READY/HEARTBEAT transition.
+            // V49 USB FIX:
+            // Do NOT wait for READY.
             //
-            // CONNECT -> send L -> LIVE
+            // USB connection sequence:
+            //   CONNECT -> short delay -> L -> LIVE
             //
-            // This does not start a measurement.
-            // Measurement is still started only by the explicit S command.
+            // We deliberately keep waitingForInitialReady = true
+            // for a short period so that an incoming LIVE frame can
+            // confirm that the sensor really entered LIVE mode.
+            //
+            // If the first L is lost during USB CDC startup, send L
+            // once more after 1.5 s.
+            //
+            // IMPORTANT:
+            // L = LIVE only.
+            // S = measurement.
+            // Q = stop LIVE.
+            //
+            // BLE flow and measurement protocol are unchanged.
+
             waitingForInitialReady =
-                false;
+                true;
+
+            await new Promise(
+                resolve =>
+                    setTimeout(
+                        resolve,
+                        300
+                    )
+            );
 
             await startLiveMode();
+
+            setTimeout(
+                async () => {
+
+                    if (
+                        sensorTransport &&
+                        selectedTransport === "usb" &&
+                        !liveDetectedDuringInitialConnect
+                    ) {
+
+                        addSerialLine(
+                            "V49: LIVE not detected after first L - retrying L.",
+                            "serial-info"
+                        );
+
+                        try {
+
+                            await startLiveMode();
+
+                        }
+                        catch (error) {
+
+                            console.warn(
+                                "V49 USB LIVE retry error:",
+                                error
+                            );
+                        }
+                    }
+                },
+                1500
+            );
+
+            setTimeout(
+                () => {
+
+                    waitingForInitialReady =
+                        false;
+
+                },
+                4000
+            );
 
         }
  
