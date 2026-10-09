@@ -4388,400 +4388,208 @@ function resetLiveValues() {
 // ========================================================
 
 
-function resetBatteryValues() {
+function updateBatteryLevel(packVoltage) {
+    const batteryLevelFill =
+        document.getElementById("batteryLevelFill");
 
+    const batteryPercent =
+        document.getElementById("batteryPercent");
 
-    if (batteryPackValue) batteryPackValue.textContent = "--";
+    const batteryLevelLabel =
+        document.getElementById("batteryLevelLabel");
 
-    if (batteryCell1Value) batteryCell1Value.textContent = "--";
+    const batteryVisual =
+        document.querySelector(".battery-visual");
 
-    if (batteryCell2Value) batteryCell2Value.textContent = "--";
+    if (!Number.isFinite(packVoltage)) return;
 
-    if (batteryDifferenceValue) batteryDifferenceValue.textContent = "--";
+    // Przybliżony wskaźnik dla pakietu Li-ion 2S.
+    const minVoltage = 6.0;
+    const maxVoltage = 8.4;
 
+    const percentage = Math.max(
+        0,
+        Math.min(
+            100,
+            Math.round(
+                ((packVoltage - minVoltage) /
+                    (maxVoltage - minVoltage)) * 100
+            )
+        )
+    );
 
-    if (batteryStatusValue) {
+    let levelClass;
+    let levelLabel;
 
-        batteryStatusValue.textContent = "--";
-
-        batteryStatusValue.className = "battery-status";
-
+    if (percentage <= 20) {
+        levelClass = "level-low";
+        levelLabel = "Niski poziom";
+    } else if (percentage <= 60) {
+        levelClass = "level-medium";
+        levelLabel = "Średni poziom";
+    } else {
+        levelClass = "level-high";
+        levelLabel = "Wysoki poziom";
     }
 
+    if (batteryLevelFill) {
+        batteryLevelFill.style.height = percentage + "%";
 
-    if (batteryUpdatedValue) {
+        batteryLevelFill.classList.remove(
+            "level-high",
+            "level-medium",
+            "level-low"
+        );
 
-        batteryUpdatedValue.textContent = "Updated: --";
-
+        batteryLevelFill.classList.add(levelClass);
     }
 
+    if (batteryPercent) {
+        batteryPercent.textContent = percentage + "%";
+    }
+
+    if (batteryLevelLabel) {
+        batteryLevelLabel.textContent = levelLabel;
+    }
+
+    if (batteryVisual) {
+        batteryVisual.setAttribute(
+            "aria-label",
+            "Szacowany poziom naładowania baterii: " +
+                percentage + " procent"
+        );
+    }
 }
 
+
+function resetBatteryValues() {
+    if (batteryPackValue) {
+        batteryPackValue.textContent = "--";
+    }
+
+    if (batteryCell1Value) {
+        batteryCell1Value.textContent = "--";
+    }
+
+    if (batteryCell2Value) {
+        batteryCell2Value.textContent = "--";
+    }
+
+    if (batteryDifferenceValue) {
+        batteryDifferenceValue.textContent = "--";
+    }
+
+    if (batteryStatusValue) {
+        batteryStatusValue.textContent = "--";
+        batteryStatusValue.className = "battery-status";
+    }
+
+    if (batteryUpdatedValue) {
+        batteryUpdatedValue.textContent = "Updated: --";
+    }
+
+    const batteryLevelFill =
+        document.getElementById("batteryLevelFill");
+
+    const batteryPercent =
+        document.getElementById("batteryPercent");
+
+    const batteryLevelLabel =
+        document.getElementById("batteryLevelLabel");
+
+    const batteryVisual =
+        document.querySelector(".battery-visual");
+
+    if (batteryLevelFill) {
+        batteryLevelFill.style.height = "0%";
+
+        batteryLevelFill.classList.remove(
+            "level-high",
+            "level-medium",
+            "level-low"
+        );
+    }
+
+    if (batteryPercent) {
+        batteryPercent.textContent = "--%";
+    }
+
+    if (batteryLevelLabel) {
+        batteryLevelLabel.textContent = "--";
+    }
+
+    if (batteryVisual) {
+        batteryVisual.setAttribute(
+            "aria-label",
+            "Poziom naładowania baterii nieznany"
+        );
+    }
+}
 
 
 function parseBatteryData(line) {
-
-
     const parts = line.split(",");
 
-
     if (parts.length < 4 || parts[0] !== "BAT") {
-
         return;
-
     }
-
 
     const cell1 = parseFloat(parts[1]);
-
     const pack = parseFloat(parts[2]);
-
     const cell2 = parseFloat(parts[3]);
 
-
     if (
-
         !Number.isFinite(cell1) ||
-
         !Number.isFinite(pack) ||
-
         !Number.isFinite(cell2)
-
     ) {
-
         return;
-
     }
-
 
     const difference = Math.abs(cell1 - cell2);
 
-
     if (batteryPackValue) {
-
         batteryPackValue.textContent =
-
             formatNumber(pack, 2) + " V";
-
     }
-
 
     if (batteryCell1Value) {
-
         batteryCell1Value.textContent =
-
             formatNumber(cell1, 2) + " V";
-
     }
-
 
     if (batteryCell2Value) {
-
         batteryCell2Value.textContent =
-
             formatNumber(cell2, 2) + " V";
-
     }
-
 
     if (batteryDifferenceValue) {
-
         batteryDifferenceValue.textContent =
-
             formatNumber(difference, 2) + " V";
-
     }
 
-
     const status =
-
         (pack < 7.0 || cell1 < 3.5 || cell2 < 3.5)
-
             ? "LOW"
-
             : "OK";
 
-
     if (batteryStatusValue) {
-
         batteryStatusValue.textContent = status;
 
         batteryStatusValue.className =
-
             status === "OK"
-
                 ? "battery-status ok"
-
                 : "battery-status low";
-
     }
 
+    // Aktualizacja pionowego wskaźnika baterii.
+    updateBatteryLevel(pack);
 
     if (batteryUpdatedValue) {
-
         batteryUpdatedValue.textContent =
-
             "Updated: " + new Date().toLocaleTimeString();
-
     }
-
 }
-
-
-
-// ========================================================
-
-// PARSE LIVE DATA
-
-// ========================================================
-
-
-function parseLiveData(line) {
-
- 
-
-    const parts =
-
-        line.split(",");
-
- 
-
-    if (
-
-        parts.length <
-
-        10
-
-    ) {
-
- 
-
-        return;
-
-    }
-
- 
-
-    if (
-
-        parts[0] !==
-
-        "LIVE"
-
-    ) {
-
- 
-
-        return;
-
-    }
-
- 
-
-    const AX =
-
-        parseFloat(parts[1]);
-
- 
-
-    const AY =
-
-        parseFloat(parts[2]);
-
- 
-
-    const AZ =
-
-        parseFloat(parts[3]);
-
- 
-
-    const G =
-
-        parseFloat(parts[4]);
-
- 
-
-    const Angle =
-
-        parseFloat(parts[5]);
-
- 
-
-    const GX =
-
-        parseFloat(parts[6]);
-
- 
-
-    const GY =
-
-        parseFloat(parts[7]);
-
- 
-
-    const GZ =
-
-        parseFloat(parts[8]);
-
- 
-
-    const AngleY =
-
-        parseFloat(parts[9]);
-
- 
-
- 
-
-    if (axValue) {
-
- 
-
-        axValue.textContent =
-
-            formatNumber(AX);
-
-    }
-
- 
-
-    if (ayValue) {
-
- 
-
-        ayValue.textContent =
-
-            formatNumber(AY);
-
-    }
-
- 
-
-    if (azValue) {
-
- 
-
-        azValue.textContent =
-
-            formatNumber(AZ);
-
-    }
-
- 
-
-    if (gValue) {
-
- 
-
-        gValue.textContent =
-
-            formatNumber(G);
-
-    }
-
- 
-
-    if (angleValue) {
-
- 
-
-        angleValue.textContent =
-
-            formatNumber(
-
-                Angle,
-
-                1
-
-            );
-
-    }
-
- 
-
-    if (gxValue) {
-
- 
-
-        gxValue.textContent =
-
-            formatNumber(GX);
-
-    }
-
- 
-
-    if (gyValue) {
-
- 
-
-        gyValue.textContent =
-
-            formatNumber(GY);
-
-    }
-
- 
-
-    if (gzValue) {
-
- 
-
-        gzValue.textContent =
-
-            formatNumber(GZ);
-
-    }
-
- 
-
-    if (angleyValue) {
-
- 
-
-        angleyValue.textContent =
-
-            formatNumber(
-
-                AngleY,
-
-                1
-
-            );
-
-    }
-
- 
-
- 
-
-    lastHeartbeatTime =
-
-        Date.now();
-
- 
-
- 
-
-    if (!measuring) {
-
- 
-
-        setStatus(
-
-            "Live sensor",
-
-            "connected"
-
-        );
-
-    }
-
-}
-
- 
-
  
 
 // ========================================================
