@@ -4719,7 +4719,46 @@ async function handleSensorReady() {
 }
 
  
+// ========================================================
+// PARSE LIVE DATA
+// ========================================================
 
+function parseLiveData(line) {
+    const parts = line.split(",");
+
+    // LIVE,AX,AY,AZ,G,Angle,GX,GY,GZ,AngleY
+    if (parts.length < 10 || parts[0] !== "LIVE") {
+        return;
+    }
+
+    const AX = parseFloat(parts[1]);
+    const AY = parseFloat(parts[2]);
+    const AZ = parseFloat(parts[3]);
+    const G = parseFloat(parts[4]);
+    const Angle = parseFloat(parts[5]);
+    const GX = parseFloat(parts[6]);
+    const GY = parseFloat(parts[7]);
+    const GZ = parseFloat(parts[8]);
+    const AngleY = parseFloat(parts[9]);
+
+    if (![AX, AY, AZ, G, Angle, GX, GY, GZ, AngleY]
+        .every(Number.isFinite)) {
+        return;
+    }
+
+    lastHeartbeatTime = Date.now();
+
+    if (axValue) axValue.textContent = formatNumber(AX);
+    if (ayValue) ayValue.textContent = formatNumber(AY);
+    if (azValue) azValue.textContent = formatNumber(AZ);
+    if (gValue) gValue.textContent = formatNumber(G);
+    if (angleValue) angleValue.textContent = formatNumber(Angle, 1);
+
+    if (gxValue) gxValue.textContent = formatNumber(GX);
+    if (gyValue) gyValue.textContent = formatNumber(GY);
+    if (gzValue) gzValue.textContent = formatNumber(GZ);
+    if (angleyValue) angleyValue.textContent = formatNumber(AngleY, 1);
+}
  
 
 // ========================================================
