@@ -185,7 +185,7 @@ main {
 .battery-heading {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .battery-heading-icon {
@@ -197,10 +197,18 @@ main {
   filter: drop-shadow(0 1px 1px rgba(37, 99, 235, 0.12));
 }
 
-.battery-heading {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+/* Kolor małej ikony zależny od poziomu baterii */
+
+.battery-heading-icon.level-high {
+  color: #22a06b;
+}
+
+.battery-heading-icon.level-medium {
+  color: #eab308;
+}
+
+.battery-heading-icon.level-low {
+  color: #dc2626;
 }
 
 
@@ -277,8 +285,6 @@ main {
 
 /* Górny styk baterii */
 
-/* Górny styk baterii */
-
 .battery-cap {
   width: 25px;
   height: 8px;
@@ -299,39 +305,7 @@ main {
   background: #ffffff;
 }
 
-/* Dynamiczne wypełnienie */
-
-.battery-level-fill {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 0%;
-  background: #22a06b;
-  transition:
-    height 0.5s ease,
-    background-color 0.3s ease;
-}
-
-/* Wysoki poziom */
-
-.battery-level-fill.level-high {
-  background: #22a06b;
-}
-
-/* Średni poziom */
-
-.battery-level-fill.level-medium {
-  background: #eab308;
-}
-
-/* Niski poziom */
-
-.battery-level-fill.level-low {
-  background: #dc2626;
-}
-
-/* Wypełnienie sterowane przez JavaScript */
+/* Dynamiczne wypełnienie sterowane przez JavaScript */
 
 .battery-level-fill {
   position: absolute;
@@ -346,15 +320,19 @@ main {
     background-color 0.3s ease;
 }
 
-/* Kolory poziomu baterii */
+/* Wysoki poziom naładowania */
 
 .battery-level-fill.level-high {
   background: #22a06b;
 }
 
+/* Średni poziom naładowania */
+
 .battery-level-fill.level-medium {
   background: #eab308;
 }
+
+/* Niski poziom naładowania */
 
 .battery-level-fill.level-low {
   background: #dc2626;
@@ -390,7 +368,10 @@ main {
   line-height: 1.5;
 }
 
-/* Status baterii */
+
+/* =====================================================
+   BATTERY STATUS
+   ===================================================== */
 
 .battery-status {
   font-size: 16px;
@@ -664,7 +645,6 @@ footer {
    ===================================================== */
 
 @media (max-width: 900px) {
-
   .modules {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -680,7 +660,6 @@ footer {
   .sensor-summary {
     grid-template-columns: 1fr;
   }
-
 }
 
 
@@ -689,7 +668,6 @@ footer {
    ===================================================== */
 
 @media (max-width: 600px) {
-
   main {
     width: 92%;
     margin-top: 30px;
@@ -744,5 +722,4 @@ footer {
   .battery-level-note {
     font-size: 11px;
   }
-
 }
