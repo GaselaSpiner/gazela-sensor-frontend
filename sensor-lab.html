@@ -1,373 +1,242 @@
 <!DOCTYPE html>
 <html lang="pl">
-
 <head>
   <meta charset="UTF-8">
-
   <meta
     name="viewport"
     content="width=device-width, initial-scale=1.0"
   >
-
   <title>Gazela Spiner Sensor Lab</title>
-
   <link
     rel="stylesheet"
     href="css/style.css"
   >
 </head>
-
 <body>
-
 <header>
   <h1>GAZELA SPINER SENSOR</h1>
   <p>Sensor Lab</p>
 </header>
-
 <main>
-
   <!-- =====================================================
        HERO
        ===================================================== -->
-
   <section class="hero">
-
     <h2>Sensor Lab</h2>
-
     <p>
       Środowisko do rejestracji, obserwacji i analizy ruchu
       rakiety z wykorzystaniem sensora Gazela Spiner.
     </p>
-
     <!-- SENSOR CONNECTION STATUS -->
-
     <div class="status">
-
       <span
         id="statusDot"
         class="status-dot">
       </span>
-
       <span id="statusText">
         Sensor not connected
       </span>
-
     </div>
-
   </section>
-
-
   <!-- =====================================================
        MODULE NAVIGATION
        ===================================================== -->
-
   <section class="modules">
-
     <button
       class="module module-button active"
       id="liveSensorModule"
       type="button"
     >
-
       <h3>LIVE SENSOR</h3>
-
       <p>
         Dane z sensora w czasie rzeczywistym:
         przyspieszenie, żyroskop, G oraz kąty.
       </p>
-
     </button>
-
-
     <button
       class="module module-button"
       id="liveChartsModule"
       type="button"
     >
-
       <h3>LIVE CHARTS</h3>
-
       <p>
         Wizualizacja danych z czujnika
         i parametrów ruchu.
       </p>
-
     </button>
-
-
     <button
       class="module module-button"
       id="movementPlayerModule"
       type="button"
     >
-
       <h3>MOVEMENT PLAYER</h3>
-
       <p>
         Odtwarzanie zapisanych ruchów
         i obserwacja ich przebiegu w czasie.
       </p>
-
     </button>
-
-
     <button
       class="module module-button"
       id="sessionModule"
       type="button"
     >
-
       <h3>SESSION</h3>
-
       <p>
         Rejestracja i organizacja danych
         z kolejnych sesji pomiarowych.
       </p>
-
     </button>
-
   </section>
-
-
   <!-- =====================================================
        LIVE SENSOR
        ===================================================== -->
-
   <section class="card">
-
     <h2>LIVE SENSOR</h2>
-
     <div class="card-description">
       Dane odbierane bezpośrednio
       z sensora Gazela Spiner.
     </div>
-
     <div class="sensor-summary">
-
       <div class="summary-item">
-
         <div class="summary-label">
           MOVEMENT
         </div>
-
         <div
           id="movementValue"
           class="summary-value"
         >
           —
         </div>
-
       </div>
-
-
       <div class="summary-item">
-
         <div class="summary-label">
           TIME
         </div>
-
         <div
           id="timeValue"
           class="summary-value"
         >
           —
         </div>
-
       </div>
-
-
       <div class="summary-item">
-
         <div class="summary-label">
           SAMPLES RECEIVED
         </div>
-
         <div
           id="samplesValue"
           class="summary-value"
         >
           0
         </div>
-
       </div>
-
     </div>
-
-
     <div class="values">
-
       <!-- AX -->
-
       <div class="value-card">
-
         <div class="value-name">AX</div>
-
         <div
           id="ax"
           class="value-number"
         >
           —
         </div>
-
         <div class="value-unit">g</div>
-
       </div>
-
-
       <!-- AY -->
-
       <div class="value-card">
-
         <div class="value-name">AY</div>
-
         <div
           id="ay"
           class="value-number"
         >
           —
         </div>
-
         <div class="value-unit">g</div>
-
       </div>
-
-
       <!-- AZ -->
-
       <div class="value-card">
-
         <div class="value-name">AZ</div>
-
         <div
           id="az"
           class="value-number"
         >
           —
         </div>
-
         <div class="value-unit">g</div>
-
       </div>
-
-
       <!-- G -->
-
       <div class="value-card">
-
         <div class="value-name">G</div>
-
         <div
           id="g"
           class="value-number"
         >
           —
         </div>
-
         <div class="value-unit">g</div>
-
       </div>
-
-
       <!-- ANGLE -->
-
       <div class="value-card">
-
         <div class="value-name">ANGLE</div>
-
         <div
           id="angle"
           class="value-number"
         >
           —
         </div>
-
         <div class="value-unit">°</div>
-
       </div>
-
-
       <!-- GX -->
-
       <div class="value-card">
-
         <div class="value-name">GX</div>
-
         <div
           id="gx"
           class="value-number"
         >
           —
         </div>
-
         <div class="value-unit">°/s</div>
-
       </div>
-
-
       <!-- GY -->
-
       <div class="value-card">
-
         <div class="value-name">GY</div>
-
         <div
           id="gy"
           class="value-number"
         >
           —
         </div>
-
         <div class="value-unit">°/s</div>
-
       </div>
-
-
       <!-- GZ -->
-
       <div class="value-card">
-
         <div class="value-name">GZ</div>
-
         <div
           id="gz"
           class="value-number"
         >
           —
         </div>
-
         <div class="value-unit">°/s</div>
-
       </div>
-
-
       <!-- ANGLEY -->
-
       <div class="value-card">
-
         <div class="value-name">ANGLEY</div>
-
         <div
           id="angley"
           class="value-number"
         >
           —
         </div>
-
         <div class="value-unit">°</div>
-
       </div>
-
     </div>
-
   </section>
-
-
   <!-- =====================================================
        BATTERY
        ===================================================== -->
-
   <section class="card">
-
     <h2 class="battery-heading">
   <svg
     class="battery-heading-icon"
@@ -382,7 +251,6 @@
       rx="1.5"
       fill="currentColor"
     />
-
     <rect
       x="3"
       y="5"
@@ -393,227 +261,156 @@
       stroke="currentColor"
       stroke-width="2"
     />
-
     <path
       d="M7 24h10v3H7z"
       fill="currentColor"
     />
   </svg>
-
   <span>BATTERY</span>
 </h2>
-
     <div class="card-description">
       Aktualny stan pakietu baterii
       oraz poszczególnych ogniw.
     </div>
-
     <!-- BATTERY LEVEL VISUALIZATION -->
-
     <div
       class="battery-visual-panel"
       aria-live="polite"
     >
-
       <div
         class="battery-visual"
         role="img"
         aria-label="Poziom naładowania baterii: nieznany"
       >
-
         <div class="battery-cap"></div>
-
         <div class="battery-shell">
-
           <div
             id="batteryLevelFill"
             class="battery-level-fill"
             style="height: 0%"
           ></div>
-
         </div>
-
       </div>
-
-
       <div class="battery-level-details">
-
         <div
           id="batteryPercent"
           class="battery-percent"
         >
           —%
         </div>
-
         <div
           id="batteryLevelLabel"
           class="battery-level-label"
         >
           Poziom naładowania
         </div>
-
         <div class="battery-level-note">
           Szacunek na podstawie napięcia pakietu
         </div>
-
       </div>
-
     </div>
-
-
     <div class="sensor-summary">
-
       <!-- PACK -->
-
       <div class="summary-item">
-
         <div class="summary-label">
           PACK
         </div>
-
         <div
           id="batteryPack"
           class="summary-value"
         >
           —
         </div>
-
       </div>
-
-
       <!-- CELL 1 -->
-
       <div class="summary-item">
-
         <div class="summary-label">
           CELL 1
         </div>
-
         <div
           id="batteryCell1"
           class="summary-value"
         >
           —
         </div>
-
       </div>
-
-
       <!-- CELL 2 -->
-
       <div class="summary-item">
-
         <div class="summary-label">
           CELL 2
         </div>
-
         <div
           id="batteryCell2"
           class="summary-value"
         >
           —
         </div>
-
       </div>
-
-
       <!-- CELL DIFFERENCE -->
-
       <div class="summary-item">
-
         <div class="summary-label">
           CELL DIFFERENCE
         </div>
-
         <div
           id="batteryDifference"
           class="summary-value"
         >
           —
         </div>
-
       </div>
-
-
       <!-- STATUS -->
-
       <div class="summary-item">
-
         <div class="summary-label">
           STATUS
         </div>
-
         <div
           id="batteryStatus"
           class="battery-status"
         >
           —
         </div>
-
       </div>
-
     </div>
-
-
     <!-- UPDATED -->
-
     <div
       id="batteryUpdated"
       class="measurement-status"
     >
       Updated: —
     </div>
-
   </section>
-
-
   <!-- =====================================================
        CONNECT SENSOR
        ===================================================== -->
-
   <section class="card">
-
     <h2>Connect Sensor</h2>
-
     <div class="card-description">
       Wybierz sposób połączenia
       z sensorem Gazela Spiner.
     </div>
-
     <div class="controls">
-
       <!-- USB -->
-
       <button
         id="usbButton"
         type="button"
       >
         USB
       </button>
-
-
       <!-- BLE -->
-
       <button
         id="bleButton"
         type="button"
       >
         BLE
       </button>
-
-
       <!-- CONNECT -->
-
       <button
         id="connectButton"
         type="button"
       >
         Connect Sensor
       </button>
-
-
       <!-- DISCONNECT -->
-
       <button
         id="disconnectButton"
         class="secondary"
@@ -622,10 +419,7 @@
       >
         Disconnect
       </button>
-
-
       <!-- START -->
-
       <button
         id="startButton"
         class="start"
@@ -634,10 +428,7 @@
       >
         ▶ START MEASUREMENT
       </button>
-
-
       <!-- STOP -->
-
       <button
         id="stopButton"
         class="stop"
@@ -646,113 +437,73 @@
       >
         ■ STOP
       </button>
-
     </div>
-
-
     <!-- TRANSPORT STATUS -->
-
     <div
       id="transportStatus"
       class="measurement-status"
     >
       Transport: USB
     </div>
-
-
     <!-- MEASUREMENT STATUS -->
-
     <div
       id="measurementStatus"
       class="measurement-status"
     >
       Sensor is waiting.
     </div>
-
   </section>
-
-
   <!-- =====================================================
        SESSION
        ===================================================== -->
-
   <section class="card">
-
     <div class="session-header">
-
       <div>
-
         <h2>SESSION</h2>
-
         <div class="card-description">
           Aktualna sesja pomiarowa
           i jej ruchy.
         </div>
-
       </div>
-
-
       <div
         id="sessionBadge"
         class="session-badge"
       >
         No session
       </div>
-
     </div>
-
-
     <div
       id="movementList"
       class="movement-list"
     >
-
       <div class="movement-card">
-
         <div class="movement-status">
           Brak aktywnej sesji.
         </div>
-
       </div>
-
     </div>
-
   </section>
-
-
   <!-- =====================================================
        SERIAL MONITOR
        ===================================================== -->
-
   <section class="card">
-
     <h2>Serial Monitor</h2>
-
     <div class="card-description">
       Dane kontrolne i status komunikacji
       pomiędzy przeglądarką a Gazela Sensor.
       Dane LIVE nie są tutaj wyświetlane.
     </div>
-
     <div
       id="serialMonitor"
       class="serial-monitor"
     ></div>
-
   </section>
-
 </main>
-
-
 <footer>
   GAZELA SPINER SENSOR
   &nbsp; | &nbsp;
   Sensor Lab
 </footer>
-
-
 <script src="js/app.js"></script>
-
 </body>
-
 </html>
