@@ -1687,10 +1687,11 @@ function updateBatteryLevel(packVoltage) {
             const active = index < activeSegments;
             segment.classList.toggle("active", active);
             segment.classList.remove("segment-green", "segment-yellow", "segment-orange", "segment-red");
-            // Wszystkie aktywne schodki mają kolor aktualnego zakresu baterii.
-            // Nieaktywne zachowują swoje delikatne kolory tła: czerwony, pomarańczowy,
-            // żółty i zielony, dzięki czemu pozostaje widoczny dotychczasowy styl.
-            segment.classList.add("segment-" + segmentColors[index]);
+            // Wszystkie aktywne schodki mają ten sam kolor aktualnego zakresu baterii.
+            // Gdy stan jest zielony, wszystkie zapalone schodki są zielone.
+            // Gdy poziom spadnie do żółtego, wszystkie zapalone schodki są żółte itd.
+            // Nieaktywne schodki zachowują swoje kolory tła.
+            segment.classList.add("segment-" + (active ? band : segmentColors[index]));
         });
     }
     if (batteryPercent) batteryPercent.textContent = percentage + "%";
