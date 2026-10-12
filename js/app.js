@@ -3386,7 +3386,13 @@ function updateBatteryLevel(packVoltage) {
 
             segment.classList.remove("segment-green", "segment-yellow", "segment-orange", "segment-red");
 
-            segment.classList.add("segment-" + segmentColors[index]);
+            // Wszystkie aktywne schodki mają kolor aktualnego zakresu baterii.
+
+            // Nieaktywne zachowują swoje delikatne kolory tła: czerwony, pomarańczowy,
+
+            // żółty i zielony, dzięki czemu pozostaje widoczny dotychczasowy styl.
+
+            segment.classList.add("segment-" + (active ? band : segmentColors[index]));
 
         });
 
@@ -5925,4 +5931,3 @@ window.gazelaSensor = {
 // END OF APP.JS
 
 // ========================================================
-
