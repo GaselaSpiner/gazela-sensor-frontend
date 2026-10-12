@@ -1690,7 +1690,7 @@ function updateBatteryLevel(packVoltage) {
             // Wszystkie aktywne schodki mają kolor aktualnego zakresu baterii.
             // Nieaktywne zachowują swoje delikatne kolory tła: czerwony, pomarańczowy,
             // żółty i zielony, dzięki czemu pozostaje widoczny dotychczasowy styl.
-            segment.classList.add("segment-" + (active ? band : segmentColors[index]));
+            segment.classList.add("segment-" + segmentColors[index]);
         });
     }
     if (batteryPercent) batteryPercent.textContent = percentage + "%";
