@@ -1662,10 +1662,15 @@ function updateBatteryLevel(packVoltage) {
         yellow: "Średni poziom — żółty",
         green: "Wysoki poziom — zielony"
     };
-    const segmentCount = 10;
-    const activeSegments = Math.round(percentage / 10);
+    // 6 segmentów: od dołu czerwony, pomarańczowy, żółty i 3 zielone.
+    // Dzięki temu niski poziom baterii zapala czerwony segment jako pierwszy.
+    const segmentColors = ["red", "orange", "yellow", "green", "green", "green"];
+    const segmentCount = segmentColors.length;
+    const activeSegments = percentage <= 0
+        ? 0
+        : Math.min(segmentCount, Math.ceil((percentage / 100) * segmentCount));
     if (batteryLevelFill) {
-        // Segmenty są układane od dołu; najniższy segment zapala się pierwszy.
+        // Segmenty są układane od dołu; pierwszy segment znajduje się na dole.
         if (batteryLevelFill.children.length !== segmentCount) {
             batteryLevelFill.replaceChildren();
             for (let i = 0; i < segmentCount; i++) {
@@ -1679,11 +1684,10 @@ function updateBatteryLevel(packVoltage) {
         batteryLevelFill.classList.add("level-" + band);
         batteryLevelFill.style.height = "100%";
         Array.from(batteryLevelFill.children).forEach((segment, index) => {
-            // DOM: pierwszy segment na dole dzięki column-reverse.
             const active = index < activeSegments;
             segment.classList.toggle("active", active);
             segment.classList.remove("segment-green", "segment-yellow", "segment-orange", "segment-red");
-            if (active) segment.classList.add("segment-" + band);
+            segment.classList.add("segment-" + segmentColors[index]);
         });
     }
     if (batteryPercent) batteryPercent.textContent = percentage + "%";
