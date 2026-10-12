@@ -3342,11 +3342,39 @@ function updateBatteryLevel(packVoltage) {
 
     const segmentCount = segmentColors.length;
 
-    const activeSegments = percentage <= 0
+    // Liczba schodków wynika z procentu, ale jest ograniczona przez stan histerezy.
+
+    // Dzięki temu każda zmiana koloru zmienia liczbę aktywnych schodków o jeden:
+
+    // czerwony = maks. 1, pomarańczowy = maks. 2, żółty = maks. 3,
+
+    // zielony = 4–6 (zależnie od poziomu procentowego).
+
+    const calculatedSegments = percentage <= 0
 
         ? 0
 
         : Math.min(segmentCount, Math.ceil((percentage / 100) * segmentCount));
+
+    const maxSegmentsByBand = {
+
+        red: 1,
+
+        orange: 2,
+
+        yellow: 3,
+
+        green: 6
+
+    };
+
+    const activeSegments = Math.min(
+
+        calculatedSegments,
+
+        maxSegmentsByBand[band] ?? segmentCount
+
+    );
 
     if (batteryLevelFill) {
 
@@ -3384,13 +3412,13 @@ function updateBatteryLevel(packVoltage) {
 
             segment.classList.remove("segment-green", "segment-yellow", "segment-orange", "segment-red");
 
-            // Wszystkie aktywne schodki mają ten sam kolor aktualnego zakresu baterii.
+            // Wszystkie aktywne schodki mają kolor aktualnego pasma histerezy.
 
-            // Gdy stan jest zielony, wszystkie zapalone schodki są zielone.
+            // Liczba aktywnych schodków jest ograniczona przez pasmo:
 
-            // Gdy poziom spadnie do żółtego, wszystkie zapalone schodki są żółte itd.
+            // czerwony maks. 1, pomarańczowy maks. 2, żółty maks. 3,
 
-            // Nieaktywne schodki zachowują swoje kolory tła.
+            // zielony od 4 do 6. Nieaktywne zachowują kolory tła.
 
             segment.classList.add("segment-" + (active ? band : segmentColors[index]));
 
