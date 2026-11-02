@@ -4,8 +4,6 @@
 
 }
 
- 
-
 body {
 
   margin: 0;
@@ -18,8 +16,6 @@ body {
 
 }
 
- 
-
 header {
 
   background: white;
@@ -29,8 +25,6 @@ header {
   padding: 24px 7%;
 
 }
-
- 
 
 header h1 {
 
@@ -42,8 +36,6 @@ header h1 {
 
 }
 
- 
-
 header p {
 
   margin: 5px 0 0;
@@ -53,8 +45,6 @@ header p {
   font-size: 14px;
 
 }
-
- 
 
 main {
 
@@ -66,15 +56,11 @@ main {
 
 }
 
- 
-
 .hero {
 
   margin-bottom: 30px;
 
 }
-
- 
 
 .hero h2 {
 
@@ -83,8 +69,6 @@ main {
   margin: 0 0 12px;
 
 }
-
- 
 
 .hero p {
 
@@ -95,8 +79,6 @@ main {
   font-size: 17px;
 
 }
-
- 
 
 .status {
 
@@ -114,8 +96,6 @@ main {
 
 }
 
- 
-
 .status-dot {
 
   width: 9px;
@@ -128,15 +108,11 @@ main {
 
 }
 
- 
-
 .status-dot.connected {
 
   background: #22a06b;
 
 }
-
- 
 
 .status-dot.measuring {
 
@@ -144,25 +120,17 @@ main {
 
 }
 
- 
-
 .status-dot.error {
 
   background: #d93025;
 
 }
 
- 
-
- 
-
 /* =====================================================
 
    MODULE NAVIGATION
 
    ===================================================== */
-
- 
 
 .modules {
 
@@ -175,8 +143,6 @@ main {
   margin-bottom: 30px;
 
 }
-
- 
 
 .module-button {
 
@@ -200,8 +166,6 @@ main {
 
   box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
 
- 
-
   transition:
 
     transform 0.2s ease,
@@ -213,8 +177,6 @@ main {
     background 0.2s ease;
 
 }
-
- 
 
 .module-button:hover {
 
@@ -230,15 +192,11 @@ main {
 
 }
 
- 
-
 .module-button:active {
 
   transform: translateY(-1px);
 
 }
-
- 
 
 .module-button.active {
 
@@ -251,8 +209,6 @@ main {
   box-shadow: 0 10px 26px rgba(37, 99, 235, 0.12);
 
 }
-
- 
 
 .module-button h3 {
 
@@ -268,8 +224,6 @@ main {
 
 }
 
- 
-
 .module-button p {
 
   margin: 0;
@@ -282,15 +236,11 @@ main {
 
 }
 
- 
-
 .module-button:hover h3 {
 
   color: #111827;
 
 }
-
- 
 
 .module-button:hover p {
 
@@ -298,15 +248,11 @@ main {
 
 }
 
- 
-
 .module-button:focus {
 
   outline: none;
 
 }
-
- 
 
 .module-button:focus-visible {
 
@@ -316,17 +262,11 @@ main {
 
 }
 
- 
-
- 
-
 /* =====================================================
 
    GENERAL CARDS
 
    ===================================================== */
-
- 
 
 .card {
 
@@ -342,8 +282,6 @@ main {
 
 }
 
- 
-
 .card h2 {
 
   margin: 0 0 8px;
@@ -352,17 +290,11 @@ main {
 
 }
 
- 
-
- 
-
 /* =====================================================
 
    BATTERY HEADING ICON
 
    ===================================================== */
-
- 
 
 .battery-heading {
 
@@ -373,8 +305,6 @@ main {
   gap: 12px;
 
 }
-
- 
 
 .battery-heading-icon {
 
@@ -392,11 +322,7 @@ main {
 
 }
 
- 
-
 /* Kolor małej ikony zależny od poziomu baterii */
-
- 
 
 .battery-heading-icon.level-high {
 
@@ -404,15 +330,11 @@ main {
 
 }
 
- 
-
 .battery-heading-icon.level-medium {
 
   color: #eab308;
 
 }
-
- 
 
 .battery-heading-icon.level-low {
 
@@ -420,17 +342,11 @@ main {
 
 }
 
- 
-
- 
-
 /* =====================================================
 
    CARD DESCRIPTION
 
    ===================================================== */
-
- 
 
 .card-description {
 
@@ -442,17 +358,11 @@ main {
 
 }
 
- 
-
- 
-
 /* =====================================================
 
    SENSOR SUMMARY
 
    ===================================================== */
-
- 
 
 .sensor-summary {
 
@@ -466,8 +376,6 @@ main {
 
 }
 
- 
-
 .summary-item {
 
   border: 1px solid #e5e5e5;
@@ -477,8 +385,6 @@ main {
   padding: 15px;
 
 }
-
- 
 
 .summary-label {
 
@@ -490,8 +396,6 @@ main {
 
 }
 
- 
-
 .summary-value {
 
   font-size: 18px;
@@ -500,10 +404,6 @@ main {
 
 }
 
- 
-
- 
-
 /* =====================================================
 
    BATTERY VISUALIZATION
@@ -511,8 +411,6 @@ main {
    Pionowa ikona baterii
 
    ===================================================== */
-
- 
 
 .battery-visual-panel {
 
@@ -538,11 +436,7 @@ main {
 
 }
 
- 
-
 /* Cała ikona baterii */
-
- 
 
 .battery-visual {
 
@@ -564,11 +458,7 @@ main {
 
 }
 
- 
-
 /* Górny styk baterii */
-
- 
 
 .battery-cap {
 
@@ -584,11 +474,7 @@ main {
 
 }
 
- 
-
 /* Obudowa baterii */
-
- 
 
 .battery-shell {
 
@@ -608,11 +494,7 @@ main {
 
 }
 
- 
-
 /* Dynamiczne wypełnienie sterowane przez JavaScript */
-
- 
 
 /* Kontener sześciu segmentów. Wysokość pozostaje stała, a JS zapala
 
@@ -642,8 +524,6 @@ main {
 
 }
 
- 
-
 .battery-segment {
 
   display: block;
@@ -662,8 +542,6 @@ main {
 
 }
 
- 
-
 .battery-segment.active { opacity: 1; }
 
 .battery-segment.segment-red { background: #dc2626; }
@@ -674,11 +552,7 @@ main {
 
 .battery-segment.segment-green { background: #22a06b; }
 
- 
-
 /* Informacje obok ikony */
-
- 
 
 .battery-level-details {
 
@@ -694,8 +568,6 @@ main {
 
 }
 
- 
-
 .battery-percent {
 
   color: #202124;
@@ -710,8 +582,6 @@ main {
 
 }
 
- 
-
 .battery-level-label {
 
   color: #475569;
@@ -721,8 +591,6 @@ main {
   font-weight: 600;
 
 }
-
- 
 
 .battery-level-note {
 
@@ -734,17 +602,11 @@ main {
 
 }
 
- 
-
- 
-
 /* =====================================================
 
    BATTERY STATUS
 
    ===================================================== */
-
- 
 
 .battery-status {
 
@@ -756,15 +618,11 @@ main {
 
 }
 
- 
-
 .battery-status.ok {
 
   color: #16803d;
 
 }
-
- 
 
 .battery-status.low {
 
@@ -772,25 +630,17 @@ main {
 
 }
 
- 
-
 .battery-status.critical {
 
   color: #dc2626;
 
 }
 
- 
-
- 
-
 /* =====================================================
 
    SENSOR VALUES
 
    ===================================================== */
-
- 
 
 .values {
 
@@ -801,8 +651,6 @@ main {
   gap: 12px;
 
 }
-
- 
 
 .value-card {
 
@@ -816,8 +664,6 @@ main {
 
 }
 
- 
-
 .value-name {
 
   font-size: 12px;
@@ -828,8 +674,6 @@ main {
 
 }
 
- 
-
 .value-number {
 
   font-size: 22px;
@@ -837,8 +681,6 @@ main {
   font-weight: bold;
 
 }
-
- 
 
 .value-unit {
 
@@ -850,17 +692,11 @@ main {
 
 }
 
- 
-
- 
-
 /* =====================================================
 
    CONTROLS
 
    ===================================================== */
-
- 
 
 .controls {
 
@@ -873,8 +709,6 @@ main {
   margin-top: 20px;
 
 }
-
- 
 
 button {
 
@@ -894,15 +728,11 @@ button {
 
 }
 
- 
-
 button:hover {
 
   background: #1d4ed8;
 
 }
-
- 
 
 button:disabled {
 
@@ -912,8 +742,6 @@ button:disabled {
 
 }
 
- 
-
 button.secondary {
 
   background: #e8e8e8;
@@ -922,15 +750,11 @@ button.secondary {
 
 }
 
- 
-
 button.secondary:hover {
 
   background: #dcdcdc;
 
 }
-
- 
 
 button.start {
 
@@ -938,15 +762,11 @@ button.start {
 
 }
 
- 
-
 button.start:hover {
 
   background: #15803d;
 
 }
-
- 
 
 button.stop {
 
@@ -954,25 +774,17 @@ button.stop {
 
 }
 
- 
-
 button.stop:hover {
 
   background: #b91c1c;
 
 }
 
- 
-
- 
-
 /* =====================================================
 
    SESSION / MOVEMENTS
 
    ===================================================== */
-
- 
 
 .session-header {
 
@@ -987,8 +799,6 @@ button.stop:hover {
   flex-wrap: wrap;
 
 }
-
- 
 
 .session-badge {
 
@@ -1006,8 +816,6 @@ button.stop:hover {
 
 }
 
- 
-
 .movement-list {
 
   display: grid;
@@ -1017,8 +825,6 @@ button.stop:hover {
   margin-top: 20px;
 
 }
-
- 
 
 .movement-card {
 
@@ -1032,8 +838,6 @@ button.stop:hover {
 
 }
 
- 
-
 .movement-card.active {
 
   border-color: #2563eb;
@@ -1042,8 +846,6 @@ button.stop:hover {
 
 }
 
- 
-
 .movement-card.completed {
 
   border-color: #22a06b;
@@ -1051,8 +853,6 @@ button.stop:hover {
   background: #f3fbf6;
 
 }
-
- 
 
 .movement-top {
 
@@ -1068,8 +868,6 @@ button.stop:hover {
 
 }
 
- 
-
 .movement-title {
 
   font-size: 17px;
@@ -1078,8 +876,6 @@ button.stop:hover {
 
 }
 
- 
-
 .movement-status {
 
   font-size: 12px;
@@ -1087,8 +883,6 @@ button.stop:hover {
   color: #777;
 
 }
-
- 
 
 .movement-data {
 
@@ -1099,8 +893,6 @@ button.stop:hover {
   gap: 10px;
 
 }
-
- 
 
 .movement-data-item {
 
@@ -1114,8 +906,6 @@ button.stop:hover {
 
 }
 
- 
-
 .movement-data-label {
 
   color: #888;
@@ -1126,8 +916,6 @@ button.stop:hover {
 
 }
 
- 
-
 .movement-data-value {
 
   font-size: 14px;
@@ -1136,17 +924,11 @@ button.stop:hover {
 
 }
 
- 
-
- 
-
 /* =====================================================
 
    SERIAL MONITOR
 
    ===================================================== */
-
- 
 
 .serial-monitor {
 
@@ -1172,15 +954,11 @@ button.stop:hover {
 
 }
 
- 
-
 .serial-line {
 
   min-height: 18px;
 
 }
-
- 
 
 .serial-data {
 
@@ -1188,15 +966,11 @@ button.stop:hover {
 
 }
 
- 
-
 .serial-info {
 
   color: #9cc8ff;
 
 }
-
- 
 
 .serial-error {
 
@@ -1204,17 +978,11 @@ button.stop:hover {
 
 }
 
- 
-
- 
-
 /* =====================================================
 
    MEASUREMENT STATUS
 
    ===================================================== */
-
- 
 
 .measurement-status {
 
@@ -1230,8 +998,6 @@ button.stop:hover {
 
 }
 
- 
-
 .measurement-status.active {
 
   background: #eaf2ff;
@@ -1239,8 +1005,6 @@ button.stop:hover {
   color: #174ea6;
 
 }
-
- 
 
 .measurement-status.finished {
 
@@ -1250,17 +1014,11 @@ button.stop:hover {
 
 }
 
- 
-
- 
-
 /* =====================================================
 
    FOOTER
 
    ===================================================== */
-
- 
 
 footer {
 
@@ -1276,17 +1034,11 @@ footer {
 
 }
 
- 
-
- 
-
 /* =====================================================
 
    TABLET
 
    ===================================================== */
-
- 
 
 @media (max-width: 900px) {
 
@@ -1296,23 +1048,17 @@ footer {
 
   }
 
- 
-
   .values {
 
     grid-template-columns: repeat(3, 1fr);
 
   }
 
- 
-
   .movement-data {
 
     grid-template-columns: 1fr 1fr;
 
   }
-
- 
 
   .sensor-summary {
 
@@ -1322,17 +1068,11 @@ footer {
 
 }
 
- 
-
- 
-
 /* =====================================================
 
    MOBILE
 
    ===================================================== */
-
- 
 
 @media (max-width: 600px) {
 
@@ -1344,8 +1084,6 @@ footer {
 
   }
 
- 
-
   .modules {
 
     grid-template-columns: 1fr;
@@ -1353,8 +1091,6 @@ footer {
     gap: 15px;
 
   }
-
- 
 
   .module-button {
 
@@ -1364,15 +1100,11 @@ footer {
 
   }
 
- 
-
   .module-button h3 {
 
     font-size: 20px;
 
   }
-
- 
 
   .module-button p {
 
@@ -1380,15 +1112,11 @@ footer {
 
   }
 
- 
-
   .values {
 
     grid-template-columns: repeat(2, 1fr);
 
   }
-
- 
 
   .hero h2 {
 
@@ -1396,15 +1124,11 @@ footer {
 
   }
 
- 
-
   header {
 
     padding: 20px 4%;
 
   }
-
- 
 
   .movement-data {
 
@@ -1412,11 +1136,7 @@ footer {
 
   }
 
- 
-
   /* Bateria na telefonie */
-
- 
 
   .battery-visual-panel {
 
@@ -1428,15 +1148,11 @@ footer {
 
   }
 
- 
-
   .battery-percent {
 
     font-size: 32px;
 
   }
-
- 
 
   .battery-level-note {
 
@@ -1447,123 +1163,241 @@ footer {
 }
 
 /* =====================================================
+
    GESTURE RECORDER / COMPARATOR
+
    ===================================================== */
 
 .gesture-card { overflow: hidden; }
+
 .gesture-header {
+
   display: flex;
+
   justify-content: space-between;
+
   align-items: flex-start;
+
   gap: 16px;
+
   flex-wrap: wrap;
+
 }
+
 .gesture-status-badge {
+
   display: inline-block;
+
   padding: 7px 12px;
+
   border-radius: 20px;
+
   background: #eef2f7;
+
   color: #475569;
+
   font-size: 12px;
+
   font-weight: 700;
+
 }
+
 .gesture-status-badge.recording {
+
   background: #fee2e2;
+
   color: #b91c1c;
+
 }
+
 .gesture-status-badge.ready {
+
   background: #dcfce7;
+
   color: #166534;
+
 }
+
 .gesture-stats {
+
   display: grid;
+
   grid-template-columns: repeat(4, minmax(0, 1fr));
+
   gap: 12px;
+
   margin: 18px 0;
+
 }
+
 .gesture-controls {
+
   display: flex;
+
   flex-wrap: wrap;
+
   gap: 10px;
+
   margin: 18px 0;
+
 }
+
 .gesture-controls button { min-height: 42px; }
+
 .gesture-chart-grid {
+
   display: grid;
+
   grid-template-columns: repeat(2, minmax(0, 1fr));
+
   gap: 16px;
+
   margin-top: 20px;
+
 }
+
 .gesture-chart-panel {
+
   min-width: 0;
+
   padding: 14px;
+
   border: 1px solid #e5e7eb;
+
   border-radius: 10px;
+
   background: #fff;
+
 }
+
 .gesture-chart-panel h3,
+
 .gesture-history-wrap h3 {
+
   margin: 0 0 12px;
+
   font-size: 14px;
+
 }
+
 .gesture-chart-panel canvas {
+
   display: block;
+
   width: 100%;
+
   height: 190px;
+
 }
+
 .gesture-result {
+
   display: flex;
+
   align-items: center;
+
   gap: 22px;
+
   flex-wrap: wrap;
+
   margin-top: 18px;
+
   padding: 18px;
+
   border: 1px solid #e5e7eb;
+
   border-radius: 10px;
+
   background: #fafafa;
+
 }
+
 .gesture-match-score {
+
   font-size: 34px;
+
   line-height: 1.1;
+
   font-weight: 800;
+
   color: #1d4ed8;
+
 }
+
 .gesture-match-description {
+
   flex: 1 1 240px;
+
   color: #475569;
+
   font-size: 14px;
+
   line-height: 1.5;
+
 }
+
 .gesture-history-wrap { margin-top: 22px; }
+
 .gesture-history {
+
   display: grid;
+
   gap: 8px;
+
 }
+
 .gesture-history-item {
+
   display: flex;
+
   justify-content: space-between;
+
   align-items: center;
+
   gap: 12px;
+
   flex-wrap: wrap;
+
   padding: 10px 12px;
+
   border: 1px solid #e5e7eb;
+
   border-radius: 8px;
+
   background: #fff;
+
   font-size: 13px;
+
 }
+
 .gesture-history-empty {
+
   padding: 12px;
+
   color: #888;
+
   font-size: 13px;
+
 }
+
 .gesture-disclaimer {
+
   margin: 16px 0 0;
+
   color: #888;
+
   font-size: 12px;
+
   line-height: 1.5;
+
 }
+
 @media (max-width: 700px) {
+
   .gesture-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
   .gesture-chart-grid { grid-template-columns: 1fr; }
+
   .gesture-controls button { flex: 1 1 100%; }
+
 }
