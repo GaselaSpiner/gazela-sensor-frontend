@@ -233,6 +233,86 @@
       </div>
     </div>
   </section>
+
+  <!-- =====================================================
+       GESTURE RECORDER / COMPARATOR
+       ===================================================== -->
+  <section class="card gesture-card" id="gestureRecorder">
+    <div class="gesture-header">
+      <div>
+        <h2>GESTURE RECORDER</h2>
+        <div class="card-description">
+          Ręczna rejestracja gestu z danych LIVE oraz porównanie
+          przebiegu z zapisanym ruchem referencyjnym.
+        </div>
+      </div>
+      <span id="gestureStatusBadge" class="gesture-status-badge">Waiting for LIVE</span>
+    </div>
+
+    <div class="gesture-stats">
+      <div class="summary-item">
+        <div class="summary-label">LIVE BUFFER</div>
+        <div id="gestureBufferCount" class="summary-value">0</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-label">DURATION</div>
+        <div id="gestureDuration" class="summary-value">0.00 s</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-label">SAMPLES</div>
+        <div id="gestureSampleCount" class="summary-value">0</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-label">REFERENCE</div>
+        <div id="gestureReferenceStatus" class="summary-value">Not saved</div>
+      </div>
+    </div>
+
+    <div class="gesture-controls">
+      <button id="gestureRecordButton" class="start" type="button">● RECORD GESTURE</button>
+      <button id="gestureStopButton" class="stop" type="button" disabled>■ STOP RECORDING</button>
+      <button id="gestureReferenceButton" class="secondary" type="button" disabled>Save as reference</button>
+      <button id="gestureCompareButton" type="button" disabled>Compare with reference</button>
+      <button id="gestureClearButton" class="secondary" type="button">Clear current</button>
+    </div>
+
+    <div id="gestureMessage" class="measurement-status">
+      Połącz sensor i uruchom LIVE. Rejestrator nie wysyła komend do Arduino.
+    </div>
+
+    <div class="gesture-chart-grid">
+      <div class="gesture-chart-panel">
+        <h3>ACCELEROMETER — AX / AY / AZ</h3>
+        <canvas id="gestureAccelerationChart" height="190"></canvas>
+      </div>
+      <div class="gesture-chart-panel">
+        <h3>GYROSCOPE — GX / GY / GZ</h3>
+        <canvas id="gestureGyroscopeChart" height="190"></canvas>
+      </div>
+    </div>
+
+    <div class="gesture-result">
+      <div>
+        <div class="summary-label">PRELIMINARY SHAPE SIMILARITY</div>
+        <div id="gestureMatchScore" class="gesture-match-score">—</div>
+      </div>
+      <div id="gestureMatchDescription" class="gesture-match-description">
+        Zarejestruj gest i zapisz ruch referencyjny, aby rozpocząć porównanie.
+      </div>
+    </div>
+
+    <div class="gesture-history-wrap">
+      <h3>RECORDED GESTURES</h3>
+      <div id="gestureHistory" class="gesture-history">
+        <div class="gesture-history-empty">Brak zakończonych nagrań.</div>
+      </div>
+    </div>
+    <p class="gesture-disclaimer">
+      Wynik jest eksperymentalną miarą podobieństwa kształtu sygnałów,
+      a nie oceną techniki ani naukowo zwalidowaną dokładnością ruchu.
+    </p>
+  </section>
+
   <!-- =====================================================
        BATTERY
        ===================================================== -->
