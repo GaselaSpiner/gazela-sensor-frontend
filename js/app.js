@@ -1,5 +1,3 @@
-// GAZELA SPINER SENSOR — SENSOR LAB
-
 // app.js — V47 LIVE RECONNECT READY + WEBUSB DETECTION + TRANSPORT LAYER + USB SERIAL/WEBUSB + BLE
 
 // ========================================================
@@ -12,13 +10,13 @@
 
 // V37 established that the Arduino exposes:
 
-//   configuration = 1
+// configuration = 1
 
-//   interface 0 = CDC control
+// interface 0 = CDC control
 
-//   interface 1 = CDC data
+// interface 1 = CDC data
 
-//   interface 1 = bulk IN + bulk OUT
+// interface 1 = bulk IN + bulk OUT
 
 //
 
@@ -32,21 +30,21 @@
 
 // the standard order:
 
-//   1. request/open USB device
+// 1. request/open USB device
 
-//   2. activate configuration 1 if necessary
+// 2. activate configuration 1 if necessary
 
-//   3. claim CDC control interface 0
+// 3. claim CDC control interface 0
 
-//   4. SET_LINE_CODING = 115200, 8N1
+// 4. SET_LINE_CODING = 115200, 8N1
 
-//   5. SET_CONTROL_LINE_STATE = DTR
+// 5. SET_CONTROL_LINE_STATE = DTR
 
-//   6. claim CDC data interface 1
+// 6. claim CDC data interface 1
 
-//   7. transferIn endpoint 1
+// 7. transferIn endpoint 1
 
-//   8. transferOut endpoint 1
+// 8. transferOut endpoint 1
 
 //
 
@@ -78,9 +76,9 @@
 
 // USB architecture:
 
-//   PC      -> Web Serial
+// PC -> Web Serial
 
-//   Android -> WebUSB
+// Android -> WebUSB
 
 //
 
@@ -98,19 +96,19 @@
 
 const BLE_SENSOR_SERVICE_UUID =
 
-    "7a1e0001-5a9a-4c71-9b3a-47415a5a0001";
+"7a1e0001-5a9a-4c71-9b3a-47415a5a0001";
 
 const BLE_LIVE_CHARACTERISTIC_UUID =
 
-    "7a1e0002-5a9a-4c71-9b3a-47415a5a0001";
+"7a1e0002-5a9a-4c71-9b3a-47415a5a0001";
 
 const BLE_CONTROL_SERVICE_UUID =
 
-    "7a1e0010-5a9a-4c71-9b3a-47415a5a0001";
+"7a1e0010-5a9a-4c71-9b3a-47415a5a0001";
 
 const BLE_COMMAND_CHARACTERISTIC_UUID =
 
-    "7a1e0011-5a9a-4c71-9b3a-47415a5a0001";
+"7a1e0011-5a9a-4c71-9b3a-47415a5a0001";
 
 // ========================================================
 
@@ -182,103 +180,103 @@ const HEARTBEAT_TIMEOUT = 3000;
 
 const statusDot =
 
-    document.getElementById("statusDot");
+document.getElementById("statusDot");
 
 const statusText =
 
-    document.getElementById("statusText");
+document.getElementById("statusText");
 
 const movementValue =
 
-    document.getElementById("movementValue");
+document.getElementById("movementValue");
 
 const timeValue =
 
-    document.getElementById("timeValue");
+document.getElementById("timeValue");
 
 const samplesValue =
 
-    document.getElementById("samplesValue");
+document.getElementById("samplesValue");
 
 const axValue =
 
-    document.getElementById("ax");
+document.getElementById("ax");
 
 const ayValue =
 
-    document.getElementById("ay");
+document.getElementById("ay");
 
 const azValue =
 
-    document.getElementById("az");
+document.getElementById("az");
 
 const gValue =
 
-    document.getElementById("g");
+document.getElementById("g");
 
 const angleValue =
 
-    document.getElementById("angle");
+document.getElementById("angle");
 
 const gxValue =
 
-    document.getElementById("gx");
+document.getElementById("gx");
 
 const gyValue =
 
-    document.getElementById("gy");
+document.getElementById("gy");
 
 const gzValue =
 
-    document.getElementById("gz");
+document.getElementById("gz");
 
 const angleyValue =
 
-    document.getElementById("angley");
+document.getElementById("angley");
 
 const usbButton =
 
-    document.getElementById("usbButton");
+document.getElementById("usbButton");
 
 const bleButton =
 
-    document.getElementById("bleButton");
+document.getElementById("bleButton");
 
 const connectButton =
 
-    document.getElementById("connectButton");
+document.getElementById("connectButton");
 
 const disconnectButton =
 
-    document.getElementById("disconnectButton");
+document.getElementById("disconnectButton");
 
 const startButton =
 
-    document.getElementById("startButton");
+document.getElementById("startButton");
 
 const stopButton =
 
-    document.getElementById("stopButton");
+document.getElementById("stopButton");
 
 const transportStatus =
 
-    document.getElementById("transportStatus");
+document.getElementById("transportStatus");
 
 const measurementStatus =
 
-    document.getElementById("measurementStatus");
+document.getElementById("measurementStatus");
 
 const sessionBadge =
 
-    document.getElementById("sessionBadge");
+document.getElementById("sessionBadge");
 
 const movementList =
 
-    document.getElementById("movementList");
+document.getElementById("movementList");
 
 const serialMonitor =
 
-    document.getElementById("serialMonitor");
+document.getElementById("serialMonitor");
 
 // ========================================================
 
@@ -292,27 +290,11 @@ const serialMonitor =
 
 const batteryPackValue =
 
-    document.getElementById("batteryPack");
-
-const batteryCell1Value =
-
-    document.getElementById("batteryCell1");
-
-const batteryCell2Value =
-
-    document.getElementById("batteryCell2");
-
-const batteryDifferenceValue =
-
-    document.getElementById("batteryDifference");
-
-const batteryStatusValue =
-
-    document.getElementById("batteryStatus");
+document.getElementById("batteryPack");
 
 const batteryUpdatedValue =
 
-    document.getElementById("batteryUpdated");
+document.getElementById("batteryUpdated");
 
 // ========================================================
 
@@ -322,19 +304,19 @@ const batteryUpdatedValue =
 
 if (startButton) {
 
-    startButton.disabled = true;
+startButton.disabled = true;
 
 }
 
 if (stopButton) {
 
-    stopButton.disabled = true;
+stopButton.disabled = true;
 
 }
 
 if (disconnectButton) {
 
-    disconnectButton.disabled = true;
+disconnectButton.disabled = true;
 
 }
 
@@ -346,31 +328,31 @@ if (disconnectButton) {
 
 function setStatus(
 
-    text,
+text,
 
-    state = "neutral"
+state = "neutral"
 
 ) {
 
-    if (statusText) {
+if (statusText) {
 
-        statusText.textContent = text;
+statusText.textContent = text;
 
-    }
+}
 
-    if (statusDot) {
+if (statusDot) {
 
-        statusDot.className =
+statusDot.className =
 
-            "status-dot";
+"status-dot";
 
-        if (state) {
+if (state) {
 
-            statusDot.classList.add(state);
+statusDot.classList.add(state);
 
-        }
+}
 
-    }
+}
 
 }
 
@@ -382,11 +364,11 @@ function setStatus(
 
 function setTransportStatus(text) {
 
-    if (transportStatus) {
+if (transportStatus) {
 
-        transportStatus.textContent = text;
+transportStatus.textContent = text;
 
-    }
+}
 
 }
 
@@ -400,51 +382,51 @@ const SERIAL_MONITOR_MAX_LINES = 500;
 
 function addSerialLine(
 
-    text,
+text,
 
-    className = ""
+className = ""
 
 ) {
 
-    if (!serialMonitor) {
+if (!serialMonitor) {
 
-        return;
+return;
 
-    }
+}
 
-    const line =
+const line =
 
-        document.createElement("div");
+document.createElement("div");
 
-    line.textContent = text;
+line.textContent = text;
 
-    if (className) {
+if (className) {
 
-        line.className = className;
+line.className = className;
 
-    }
+}
 
-    serialMonitor.appendChild(line);
+serialMonitor.appendChild(line);
 
-    while (
+while (
 
-        serialMonitor.children.length >
+serialMonitor.children.length >
 
-        SERIAL_MONITOR_MAX_LINES
+SERIAL_MONITOR_MAX_LINES
 
-    ) {
+) {
 
-        serialMonitor.removeChild(
+serialMonitor.removeChild(
 
-            serialMonitor.firstElementChild
+serialMonitor.firstElementChild
 
-        );
+);
 
-    }
+}
 
-    serialMonitor.scrollTop =
+serialMonitor.scrollTop =
 
-        serialMonitor.scrollHeight;
+serialMonitor.scrollHeight;
 
 }
 
@@ -456,23 +438,23 @@ function addSerialLine(
 
 function formatNumber(
 
-    value,
+value,
 
-    decimals = 3
+decimals = 3
 
 ) {
 
-    const number =
+const number =
 
-        Number(value);
+Number(value);
 
-    if (!Number.isFinite(number)) {
+if (!Number.isFinite(number)) {
 
-        return "--";
+return "--";
 
-    }
+}
 
-    return number.toFixed(decimals);
+return number.toFixed(decimals);
 
 }
 
@@ -484,59 +466,59 @@ function formatNumber(
 
 function formatTime(milliseconds) {
 
-    if (!Number.isFinite(milliseconds)) {
+if (!Number.isFinite(milliseconds)) {
 
-        return "00:00.000";
+return "00:00.000";
 
-    }
+}
 
-    const totalMs =
+const totalMs =
 
-        Math.max(
+Math.max(
 
-            0,
+0,
 
-            milliseconds
+milliseconds
 
-        );
+);
 
-    const minutes =
+const minutes =
 
-        Math.floor(
+Math.floor(
 
-            totalMs / 60000
+totalMs / 60000
 
-        );
+);
 
-    const seconds =
+const seconds =
 
-        Math.floor(
+Math.floor(
 
-            (totalMs % 60000) / 1000
+(totalMs % 60000) / 1000
 
-        );
+);
 
-    const ms =
+const ms =
 
-        Math.floor(
+Math.floor(
 
-            totalMs % 1000
+totalMs % 1000
 
-        );
+);
 
-    return (
+return (
 
-        String(minutes).padStart(2, "0") +
+String(minutes).padStart(2, "0") +
 
-        ":" +
+":" +
 
-        String(seconds).padStart(2, "0") +
+String(seconds).padStart(2, "0") +
 
-        "." +
+"." +
 
-        String(ms).padStart(3, "0")
+String(ms).padStart(3, "0")
 
-    );
+);
 
 }
 
@@ -554,17 +536,17 @@ function formatTime(milliseconds) {
 
 function isSensorDataLine(line) {
 
-    if (!line) return false;
+if (!line) return false;
 
-    if (line.startsWith("LIVE,")) return true;
+if (line.startsWith("LIVE,")) return true;
 
-    if (line.startsWith("BAT,")) return true;
+if (line.startsWith("BAT,")) return true;
 
-    if (line.startsWith("MOVEMENT,TIME_ms")) return true;
+if (line.startsWith("MOVEMENT,TIME_ms")) return true;
 
-    if (/^\d+,/.test(line)) return true;
+if (/^\d+,/.test(line)) return true;
 
-    return false;
+return false;
 
 }
 
@@ -584,57 +566,57 @@ const V46_RAW_RX_MAX_CHUNKS = 40;
 
 function v45BytesToHex(bytes) {
 
-    return Array.from(bytes)
+return Array.from(bytes)
 
-        .map(byte => byte.toString(16).padStart(2, "0").toUpperCase())
+.map(byte => byte.toString(16).padStart(2, "0").toUpperCase())
 
-        .join(" ");
+.join(" ");
 
 }
 
 function v45BytesToAscii(bytes) {
 
-    return Array.from(bytes)
+return Array.from(bytes)
 
-        .map(byte => {
+.map(byte => {
 
-            if (byte >= 32 && byte <= 126) return String.fromCharCode(byte);
+if (byte >= 32 && byte <= 126) return String.fromCharCode(byte);
 
-            if (byte === 10) return "\\n";
+if (byte === 10) return "\\n";
 
-            if (byte === 13) return "\\r";
+if (byte === 13) return "\\r";
 
-            return ".";
+return ".";
 
-        })
+})
 
-        .join("");
+.join("");
 
 }
 
 function v45LogRawUSB(bytes, transportName, chunkNumber) {
 
-    if (!bytes || bytes.length === 0) return;
+if (!bytes || bytes.length === 0) return;
 
-    if (chunkNumber > V46_RAW_RX_MAX_CHUNKS) return;
+if (chunkNumber > V46_RAW_RX_MAX_CHUNKS) return;
 
-    addSerialLine(
+addSerialLine(
 
-        "V46 RAW RX " +
+"V46 RAW RX " +
 
-        transportName +
+transportName +
 
-        " #" + chunkNumber +
+" #" + chunkNumber +
 
-        " LEN=" + bytes.length +
+" LEN=" + bytes.length +
 
-        " HEX=[" + v45BytesToHex(bytes) + "]" +
+" HEX=[" + v45BytesToHex(bytes) + "]" +
 
-        " ASCII=[" + v45BytesToAscii(bytes) + "]",
+" ASCII=[" + v45BytesToAscii(bytes) + "]",
 
-        "serial-info"
+"serial-info"
 
-    );
+);
 
 }
 
@@ -646,55 +628,55 @@ function v45LogRawUSB(bytes, transportName, chunkNumber) {
 
 class SensorTransport {
 
-    constructor(onLine) {
+constructor(onLine) {
 
-        this.onLine = onLine;
+this.onLine = onLine;
 
-        this.running = false;
+this.running = false;
 
-        this.readTask = null;
+this.readTask = null;
 
-    }
+}
 
-    async connect() {
+async connect() {
 
-        throw new Error(
+throw new Error(
 
-            "connect() not implemented"
+"connect() not implemented"
 
-        );
+);
 
-    }
+}
 
-    async send(command) {
+async send(command) {
 
-        throw new Error(
+throw new Error(
 
-            "send() not implemented"
+"send() not implemented"
 
-        );
+);
 
-    }
+}
 
-    async disconnect() {
+async disconnect() {
 
-        addSerialLine(
+addSerialLine(
 
-            "V43: transport disconnect START",
+"V43: transport disconnect START",
 
-            "serial-info"
+"serial-info"
 
-        );
+);
 
-        this.running = false;
+this.running = false;
 
-    }
+}
 
-    get name() {
+get name() {
 
-        return "Unknown";
+return "Unknown";
 
-    }
+}
 
 }
 
@@ -706,419 +688,419 @@ class SensorTransport {
 
 class WebSerialTransport
 
-    extends SensorTransport {
+extends SensorTransport {
 
-    constructor(onLine) {
+constructor(onLine) {
 
-        super(onLine);
+super(onLine);
 
-        this.port = null;
+this.port = null;
 
-        this.reader = null;
+this.reader = null;
 
-        this.v45RxChunkCount = 0;
+this.v45RxChunkCount = 0;
 
-    }
+}
 
-    get name() {
+get name() {
 
-        return "Web Serial";
+return "Web Serial";
 
-    }
+}
 
-    async connect() {
+async connect() {
 
-        if (!("serial" in navigator)) {
+if (!("serial" in navigator)) {
 
-            throw new Error(
+throw new Error(
 
-                "Web Serial API nie jest dostępne."
+"Web Serial API nie jest dostępne."
 
-            );
+);
 
-        }
+}
 
-        addSerialLine(
+addSerialLine(
 
-            "V46: Web Serial requestPort() START",
+"V46: Web Serial requestPort() START",
 
-            "serial-info"
+"serial-info"
 
-        );
+);
 
-        this.port =
+this.port =
 
-            await navigator.serial.requestPort();
+await navigator.serial.requestPort();
 
-        addSerialLine(
+addSerialLine(
 
-            "V46: Web Serial requestPort() OK",
+"V46: Web Serial requestPort() OK",
 
-            "serial-info"
+"serial-info"
 
-        );
+);
 
-        addSerialLine(
+addSerialLine(
 
-            "V46: Web Serial port.open(115200) START",
+"V46: Web Serial port.open(115200) START",
 
-            "serial-info"
+"serial-info"
 
-        );
+);
 
-        await this.port.open({
+await this.port.open({
 
-            baudRate: 115200
+baudRate: 115200
 
-        });
+});
 
-        addSerialLine(
+addSerialLine(
 
-            "V46: Web Serial port.open(115200) OK",
+"V46: Web Serial port.open(115200) OK",
 
-            "serial-info"
+"serial-info"
 
-        );
+);
 
-        this.running = true;
+this.running = true;
 
-        this.v45RxChunkCount = 0;
+this.v45RxChunkCount = 0;
 
-        addSerialLine(
+addSerialLine(
 
-            "V46: Web Serial readLoop START",
+"V46: Web Serial readLoop START",
 
-            "serial-info"
+"serial-info"
 
-        );
+);
 
-        this.readTask =
+this.readTask =
 
-            this.readLoop();
+this.readLoop();
 
-    }
+}
 
-    async readLoop() {
+async readLoop() {
 
-        try {
+try {
 
-            const decoder =
+const decoder =
 
-                new TextDecoder();
+new TextDecoder();
 
-            this.reader =
+this.reader =
 
-                this.port.readable.getReader();
+this.port.readable.getReader();
 
-            let buffer = "";
+let buffer = "";
 
-            while (this.running) {
+while (this.running) {
 
-                const {
+const {
 
-                    value,
+value,
 
-                    done
+done
 
-                } =
+} =
 
-                    await this.reader.read();
+await this.reader.read();
 
-                if (done) {
+if (done) {
 
-                    break;
+break;
 
-                }
+}
 
-                if (!value) {
+if (!value) {
 
-                    continue;
+continue;
 
-                }
+}
 
-                this.v45RxChunkCount++;
+this.v45RxChunkCount++;
 
-                v45LogRawUSB(
+v45LogRawUSB(
 
-                    value,
+value,
 
-                    "WebSerial",
+"WebSerial",
 
-                    this.v45RxChunkCount
+this.v45RxChunkCount
 
-                );
+);
 
-                buffer +=
+buffer +=
 
-                    decoder.decode(
+decoder.decode(
 
-                        value,
+value,
 
-                        {
+{
 
-                            stream: true
+stream: true
 
-                        }
+}
 
-                    );
+);
 
-                const lines =
+const lines =
 
-                    buffer.split(
+buffer.split(
 
-                        /\r?\n/
+/\r?\n/
 
-                    );
+);
 
-                buffer =
+buffer =
 
-                    lines.pop() || "";
+lines.pop() || "";
 
-                for (
+for (
 
-                    const line
+const line
 
-                    of lines
+of lines
 
-                ) {
+) {
 
-                    const cleanLine =
+const cleanLine =
 
-                        line.trim();
+line.trim();
 
-                    if (cleanLine) {
+if (cleanLine) {
 
-                        if (
+if (
 
-                            !isSensorDataLine(cleanLine)
+!isSensorDataLine(cleanLine)
 
-                        ) {
+) {
 
-                            addSerialLine(
+addSerialLine(
 
-                                "V43: USB RX " +
+"V43: USB RX " +
 
-                                cleanLine,
+cleanLine,
 
-                                "serial-info"
+"serial-info"
 
-                            );
+);
 
-                        }
+}
 
-                        this.onLine(
+this.onLine(
 
-                            cleanLine
+cleanLine
 
-                        );
+);
 
-                    }
+}
 
-                }
+}
 
-            }
+}
 
-        }
+}
 
-        catch (error) {
+catch (error) {
 
-            if (this.running) {
+if (this.running) {
 
-                console.error(
+console.error(
 
-                    "Web Serial read error:",
+"Web Serial read error:",
 
-                    error
+error
 
-                );
+);
 
-                addSerialLine(
+addSerialLine(
 
-                    "Web Serial read error: " +
+"Web Serial read error: " +
 
-                    error.message,
+error.message,
 
-                    "serial-error"
+"serial-error"
 
-                );
+);
 
-            }
+}
 
-        }
+}
 
-        finally {
+finally {
 
-            if (this.reader) {
+if (this.reader) {
 
-                try {
+try {
 
-                    this.reader.releaseLock();
+this.reader.releaseLock();
 
-                }
+}
 
-                catch (error) {
+catch (error) {
 
-                    console.warn(error);
+console.warn(error);
 
-                }
+}
 
-                this.reader = null;
+this.reader = null;
 
-            }
+}
 
-        }
+}
 
-    }
+}
 
-    async send(command) {
+async send(command) {
 
-        if (
+if (
 
-            !this.port ||
+!this.port ||
 
-            !this.port.writable
+!this.port.writable
 
-        ) {
+) {
 
-            throw new Error(
+throw new Error(
 
-                "Web Serial nie jest gotowy do wysyłania."
+"Web Serial nie jest gotowy do wysyłania."
 
-            );
+);
 
-        }
+}
 
-        addSerialLine(
+addSerialLine(
 
-            "V43: USB TX " + command,
+"V43: USB TX " + command,
 
-            "serial-info"
+"serial-info"
 
-        );
+);
 
-        const writer =
+const writer =
 
-            this.port.writable.getWriter();
+this.port.writable.getWriter();
 
-        try {
+try {
 
-            await writer.write(
+await writer.write(
 
-                new TextEncoder().encode(
+new TextEncoder().encode(
 
-                    command + "\n"
+command + "\n"
 
-                )
+)
 
-            );
+);
 
-        }
+}
 
-        finally {
+finally {
 
-            writer.releaseLock();
+writer.releaseLock();
 
-        }
+}
 
-    }
+}
 
-    async disconnect() {
+async disconnect() {
 
-        this.running = false;
+this.running = false;
 
-        if (this.reader) {
+if (this.reader) {
 
-            try {
+try {
 
-                await this.reader.cancel();
+await this.reader.cancel();
 
-            }
+}
 
-            catch (error) {
+catch (error) {
 
-                console.warn(
+console.warn(
 
-                    "Web Serial reader cancel:",
+"Web Serial reader cancel:",
 
-                    error
+error
 
-                );
+);
 
-            }
+}
 
-        }
+}
 
-        if (this.readTask) {
+if (this.readTask) {
 
-            try {
+try {
 
-                await Promise.race([
+await Promise.race([
 
-                    this.readTask,
+this.readTask,
 
-                    new Promise(
+new Promise(
 
-                        resolve =>
+resolve =>
 
-                            setTimeout(
+setTimeout(
 
-                                resolve,
+resolve,
 
-                                1000
+1000
 
-                            )
+)
 
-                    )
+)
 
-                ]);
+]);
 
-            }
+}
 
-            catch (error) {
+catch (error) {
 
-                console.warn(error);
+console.warn(error);
 
-            }
+}
 
-        }
+}
 
-        if (this.port) {
+if (this.port) {
 
-            try {
+try {
 
-                await this.port.close();
+await this.port.close();
 
-            }
+}
 
-            catch (error) {
+catch (error) {
 
-                console.warn(
+console.warn(
 
-                    "Web Serial close:",
+"Web Serial close:",
 
-                    error
+error
 
-                );
+);
 
-            }
+}
 
-        }
+}
 
-        this.reader = null;
+this.reader = null;
 
-        this.port = null;
+this.port = null;
 
-        this.readTask = null;
+this.readTask = null;
 
-        addSerialLine(
+addSerialLine(
 
-            "V46: Web Serial disconnect COMPLETE",
+"V46: Web Serial disconnect COMPLETE",
 
-            "serial-info"
+"serial-info"
 
-        );
+);
 
-    }
+}
 
 }
 
@@ -1130,1721 +1112,1721 @@ class WebSerialTransport
 
 class WebUSBTransport
 
-    extends SensorTransport {
+extends SensorTransport {
 
-    constructor(onLine) {
+constructor(onLine) {
 
-        super(onLine);
+super(onLine);
 
-        this.device = null;
+this.device = null;
 
-        this.interface0Claimed = false;
+this.interface0Claimed = false;
 
-        this.interface1Claimed = false;
+this.interface1Claimed = false;
 
-        this.decoder =
+this.decoder =
 
-            new TextDecoder();
+new TextDecoder();
 
-        this.encoder =
+this.encoder =
 
-            new TextEncoder();
+new TextEncoder();
 
-        this.buffer = "";
+this.buffer = "";
 
-        this.v45RxChunkCount = 0;
+this.v45RxChunkCount = 0;
 
-    }
+}
 
-    get name() {
+get name() {
 
-        return "WebUSB";
+return "WebUSB";
 
-    }
+}
 
-    async connect() {
+async connect() {
 
-        if (!("usb" in navigator)) {
+if (!("usb" in navigator)) {
 
-            throw new Error(
+throw new Error(
 
-                "WebUSB nie jest dostępne w tej przeglądarce."
+"WebUSB nie jest dostępne w tej przeglądarce."
 
-            );
+);
 
-        }
+}
 
-        addSerialLine(
+addSerialLine(
 
-            "V46: WebUSB transport START",
+"V46: WebUSB transport START",
 
-            "serial-info"
+"serial-info"
 
-        );
+);
 
-        const devices =
+const devices =
 
-            await navigator.usb.getDevices();
+await navigator.usb.getDevices();
 
-        addSerialLine(
+addSerialLine(
 
-            `V46: WebUSB getDevices() count=${devices.length}`,
+`V46: WebUSB getDevices() count=${devices.length}`,
 
-            "serial-info"
+"serial-info"
 
-        );
+);
 
-        devices.forEach((device, index) => {
+devices.forEach((device, index) => {
 
-            addSerialLine(
+addSerialLine(
 
-                `V46: USB device #${index + 1} VID=0x${device.vendorId.toString(16).toUpperCase().padStart(4, "0")} PID=0x${device.productId.toString(16).toUpperCase().padStart(4, "0")} manufacturer=${device.manufacturerName || "?"} product=${device.productName || "?"}`,
+`V46: USB device #${index + 1} VID=0x${device.vendorId.toString(16).toUpperCase().padStart(4, "0")} PID=0x${device.productId.toString(16).toUpperCase().padStart(4, "0")} manufacturer=${device.manufacturerName || "?"} product=${device.productName || "?"}`,
 
-                "serial-info"
+"serial-info"
 
-            );
+);
 
-        });
+});
 
-        this.device =
+this.device =
 
-            devices.find(
+devices.find(
 
-                device =>
+device =>
 
-                    device.vendorId ===
+device.vendorId ===
 
-                        USB_VENDOR_ID &&
+USB_VENDOR_ID &&
 
-                    device.productId ===
+device.productId ===
 
-                        USB_PRODUCT_ID
+USB_PRODUCT_ID
 
-            );
+);
 
-        if (this.device) {
+if (this.device) {
 
-            addSerialLine(
+addSerialLine(
 
-                "V46: WebUSB authorized device FOUND",
+"V46: WebUSB authorized device FOUND",
 
-                "serial-info"
+"serial-info"
 
-            );
+);
 
-        }
+}
 
-        else {
+else {
 
-            addSerialLine(
+addSerialLine(
 
-                "V46: WebUSB requestDevice() START",
+"V46: WebUSB requestDevice() START",
 
-                "serial-info"
+"serial-info"
 
-            );
+);
 
-            addSerialLine(
+addSerialLine(
 
-                `V46: WebUSB requestDevice() FILTER = vendorId 0x${USB_VENDOR_ID.toString(16).toUpperCase()}, productId 0x${USB_PRODUCT_ID.toString(16).toUpperCase()}`,
+`V46: WebUSB requestDevice() FILTER = vendorId 0x${USB_VENDOR_ID.toString(16).toUpperCase()}, productId 0x${USB_PRODUCT_ID.toString(16).toUpperCase()}`,
 
-                "serial-info"
+"serial-info"
 
-            );
+);
 
-            // V46: diagnostic fallback — filter by Arduino vendor only.
+// V46: diagnostic fallback — filter by Arduino vendor only.
 
-            // This lets Android show the board even if its PID differs.
+// This lets Android show the board even if its PID differs.
 
-            this.device =
+this.device =
 
-                await navigator.usb.requestDevice({
+await navigator.usb.requestDevice({
 
-                    filters: [
+filters: [
 
-                        {
+{
 
-                            vendorId:
+vendorId:
 
-                                USB_VENDOR_ID
+USB_VENDOR_ID
 
-                        }
+}
 
-                    ]
+]
 
-                });
+});
 
-            addSerialLine(
+addSerialLine(
 
-                "V46: WebUSB requestDevice() OK",
+"V46: WebUSB requestDevice() OK",
 
-                "serial-info"
+"serial-info"
 
-            );
+);
 
-        }
+}
 
-        try {
+try {
 
-            addSerialLine(
+addSerialLine(
 
-                "V40 TEST: device.open() START",
+"V40 TEST: device.open() START",
 
-                "serial-info"
+"serial-info"
 
-            );
+);
 
-            await this.device.open();
+await this.device.open();
 
-            addSerialLine(
+addSerialLine(
 
-                "V40 TEST: device.open() OK",
+"V40 TEST: device.open() OK",
 
-                "serial-info"
+"serial-info"
 
-            );
+);
 
-            if (
+if (
 
-                this.device.configuration ===
+this.device.configuration ===
 
-                null
+null
 
-            ) {
+) {
 
-                addSerialLine(
+addSerialLine(
 
-                    "V40 TEST: selectConfiguration(1) START",
+"V40 TEST: selectConfiguration(1) START",
 
-                    "serial-info"
+"serial-info"
 
-                );
+);
 
-                await this.device
+await this.device
 
-                    .selectConfiguration(1);
+.selectConfiguration(1);
 
-                addSerialLine(
+addSerialLine(
 
-                    "V40 TEST: selectConfiguration(1) OK",
+"V40 TEST: selectConfiguration(1) OK",
 
-                    "serial-info"
+"serial-info"
 
-                );
+);
 
-            }
+}
 
-            else if (
+else if (
 
-                this.device.configuration
+this.device.configuration
 
-                    .configurationValue !== 1
+.configurationValue !== 1
 
-            ) {
+) {
 
-                addSerialLine(
+addSerialLine(
 
-                    "V40 TEST: active configuration != 1",
+"V40 TEST: active configuration != 1",
 
-                    "serial-info"
+"serial-info"
 
-                );
+);
 
-                addSerialLine(
+addSerialLine(
 
-                    "V40 TEST: selectConfiguration(1) START",
+"V40 TEST: selectConfiguration(1) START",
 
-                    "serial-info"
+"serial-info"
 
-                );
+);
 
-                await this.device
+await this.device
 
-                    .selectConfiguration(1);
+.selectConfiguration(1);
 
-                addSerialLine(
+addSerialLine(
 
-                    "V40 TEST: selectConfiguration(1) OK",
+"V40 TEST: selectConfiguration(1) OK",
 
-                    "serial-info"
+"serial-info"
 
-                );
+);
 
-            }
+}
 
-            else {
+else {
 
-                addSerialLine(
+addSerialLine(
 
-                    "V40 TEST: configuration 1 already active",
+"V40 TEST: configuration 1 already active",
 
-                    "serial-info"
+"serial-info"
 
-                );
+);
 
-            }
+}
 
-            const configuration =
+const configuration =
 
-                this.device.configuration;
+this.device.configuration;
 
-            if (!configuration) {
+if (!configuration) {
 
-                throw new Error(
+throw new Error(
 
-                    "V39: brak aktywnej konfiguracji USB."
+"V39: brak aktywnej konfiguracji USB."
 
-                );
+);
 
-            }
+}
 
-            addSerialLine(
+addSerialLine(
 
-                "V40 TEST: interfaces = " +
+"V40 TEST: interfaces = " +
 
-                configuration.interfaces.length,
+configuration.interfaces.length,
 
-                "serial-info"
+"serial-info"
 
-            );
+);
 
-            for (
+for (
 
-                const usbInterface
+const usbInterface
 
-                of configuration.interfaces
+of configuration.interfaces
 
-            ) {
+) {
 
-                for (
+for (
 
-                    const alternate
+const alternate
 
-                    of usbInterface.alternates
+of usbInterface.alternates
 
-                ) {
+) {
 
-                    addSerialLine(
+addSerialLine(
 
-                        "V40 TEST: interface " +
+"V40 TEST: interface " +
 
-                        usbInterface.interfaceNumber +
+usbInterface.interfaceNumber +
 
-                        " alt " +
+" alt " +
 
-                        alternate.alternateSetting +
+alternate.alternateSetting +
 
-                        " class=" +
+" class=" +
 
-                        alternate.interfaceClass +
+alternate.interfaceClass +
 
-                        " subclass=" +
+" subclass=" +
 
-                        alternate.interfaceSubclass +
+alternate.interfaceSubclass +
 
-                        " protocol=" +
+" protocol=" +
 
-                        alternate.interfaceProtocol +
+alternate.interfaceProtocol +
 
-                        " endpoints=" +
+" endpoints=" +
 
-                        alternate.endpoints.length,
+alternate.endpoints.length,
 
-                        "serial-info"
+"serial-info"
 
-                    );
+);
 
-                    for (
+for (
 
-                        const endpoint
+const endpoint
 
-                        of alternate.endpoints
+of alternate.endpoints
 
-                    ) {
+) {
 
-                        addSerialLine(
+addSerialLine(
 
-                            "V40 TEST: endpoint " +
+"V40 TEST: endpoint " +
 
-                            endpoint.endpointNumber +
+endpoint.endpointNumber +
 
-                            " " +
+" " +
 
-                            endpoint.direction +
+endpoint.direction +
 
-                            " " +
+" " +
 
-                            endpoint.type +
+endpoint.type +
 
-                            " packet=" +
+" packet=" +
 
-                            endpoint.packetSize,
+endpoint.packetSize,
 
-                            "serial-info"
+"serial-info"
 
-                        );
+);
 
-                    }
+}
 
-                }
+}
 
-            }
+}
 
-            // Arduino Nano 33 BLE Sense Rev2 exposes CDC as:
+// Arduino Nano 33 BLE Sense Rev2 exposes CDC as:
 
-            // interface 0 = CDC control
+// interface 0 = CDC control
 
-            // interface 1 = CDC data
+// interface 1 = CDC data
 
-            //
+//
 
-            // IMPORTANT:
+// IMPORTANT:
 
-            // Claim interface 0 FIRST.
+// Claim interface 0 FIRST.
 
-            // Then configure the CDC line.
+// Then configure the CDC line.
 
-            // Only then claim interface 1.
+// Only then claim interface 1.
 
-            //
+//
 
-            // This is intentionally explicit because the earlier
+// This is intentionally explicit because the earlier
 
-            // diagnostic versions showed claimInterface(1) failing
+// diagnostic versions showed claimInterface(1) failing
 
-            // when interface 0 had not been claimed first.
+// when interface 0 had not been claimed first.
 
-            addSerialLine(
+addSerialLine(
 
-                "V40 TEST: claimInterface(0) START",
+"V40 TEST: claimInterface(0) START",
 
-                "serial-info"
+"serial-info"
 
-            );
+);
 
-            await this.device
+await this.device
 
-                .claimInterface(0);
+.claimInterface(0);
 
-            this.interface0Claimed = true;
+this.interface0Claimed = true;
 
-            addSerialLine(
+addSerialLine(
 
-                "V40 TEST: claimInterface(0) OK",
+"V40 TEST: claimInterface(0) OK",
 
-                "serial-info"
+"serial-info"
 
-            );
+);
 
-            // CDC SET_LINE_CODING
+// CDC SET_LINE_CODING
 
-            // 115200 baud, 1 stop bit, no parity, 8 data bits.
+// 115200 baud, 1 stop bit, no parity, 8 data bits.
 
-            const lineCoding =
+const lineCoding =
 
-                new Uint8Array([
+new Uint8Array([
 
-                    0x00,
+0x00,
 
-                    0xC2,
+0xC2,
 
-                    0x01,
+0x01,
 
-                    0x00,
+0x00,
 
-                    0x00,
+0x00,
 
-                    0x00,
+0x00,
 
-                    0x08
+0x08
 
-                ]);
+]);
 
-            addSerialLine(
+addSerialLine(
 
-                "V40 TEST: CDC SET_LINE_CODING START",
+"V40 TEST: CDC SET_LINE_CODING START",
 
-                "serial-info"
+"serial-info"
 
-            );
+);
 
-            await this.device
+await this.device
 
-                .controlTransferOut(
+.controlTransferOut(
 
-                    {
+{
 
-                        requestType:
+requestType:
 
-                            "class",
+"class",
 
-                        recipient:
+recipient:
 
-                            "interface",
+"interface",
 
-                        request:
+request:
 
-                            0x20,
+0x20,
 
-                        value:
+value:
 
-                            0x0000,
+0x0000,
 
-                        index:
+index:
 
-                            0x0000
+0x0000
 
-                    },
+},
 
-                    lineCoding
+lineCoding
 
-                );
+);
 
-            addSerialLine(
+addSerialLine(
 
-                "V40 TEST: CDC SET_LINE_CODING OK",
+"V40 TEST: CDC SET_LINE_CODING OK",
 
-                "serial-info"
+"serial-info"
 
-            );
+);
 
-            // CDC SET_CONTROL_LINE_STATE
+// CDC SET_CONTROL_LINE_STATE
 
-            // DTR = 1.
+// DTR = 1.
 
-            addSerialLine(
+addSerialLine(
 
-                "V40 TEST: CDC SET_CONTROL_LINE_STATE START",
+"V40 TEST: CDC SET_CONTROL_LINE_STATE START",
 
-                "serial-info"
+"serial-info"
 
-            );
+);
 
-            await this.device
+await this.device
 
-                .controlTransferOut(
+.controlTransferOut(
 
-                    {
+{
 
-                        requestType:
+requestType:
 
-                            "class",
+"class",
 
-                        recipient:
+recipient:
 
-                            "interface",
+"interface",
 
-                        request:
+request:
 
-                            0x22,
+0x22,
 
-                        value:
+value:
 
-                            0x0001,
+0x0001,
 
-                        index:
+index:
 
-                            0x0000
+0x0000
 
-                    }
+}
 
-                );
+);
 
-            addSerialLine(
+addSerialLine(
 
-                "V40 TEST: CDC SET_CONTROL_LINE_STATE OK",
+"V40 TEST: CDC SET_CONTROL_LINE_STATE OK",
 
-                "serial-info"
+"serial-info"
 
-            );
+);
 
-            addSerialLine(
+addSerialLine(
 
-                "V40 TEST: claimInterface(1) START",
+"V40 TEST: claimInterface(1) START",
 
-                "serial-info"
+"serial-info"
 
-            );
+);
 
-            await this.device
+await this.device
 
-                .claimInterface(1);
+.claimInterface(1);
 
-            this.interface1Claimed = true;
+this.interface1Claimed = true;
 
-            addSerialLine(
+addSerialLine(
 
-                "V40 TEST: claimInterface(1) OK",
+"V40 TEST: claimInterface(1) OK",
 
-                "serial-info"
+"serial-info"
 
-            );
+);
 
-            this.running = true;
+this.running = true;
 
-            this.v45RxChunkCount = 0;
+this.v45RxChunkCount = 0;
 
-            addSerialLine(
+addSerialLine(
 
-                "V46: WebUSB readLoop START",
+"V46: WebUSB readLoop START",
 
-                "serial-info"
+"serial-info"
 
-            );
+);
 
-            this.readTask =
+this.readTask =
 
-                this.readLoop();
+this.readLoop();
 
-        }
+}
 
-        catch (error) {
+catch (error) {
 
-            addSerialLine(
+addSerialLine(
 
-                "V46: WebUSB CONNECT ERROR: " +
+"V46: WebUSB CONNECT ERROR: " +
 
-                error.message,
+error.message,
 
-                "serial-error"
+"serial-error"
 
-            );
+);
 
-            await this.cleanupAfterConnectError();
+await this.cleanupAfterConnectError();
 
-            throw error;
+throw error;
 
-        }
+}
 
-    }
+}
 
-    async readLoop() {
+async readLoop() {
 
-        try {
+try {
 
-            while (this.running) {
+while (this.running) {
 
-                const result =
+const result =
 
-                    await this.device
+await this.device
 
-                        .transferIn(
+.transferIn(
 
-                            1,
+1,
 
-                            64
+64
 
-                        );
+);
 
-                if (
+if (
 
-                    !result ||
+!result ||
 
-                    !result.data ||
+!result.data ||
 
-                    result.data.byteLength === 0
+result.data.byteLength === 0
 
-                ) {
+) {
 
-                    continue;
+continue;
 
-                }
+}
 
-                const receivedBytes =
+const receivedBytes =
 
-                    new Uint8Array(
+new Uint8Array(
 
-                        result.data.buffer,
+result.data.buffer,
 
-                        result.data.byteOffset,
+result.data.byteOffset,
 
-                        result.data.byteLength
+result.data.byteLength
 
-                    );
+);
 
-                this.v45RxChunkCount++;
+this.v45RxChunkCount++;
 
-                v45LogRawUSB(
+v45LogRawUSB(
 
-                    receivedBytes,
+receivedBytes,
 
-                    "WebUSB",
+"WebUSB",
 
-                    this.v45RxChunkCount
+this.v45RxChunkCount
 
-                );
+);
 
-                const text =
+const text =
 
-                    this.decoder.decode(
+this.decoder.decode(
 
-                        result.data
+result.data
 
-                    );
+);
 
-                this.buffer += text;
+this.buffer += text;
 
-                const lines =
+const lines =
 
-                    this.buffer.split(
+this.buffer.split(
 
-                        /\r?\n/
+/\r?\n/
 
-                    );
+);
 
-                this.buffer =
+this.buffer =
 
-                    lines.pop() || "";
+lines.pop() || "";
 
-                for (
+for (
 
-                    const line
+const line
 
-                    of lines
+of lines
 
-                ) {
+) {
 
-                    const cleanLine =
+const cleanLine =
 
-                        line.trim();
+line.trim();
 
-                    if (cleanLine) {
+if (cleanLine) {
 
-                        if (
+if (
 
-                            !isSensorDataLine(cleanLine)
+!isSensorDataLine(cleanLine)
 
-                        ) {
+) {
 
-                            addSerialLine(
+addSerialLine(
 
-                                "V43: USB RX " +
+"V43: USB RX " +
 
-                                cleanLine,
+cleanLine,
 
-                                "serial-info"
+"serial-info"
 
-                            );
+);
 
-                        }
+}
 
-                        this.onLine(
+this.onLine(
 
-                            cleanLine
+cleanLine
 
-                        );
+);
 
-                    }
+}
 
-                }
+}
 
-            }
+}
 
-        }
+}
 
-        catch (error) {
+catch (error) {
 
-            if (this.running) {
+if (this.running) {
 
-                console.error(
+console.error(
 
-                    "WebUSB read error:",
+"WebUSB read error:",
 
-                    error
+error
 
-                );
+);
 
-                addSerialLine(
+addSerialLine(
 
-                    "V43: WebUSB read error: " +
+"V43: WebUSB read error: " +
 
-                    error.message,
+error.message,
 
-                    "serial-error"
+"serial-error"
 
-                );
+);
 
-            }
+}
 
-        }
+}
 
-    }
+}
 
-    async send(command) {
+async send(command) {
 
-        if (
+if (
 
-            !this.device ||
+!this.device ||
 
-            !this.device.opened ||
+!this.device.opened ||
 
-            !this.interface1Claimed
+!this.interface1Claimed
 
-        ) {
+) {
 
-            throw new Error(
+throw new Error(
 
-                "WebUSB nie jest gotowy do wysyłania."
+"WebUSB nie jest gotowy do wysyłania."
 
-            );
+);
 
-        }
+}
 
-        const data =
+const data =
 
-            this.encoder.encode(
+this.encoder.encode(
 
-                command + "\n"
+command + "\n"
 
-            );
+);
 
-        addSerialLine(
+addSerialLine(
 
-            "V40 TEST: USB TX " +
+"V40 TEST: USB TX " +
 
-            command,
+command,
 
-            "serial-info"
+"serial-info"
 
-        );
+);
 
-        await this.device.transferOut(
+await this.device.transferOut(
 
-            1,
+1,
 
-            data
+data
 
-        );
+);
 
-    }
+}
 
-    async cleanupAfterConnectError() {
+async cleanupAfterConnectError() {
 
-        this.running = false;
+this.running = false;
 
-        if (this.device) {
+if (this.device) {
 
-            if (this.interface1Claimed) {
+if (this.interface1Claimed) {
 
-                try {
+try {
 
-                    await this.device
+await this.device
 
-                        .releaseInterface(1);
+.releaseInterface(1);
 
-                }
+}
 
-                catch (error) {
+catch (error) {
 
-                    console.warn(
+console.warn(
 
-                        "V39 releaseInterface(1):",
+"V39 releaseInterface(1):",
 
-                        error
+error
 
-                    );
+);
 
-                }
+}
 
-                this.interface1Claimed =
+this.interface1Claimed =
 
-                    false;
+false;
 
-            }
+}
 
-            if (this.interface0Claimed) {
+if (this.interface0Claimed) {
 
-                try {
+try {
 
-                    await this.device
+await this.device
 
-                        .releaseInterface(0);
+.releaseInterface(0);
 
-                }
+}
 
-                catch (error) {
+catch (error) {
 
-                    console.warn(
+console.warn(
 
-                        "V39 releaseInterface(0):",
+"V39 releaseInterface(0):",
 
-                        error
+error
 
-                    );
+);
 
-                }
+}
 
-                this.interface0Claimed =
+this.interface0Claimed =
 
-                    false;
+false;
 
-            }
+}
 
-            try {
+try {
 
-                await this.device.close();
+await this.device.close();
 
-            }
+}
 
-            catch (error) {
+catch (error) {
 
-                console.warn(
+console.warn(
 
-                    "V39 device.close():",
+"V39 device.close():",
 
-                    error
+error
 
-                );
+);
 
-            }
+}
 
-        }
+}
 
-        this.device = null;
+this.device = null;
 
-        this.readTask = null;
+this.readTask = null;
 
-        this.buffer = "";
+this.buffer = "";
 
-    }
+}
 
-    async disconnect() {
+async disconnect() {
 
-        this.running = false;
+this.running = false;
 
-        addSerialLine(
+addSerialLine(
 
-            "V46: WebUSB disconnect START",
+"V46: WebUSB disconnect START",
 
-            "serial-info"
+"serial-info"
 
-        );
+);
 
-        if (this.readTask) {
+if (this.readTask) {
 
-            try {
+try {
 
-                await Promise.race([
+await Promise.race([
 
-                    this.readTask,
+this.readTask,
 
-                    new Promise(
+new Promise(
 
-                        resolve =>
+resolve =>
 
-                            setTimeout(
+setTimeout(
 
-                                resolve,
+resolve,
 
-                                1200
+1200
 
-                            )
+)
 
-                    )
+)
 
-                ]);
+]);
 
-            }
+}
 
-            catch (error) {
+catch (error) {
 
-                console.warn(
+console.warn(
 
-                    "V39 WebUSB read task:",
+"V39 WebUSB read task:",
 
-                    error
+error
 
-                );
+);
 
-            }
+}
 
-        }
+}
 
-        if (this.device) {
+if (this.device) {
 
-            if (this.interface1Claimed) {
+if (this.interface1Claimed) {
 
-                try {
+try {
 
-                    await this.device
+await this.device
 
-                        .releaseInterface(1);
+.releaseInterface(1);
 
-                    addSerialLine(
+addSerialLine(
 
-                        "V40 TEST: interface 1 released",
+"V40 TEST: interface 1 released",
 
-                        "serial-info"
+"serial-info"
 
-                    );
+);
 
-                }
+}
 
-                catch (error) {
+catch (error) {
 
-                    addSerialLine(
+addSerialLine(
 
-                        "V40 TEST: interface 1 release ERROR: " +
+"V40 TEST: interface 1 release ERROR: " +
 
-                        error.message,
+error.message,
 
-                        "serial-error"
+"serial-error"
 
-                    );
+);
 
-                }
+}
 
-                this.interface1Claimed =
+this.interface1Claimed =
 
-                    false;
+false;
 
-            }
+}
 
-            if (this.interface0Claimed) {
+if (this.interface0Claimed) {
 
-                try {
+try {
 
-                    await this.device
+await this.device
 
-                        .releaseInterface(0);
+.releaseInterface(0);
 
-                    addSerialLine(
+addSerialLine(
 
-                        "V40 TEST: interface 0 released",
+"V40 TEST: interface 0 released",
 
-                        "serial-info"
+"serial-info"
 
-                    );
+);
 
-                }
+}
 
-                catch (error) {
+catch (error) {
 
-                    addSerialLine(
+addSerialLine(
 
-                        "V40 TEST: interface 0 release ERROR: " +
+"V40 TEST: interface 0 release ERROR: " +
 
-                        error.message,
+error.message,
 
-                        "serial-error"
+"serial-error"
 
-                    );
+);
 
-                }
+}
 
-                this.interface0Claimed =
+this.interface0Claimed =
 
-                    false;
+false;
 
-            }
+}
 
-            try {
+try {
 
-                await this.device.close();
+await this.device.close();
 
-                addSerialLine(
+addSerialLine(
 
-                    "V46: WebUSB device.close() OK",
+"V46: WebUSB device.close() OK",
 
-                    "serial-info"
+"serial-info"
 
-                );
+);
 
-            }
+}
 
-            catch (error) {
+catch (error) {
 
-                addSerialLine(
+addSerialLine(
 
-                    "V43: WebUSB close ERROR: " +
+"V43: WebUSB close ERROR: " +
 
-                    error.message,
+error.message,
 
-                    "serial-error"
+"serial-error"
 
-                );
+);
 
-            }
+}
 
-        }
+}
 
-        this.device = null;
+this.device = null;
 
-        this.readTask = null;
+this.readTask = null;
 
-        this.buffer = "";
+this.buffer = "";
 
-        addSerialLine(
+addSerialLine(
 
-            "V46: WebUSB disconnect COMPLETE",
+"V46: WebUSB disconnect COMPLETE",
 
-            "serial-info"
+"serial-info"
 
-        );
+);
 
-    }
+}
 
 }
 
 class WebBluetoothTransport
 
-    extends SensorTransport {
+extends SensorTransport {
 
-    constructor(onLine) {
+constructor(onLine) {
 
-        super(onLine);
+super(onLine);
 
-        this.device = null;
+this.device = null;
 
-        this.server = null;
+this.server = null;
 
-        this.sensorService = null;
+this.sensorService = null;
 
-        this.liveCharacteristic = null;
+this.liveCharacteristic = null;
 
-        this.controlService = null;
+this.controlService = null;
 
-        this.commandCharacteristic = null;
+this.commandCharacteristic = null;
 
-        this.decoder =
+this.decoder =
 
-            new TextDecoder();
+new TextDecoder();
 
-        this.boundNotificationHandler =
+this.boundNotificationHandler =
 
-            this.handleNotification.bind(this);
+this.handleNotification.bind(this);
 
-        this.boundDisconnectHandler =
+this.boundDisconnectHandler =
 
-            this.handleDisconnected.bind(this);
+this.handleDisconnected.bind(this);
 
-        // Prevent duplicate handling of the same BLE disconnect event.
+// Prevent duplicate handling of the same BLE disconnect event.
 
-        this.disconnectHandled = false;
+this.disconnectHandled = false;
 
-    }
+}
 
-    get name() {
+get name() {
 
-        return "Web Bluetooth";
+return "Web Bluetooth";
 
-    }
+}
 
-    async connect() {
+async connect() {
 
-        // This transport instance is starting a new connection attempt.
+// This transport instance is starting a new connection attempt.
 
-        this.disconnectHandled = false;
+this.disconnectHandled = false;
 
-        if (!("bluetooth" in navigator)) {
+if (!("bluetooth" in navigator)) {
 
-            throw new Error(
+throw new Error(
 
-                "Web Bluetooth nie jest dostępny w tej przeglądarce."
+"Web Bluetooth nie jest dostępny w tej przeglądarce."
 
-            );
+);
 
-        }
+}
 
-        addSerialLine(
+addSerialLine(
 
-            "BLE: requestDevice...",
+"BLE: requestDevice...",
 
-            "serial-info"
+"serial-info"
 
-        );
+);
 
-        this.device =
+this.device =
 
-            await navigator.bluetooth.requestDevice({
+await navigator.bluetooth.requestDevice({
 
-                filters: [
+filters: [
 
-                    {
+{
 
-                        name:
+name:
 
-                            "GAZELA SENSOR"
+"GAZELA SENSOR"
 
-                    }
+}
 
-                ],
+],
 
-                optionalServices: [
+optionalServices: [
 
-                    BLE_SENSOR_SERVICE_UUID,
+BLE_SENSOR_SERVICE_UUID,
 
-                    BLE_CONTROL_SERVICE_UUID
+BLE_CONTROL_SERVICE_UUID
 
-                ]
+]
 
-            });
+});
 
-        addSerialLine(
+addSerialLine(
 
-            "BLE: requestDevice OK",
+"BLE: requestDevice OK",
 
-            "serial-info"
+"serial-info"
 
-        );
+);
 
-        this.device.addEventListener(
+this.device.addEventListener(
 
-            "gattserverdisconnected",
+"gattserverdisconnected",
 
-            this.boundDisconnectHandler
+this.boundDisconnectHandler
 
-        );
+);
 
-        addSerialLine(
+addSerialLine(
 
-            "BLE: GATT connect...",
+"BLE: GATT connect...",
 
-            "serial-info"
+"serial-info"
 
-        );
+);
 
-        this.server =
+this.server =
 
-            await this.device.gatt.connect();
+await this.device.gatt.connect();
 
-        addSerialLine(
+addSerialLine(
 
-            "BLE: GATT connected",
+"BLE: GATT connected",
 
-            "serial-info"
+"serial-info"
 
-        );
+);
 
-        addSerialLine(
+addSerialLine(
 
-            "BLE: get sensor service...",
+"BLE: get sensor service...",
 
-            "serial-info"
+"serial-info"
 
-        );
+);
 
-        this.sensorService =
+this.sensorService =
 
-            await this.server
+await this.server
 
-                .getPrimaryService(
+.getPrimaryService(
 
-                    BLE_SENSOR_SERVICE_UUID
+BLE_SENSOR_SERVICE_UUID
 
-                );
+);
 
-        addSerialLine(
+addSerialLine(
 
-            "BLE: sensor service OK",
+"BLE: sensor service OK",
 
-            "serial-info"
+"serial-info"
 
-        );
+);
 
-        addSerialLine(
+addSerialLine(
 
-            "BLE: get live characteristic...",
+"BLE: get live characteristic...",
 
-            "serial-info"
+"serial-info"
 
-        );
+);
 
-        this.liveCharacteristic =
+this.liveCharacteristic =
 
-            await this.sensorService
+await this.sensorService
 
-                .getCharacteristic(
+.getCharacteristic(
 
-                    BLE_LIVE_CHARACTERISTIC_UUID
+BLE_LIVE_CHARACTERISTIC_UUID
 
-                );
+);
 
-        addSerialLine(
+addSerialLine(
 
-            "BLE: live characteristic OK",
+"BLE: live characteristic OK",
 
-            "serial-info"
+"serial-info"
 
-        );
+);
 
-        addSerialLine(
+addSerialLine(
 
-            "BLE: get control service...",
+"BLE: get control service...",
 
-            "serial-info"
+"serial-info"
 
-        );
+);
 
-        this.controlService =
+this.controlService =
 
-            await this.server
+await this.server
 
-                .getPrimaryService(
+.getPrimaryService(
 
-                    BLE_CONTROL_SERVICE_UUID
+BLE_CONTROL_SERVICE_UUID
 
-                );
+);
 
-        addSerialLine(
+addSerialLine(
 
-            "BLE: control service OK",
+"BLE: control service OK",
 
-            "serial-info"
+"serial-info"
 
-        );
+);
 
-        addSerialLine(
+addSerialLine(
 
-            "BLE: get command characteristic...",
+"BLE: get command characteristic...",
 
-            "serial-info"
+"serial-info"
 
-        );
+);
 
-        this.commandCharacteristic =
+this.commandCharacteristic =
 
-            await this.controlService
+await this.controlService
 
-                .getCharacteristic(
+.getCharacteristic(
 
-                    BLE_COMMAND_CHARACTERISTIC_UUID
+BLE_COMMAND_CHARACTERISTIC_UUID
 
-                );
+);
 
-        addSerialLine(
+addSerialLine(
 
-            "BLE: command characteristic OK",
+"BLE: command characteristic OK",
 
-            "serial-info"
+"serial-info"
 
-        );
+);
 
-        addSerialLine(
+addSerialLine(
 
-            "BLE: start notifications...",
+"BLE: start notifications...",
 
-            "serial-info"
+"serial-info"
 
-        );
+);
 
-        await this.liveCharacteristic
+await this.liveCharacteristic
 
-            .startNotifications();
+.startNotifications();
 
-        addSerialLine(
+addSerialLine(
 
-            "BLE: notifications OK",
+"BLE: notifications OK",
 
-            "serial-info"
+"serial-info"
 
-        );
+);
 
-        this.liveCharacteristic
+this.liveCharacteristic
 
-            .addEventListener(
+.addEventListener(
 
-                "characteristicvaluechanged",
+"characteristicvaluechanged",
 
-                this.boundNotificationHandler
+this.boundNotificationHandler
 
-            );
+);
 
-        this.running = true;
+this.running = true;
 
-        addSerialLine(
+addSerialLine(
 
-            "BLE: CONNECT COMPLETE",
+"BLE: CONNECT COMPLETE",
 
-            "serial-info"
+"serial-info"
 
-        );
+);
 
-    }
+}
 
-    handleNotification(event) {
+handleNotification(event) {
 
-        try {
+try {
 
-            const value =
+const value =
 
-                event.target.value;
+event.target.value;
 
-            const text =
+const text =
 
-                this.decoder.decode(
+this.decoder.decode(
 
-                    value
+value
 
-                );
+);
 
-            const lines =
+const lines =
 
-                text.split(
+text.split(
 
-                    /\r?\n/
+/\r?\n/
 
-                );
+);
 
-            for (
+for (
 
-                const line
+const line
 
-                of lines
+of lines
 
-            ) {
+) {
 
-                const cleanLine =
+const cleanLine =
 
-                    line.trim();
+line.trim();
 
-                if (cleanLine) {
+if (cleanLine) {
 
-                    this.onLine(
+this.onLine(
 
-                        cleanLine
+cleanLine
 
-                    );
+);
 
-                }
+}
 
-            }
+}
 
-        }
+}
 
-        catch (error) {
+catch (error) {
 
-            console.error(
+console.error(
 
-                "BLE notification error:",
+"BLE notification error:",
 
-                error
+error
 
-            );
+);
 
-        }
+}
 
-    }
+}
 
-    async send(command) {
+async send(command) {
 
-        if (
+if (
 
-            !this.commandCharacteristic
+!this.commandCharacteristic
 
-        ) {
+) {
 
-            throw new Error(
+throw new Error(
 
-                "BLE command characteristic nie jest gotowa."
+"BLE command characteristic nie jest gotowa."
 
-            );
+);
 
-        }
+}
 
-        const data =
+const data =
 
-            new TextEncoder().encode(
+new TextEncoder().encode(
 
-                command
+command
 
-            );
+);
 
-        await this.commandCharacteristic
+await this.commandCharacteristic
 
-            .writeValue(data);
+.writeValue(data);
 
-    }
+}
 
-    async disconnect() {
+async disconnect() {
 
-        this.running = false;
+this.running = false;
 
-        if (
+if (
 
-            this.liveCharacteristic
+this.liveCharacteristic
 
-        ) {
+) {
 
-            try {
+try {
 
-                await this.liveCharacteristic
+await this.liveCharacteristic
 
-                    .stopNotifications();
+.stopNotifications();
 
-            }
+}
 
-            catch (error) {
+catch (error) {
 
-                console.warn(
+console.warn(
 
-                    "BLE stopNotifications:",
+"BLE stopNotifications:",
 
-                    error
+error
 
-                );
+);
 
-            }
+}
 
-            try {
+try {
 
-                this.liveCharacteristic
+this.liveCharacteristic
 
-                    .removeEventListener(
+.removeEventListener(
 
-                        "characteristicvaluechanged",
+"characteristicvaluechanged",
 
-                        this.boundNotificationHandler
+this.boundNotificationHandler
 
-                    );
+);
 
-            }
+}
 
-            catch (error) {
+catch (error) {
 
-                console.warn(error);
+console.warn(error);
 
-            }
+}
 
-        }
+}
 
-        if (
+if (
 
-            this.device &&
+this.device &&
 
-            this.device.gatt &&
+this.device.gatt &&
 
-            this.device.gatt.connected
+this.device.gatt.connected
 
-        ) {
+) {
 
-            try {
+try {
 
-                this.device.gatt.disconnect();
+this.device.gatt.disconnect();
 
-            }
+}
 
-            catch (error) {
+catch (error) {
 
-                console.warn(
+console.warn(
 
-                    "BLE disconnect:",
+"BLE disconnect:",
 
-                    error
+error
 
-                );
+);
 
-            }
+}
 
-        }
+}
 
-        if (this.device) {
+if (this.device) {
 
-            try {
+try {
 
-                this.device.removeEventListener(
+this.device.removeEventListener(
 
-                    "gattserverdisconnected",
+"gattserverdisconnected",
 
-                    this.boundDisconnectHandler
+this.boundDisconnectHandler
 
-                );
+);
 
-            }
+}
 
-            catch (error) {
+catch (error) {
 
-                console.warn(error);
+console.warn(error);
 
-            }
+}
 
-        }
+}
 
-        this.device = null;
+this.device = null;
 
-        this.server = null;
+this.server = null;
 
-        this.sensorService = null;
+this.sensorService = null;
 
-        this.liveCharacteristic = null;
+this.liveCharacteristic = null;
 
-        this.controlService = null;
+this.controlService = null;
 
-        this.commandCharacteristic = null;
+this.commandCharacteristic = null;
 
-    }
+}
 
-    handleDisconnected() {
+handleDisconnected() {
 
-        // The browser can deliver more than one disconnect notification
+// The browser can deliver more than one disconnect notification
 
-        // while a GATT connection is being torn down. Handle this transport
+// while a GATT connection is being torn down. Handle this transport
 
-        // instance only once.
+// instance only once.
 
-        if (this.disconnectHandled) {
+if (this.disconnectHandled) {
 
-            return;
+return;
 
-        }
+}
 
-        this.disconnectHandled = true;
+this.disconnectHandled = true;
 
-        this.running = false;
+this.running = false;
 
-        addSerialLine(
+addSerialLine(
 
-            "BLE device disconnected.",
+"BLE device disconnected.",
 
-            "serial-error"
+"serial-error"
 
-        );
+);
 
-        // ----------------------------------------------------
+// ----------------------------------------------------
 
-        // CLEAN UP THIS BLE TRANSPORT INSTANCE
+// CLEAN UP THIS BLE TRANSPORT INSTANCE
 
-        // ----------------------------------------------------
+// ----------------------------------------------------
 
-        //
+//
 
-        // When the peripheral disconnects by itself, disconnect() is not
+// When the peripheral disconnects by itself, disconnect() is not
 
-        // called by the application. Therefore the old event listeners
+// called by the application. Therefore the old event listeners
 
-        // must be removed here as well. Otherwise an old transport object
+// must be removed here as well. Otherwise an old transport object
 
-        // can remain subscribed to the same BluetoothDevice and react to
+// can remain subscribed to the same BluetoothDevice and react to
 
-        // later disconnects.
+// later disconnects.
 
-        if (this.liveCharacteristic) {
+if (this.liveCharacteristic) {
 
-            try {
+try {
 
-                this.liveCharacteristic.removeEventListener(
+this.liveCharacteristic.removeEventListener(
 
-                    "characteristicvaluechanged",
+"characteristicvaluechanged",
 
-                    this.boundNotificationHandler
+this.boundNotificationHandler
 
-                );
+);
 
-            }
+}
 
-            catch (error) {
+catch (error) {
 
-                console.warn(error);
+console.warn(error);
 
-            }
+}
 
-        }
+}
 
-        if (this.device) {
+if (this.device) {
 
-            try {
+try {
 
-                this.device.removeEventListener(
+this.device.removeEventListener(
 
-                    "gattserverdisconnected",
+"gattserverdisconnected",
 
-                    this.boundDisconnectHandler
+this.boundDisconnectHandler
 
-                );
+);
 
-            }
+}
 
-            catch (error) {
+catch (error) {
 
-                console.warn(error);
+console.warn(error);
 
-            }
+}
 
-        }
+}
 
-        this.server = null;
+this.server = null;
 
-        this.sensorService = null;
+this.sensorService = null;
 
-        this.liveCharacteristic = null;
+this.liveCharacteristic = null;
 
-        this.controlService = null;
+this.controlService = null;
 
-        this.commandCharacteristic = null;
+this.commandCharacteristic = null;
 
-        if (
+if (
 
-            sensorTransport === this
+sensorTransport === this
 
-        ) {
+) {
 
-            sensorTransport = null;
+sensorTransport = null;
 
-            transportType = null;
+transportType = null;
 
-            stopHeartbeatMonitor();
+stopHeartbeatMonitor();
 
-            measuring = false;
+measuring = false;
 
-            sensorReady = false;
+sensorReady = false;
 
-            measurementCommandSent =
+measurementCommandSent =
 
-                false;
+false;
 
-            if (connectButton) {
+if (connectButton) {
 
-                connectButton.disabled = false;
+connectButton.disabled = false;
 
-            }
+}
 
-            if (disconnectButton) {
+if (disconnectButton) {
 
-                disconnectButton.disabled = true;
+disconnectButton.disabled = true;
 
-            }
+}
 
-            if (startButton) {
+if (startButton) {
 
-                startButton.disabled = true;
+startButton.disabled = true;
 
-            }
+}
 
-            if (stopButton) {
+if (stopButton) {
 
-                stopButton.disabled = true;
+stopButton.disabled = true;
 
-            }
+}
 
-            setStatus(
+setStatus(
 
-                "Sensor disconnected",
+"Sensor disconnected",
 
-                "neutral"
+"neutral"
 
-            );
+);
 
-            setTransportStatus(
+setTransportStatus(
 
-                "Transport: not connected"
+"Transport: not connected"
 
-            );
+);
 
-            if (measurementStatus) {
+if (measurementStatus) {
 
-                measurementStatus.textContent =
+measurementStatus.textContent =
 
-                    "Sensor disconnected.";
+"Sensor disconnected.";
 
-                measurementStatus.className =
+measurementStatus.className =
 
-                    "measurement-status";
+"measurement-status";
 
-            }
+}
 
-        }
+}
 
-    }
+}
 
 }
 
@@ -2856,85 +2838,85 @@ class WebBluetoothTransport
 
 function waitForSensorReady(
 
-    timeout = 7000
+timeout = 7000
 
 ) {
 
-    if (sensorReady) {
+if (sensorReady) {
 
-        return Promise.resolve();
+return Promise.resolve();
 
-    }
+}
 
-    return new Promise(
+return new Promise(
 
-        (resolve, reject) => {
+(resolve, reject) => {
 
-            let finished = false;
+let finished = false;
 
-            const timeoutId =
+const timeoutId =
 
-                setTimeout(
+setTimeout(
 
-                    () => {
+() => {
 
-                        if (finished) {
+if (finished) {
 
-                            return;
+return;
 
-                        }
+}
 
-                        finished = true;
+finished = true;
 
-                        window.__gazelaReadyWaiter =
+window.__gazelaReadyWaiter =
 
-                            null;
+null;
 
-                        reject(
+reject(
 
-                            new Error(
+new Error(
 
-                                "Sensor nie wysłał READY w wymaganym czasie."
+"Sensor nie wysłał READY w wymaganym czasie."
 
-                            )
+)
 
-                        );
+);
 
-                    },
+},
 
-                    timeout
+timeout
 
-                );
+);
 
-            window.__gazelaReadyWaiter =
+window.__gazelaReadyWaiter =
 
-                () => {
+() => {
 
-                    if (finished) {
+if (finished) {
 
-                        return;
+return;
 
-                    }
+}
 
-                    finished = true;
+finished = true;
 
-                    clearTimeout(
+clearTimeout(
 
-                        timeoutId
+timeoutId
 
-                    );
+);
 
-                    window.__gazelaReadyWaiter =
+window.__gazelaReadyWaiter =
 
-                        null;
+null;
 
-                    resolve();
+resolve();
 
-                };
+};
 
-        }
+}
 
-    );
+);
 
 }
 
@@ -2946,75 +2928,75 @@ function waitForSensorReady(
 
 function isAndroidDevice() {
 
-    if (navigator.userAgentData && navigator.userAgentData.platform && /Android/i.test(navigator.userAgentData.platform)) {
+if (navigator.userAgentData && navigator.userAgentData.platform && /Android/i.test(navigator.userAgentData.platform)) {
 
-        return true;
+return true;
 
-    }
+}
 
-    return /Android/i.test(navigator.userAgent || "");
+return /Android/i.test(navigator.userAgent || "");
 
 }
 
 async function createSensorTransport() {
 
-    // USB: PC -> Web Serial | Android -> WebUSB
+// USB: PC -> Web Serial | Android -> WebUSB
 
-    if (selectedTransport === "usb") {
+if (selectedTransport === "usb") {
 
-        const android = isAndroidDevice();
+const android = isAndroidDevice();
 
-        if (android) {
+if (android) {
 
-            if (!("usb" in navigator)) {
+if (!("usb" in navigator)) {
 
-                throw new Error("Android: WebUSB nie jest dostępne w tej przeglądarce.");
+throw new Error("Android: WebUSB nie jest dostępne w tej przeglądarce.");
 
-            }
+}
 
-            addSerialLine("V43: USB transport = WebUSB (Android)", "serial-info");
+addSerialLine("V43: USB transport = WebUSB (Android)", "serial-info");
 
-            return new WebUSBTransport(processSerialLine);
+return new WebUSBTransport(processSerialLine);
 
-        }
+}
 
-        if ("serial" in navigator) {
+if ("serial" in navigator) {
 
-            addSerialLine("V43: USB transport = Web Serial (PC)", "serial-info");
+addSerialLine("V43: USB transport = Web Serial (PC)", "serial-info");
 
-            return new WebSerialTransport(processSerialLine);
+return new WebSerialTransport(processSerialLine);
 
-        }
+}
 
-        if ("usb" in navigator) {
+if ("usb" in navigator) {
 
-            addSerialLine("V43: USB transport = WebUSB fallback (PC)", "serial-info");
+addSerialLine("V43: USB transport = WebUSB fallback (PC)", "serial-info");
 
-            return new WebUSBTransport(processSerialLine);
+return new WebUSBTransport(processSerialLine);
 
-        }
+}
 
-        throw new Error("USB: brak Web Serial oraz WebUSB.");
+throw new Error("USB: brak Web Serial oraz WebUSB.");
 
-    }
+}
 
-    // BLE: PC + Android -> Web Bluetooth
+// BLE: PC + Android -> Web Bluetooth
 
-    if (selectedTransport === "ble") {
+if (selectedTransport === "ble") {
 
-        if ("bluetooth" in navigator) {
+if ("bluetooth" in navigator) {
 
-            addSerialLine("V43: BLE transport = Web Bluetooth", "serial-info");
+addSerialLine("V43: BLE transport = Web Bluetooth", "serial-info");
 
-            return new WebBluetoothTransport(processSerialLine);
+return new WebBluetoothTransport(processSerialLine);
 
-        }
+}
 
-        throw new Error("Web Bluetooth nie jest dostępny w tej przeglądarce.");
+throw new Error("Web Bluetooth nie jest dostępny w tej przeglądarce.");
 
-    }
+}
 
-    throw new Error("Nieznany transport: " + selectedTransport);
+throw new Error("Nieznany transport: " + selectedTransport);
 
 }
 
@@ -3026,57 +3008,57 @@ async function createSensorTransport() {
 
 function startHeartbeatMonitor() {
 
-    stopHeartbeatMonitor();
+stopHeartbeatMonitor();
 
-    lastHeartbeatTime =
+lastHeartbeatTime =
 
-        Date.now();
+Date.now();
 
-    heartbeatMonitor =
+heartbeatMonitor =
 
-        setInterval(
+setInterval(
 
-            () => {
+() => {
 
-                if (!sensorTransport) {
+if (!sensorTransport) {
 
-                    return;
+return;
 
-                }
+}
 
-                const elapsed =
+const elapsed =
 
-                    Date.now() -
+Date.now() -
 
-                    lastHeartbeatTime;
+lastHeartbeatTime;
 
-                if (
+if (
 
-                    elapsed >
+elapsed >
 
-                    HEARTBEAT_TIMEOUT
+HEARTBEAT_TIMEOUT
 
-                ) {
+) {
 
-                    if (!measuring) {
+if (!measuring) {
 
-                        setStatus(
+setStatus(
 
-                            "No sensor data",
+"No sensor data",
 
-                            "error"
+"error"
 
-                        );
+);
 
-                    }
+}
 
-                }
+}
 
-            },
+},
 
-            500
+500
 
-        );
+);
 
 }
 
@@ -3088,17 +3070,17 @@ function startHeartbeatMonitor() {
 
 function stopHeartbeatMonitor() {
 
-    if (heartbeatMonitor) {
+if (heartbeatMonitor) {
 
-        clearInterval(
+clearInterval(
 
-            heartbeatMonitor
+heartbeatMonitor
 
-        );
+);
 
-        heartbeatMonitor = null;
+heartbeatMonitor = null;
 
-    }
+}
 
 }
 
@@ -3110,101 +3092,101 @@ function stopHeartbeatMonitor() {
 
 function resetLiveValues() {
 
-    if (movementValue) {
+if (movementValue) {
 
-        movementValue.textContent =
+movementValue.textContent =
 
-            "--";
+"--";
 
-    }
+}
 
-    if (timeValue) {
+if (timeValue) {
 
-        timeValue.textContent =
+timeValue.textContent =
 
-            "--";
+"--";
 
-    }
+}
 
-    if (samplesValue) {
+if (samplesValue) {
 
-        samplesValue.textContent =
+samplesValue.textContent =
 
-            "0";
+"0";
 
-    }
+}
 
-    if (axValue) {
+if (axValue) {
 
-        axValue.textContent =
+axValue.textContent =
 
-            "--";
+"--";
 
-    }
+}
 
-    if (ayValue) {
+if (ayValue) {
 
-        ayValue.textContent =
+ayValue.textContent =
 
-            "--";
+"--";
 
-    }
+}
 
-    if (azValue) {
+if (azValue) {
 
-        azValue.textContent =
+azValue.textContent =
 
-            "--";
+"--";
 
-    }
+}
 
-    if (gValue) {
+if (gValue) {
 
-        gValue.textContent =
+gValue.textContent =
 
-            "--";
+"--";
 
-    }
+}
 
-    if (angleValue) {
+if (angleValue) {
 
-        angleValue.textContent =
+angleValue.textContent =
 
-            "--";
+"--";
 
-    }
+}
 
-    if (gxValue) {
+if (gxValue) {
 
-        gxValue.textContent =
+gxValue.textContent =
 
-            "--";
+"--";
 
-    }
+}
 
-    if (gyValue) {
+if (gyValue) {
 
-        gyValue.textContent =
+gyValue.textContent =
 
-            "--";
+"--";
 
-    }
+}
 
-    if (gzValue) {
+if (gzValue) {
 
-        gzValue.textContent =
+gzValue.textContent =
 
-            "--";
+"--";
 
-    }
+}
 
-    if (angleyValue) {
+if (angleyValue) {
 
-        angleyValue.textContent =
+angleyValue.textContent =
 
-            "--";
+"--";
 
-    }
+}
 
 }
 
@@ -3216,257 +3198,243 @@ function resetLiveValues() {
 
 function updateBatteryLevel(packVoltage) {
 
-    const batteryLevelFill = document.getElementById("batteryLevelFill");
+const batteryLevelFill = document.getElementById("batteryLevelFill");
 
-    const batteryPercent = document.getElementById("batteryPercent");
+const batteryPercent = document.getElementById("batteryPercent");
 
-    const batteryLevelLabel = document.getElementById("batteryLevelLabel");
+const batteryLevelLabel = document.getElementById("batteryLevelLabel");
 
-    const batteryVisual = document.querySelector(".battery-visual");
+const batteryVisual = document.querySelector(".battery-visual");
 
-    if (!Number.isFinite(packVoltage)) return;
+if (!Number.isFinite(packVoltage)) return;
 
-    // Przybliżony wskaźnik dla pakietu Li-ion 2S.
+// Przybliżony wskaźnik dla pakietu Li-ion 2S.
 
-    // Wartość procentowa jest szacunkiem opartym na napięciu pakietu.
+// Wartość procentowa jest szacunkiem opartym na napięciu pakietu.
 
-    const voltagePerCell = packVoltage / 2;
+const voltagePerCell = packVoltage / 2;
 
-    const curve = [
+const curve = [
 
-        [3.30, 0], [3.40, 5], [3.50, 10], [3.60, 20],
+[3.30, 0], [3.40, 5], [3.50, 10], [3.60, 20],
 
-        [3.70, 35], [3.80, 50], [3.90, 65], [4.00, 80],
+[3.70, 35], [3.80, 50], [3.90, 65], [4.00, 80],
 
-        [4.10, 90], [4.15, 95], [4.20, 100]
+[4.10, 90], [4.15, 95], [4.20, 100]
 
-    ];
+];
 
-    let percentage;
+let percentage;
 
-    if (voltagePerCell <= curve[0][0]) {
+if (voltagePerCell <= curve[0][0]) {
 
-        percentage = curve[0][1];
+percentage = curve[0][1];
 
-    } else if (voltagePerCell >= curve[curve.length - 1][0]) {
+} else if (voltagePerCell >= curve[curve.length - 1][0]) {
 
-        percentage = 100;
+percentage = 100;
 
-    } else {
+} else {
 
-        percentage = 0;
+percentage = 0;
 
-        for (let i = 0; i < curve.length - 1; i++) {
+for (let i = 0; i < curve.length - 1; i++) {
 
-            const [v1, p1] = curve[i];
+const [v1, p1] = curve[i];
 
-            const [v2, p2] = curve[i + 1];
+const [v2, p2] = curve[i + 1];
 
-            if (voltagePerCell >= v1 && voltagePerCell <= v2) {
+if (voltagePerCell >= v1 && voltagePerCell <= v2) {
 
-                percentage = Math.round(p1 + ((voltagePerCell - v1) / (v2 - v1)) * (p2 - p1));
+percentage = Math.round(p1 + ((voltagePerCell - v1) / (v2 - v1)) * (p2 - p1));
 
-                break;
+break;
 
-            }
+}
 
-        }
+}
 
-    }
+}
 
-    percentage = Math.max(0, Math.min(100, percentage));
+percentage = Math.max(0, Math.min(100, percentage));
 
-    // Kolor z histerezą, żeby wskazanie nie migotało przy granicach.
+// Kolor z histerezą, żeby wskazanie nie migotało przy granicach.
 
-    // Wzrost: czerwony->pomarańczowy 25%, pomarańczowy->żółty 45%, żółty->zielony 65%.
+// Wzrost: czerwony->pomarańczowy 25%, pomarańczowy->żółty 45%, żółty->zielony 65%.
 
-    // Spadek: zielony->żółty 55%, żółty->pomarańczowy 35%, pomarańczowy->czerwony 15%.
+// Spadek: zielony->żółty 55%, żółty->pomarańczowy 35%, pomarańczowy->czerwony 15%.
 
-    if (typeof window.gazelaBatteryColorBand !== "string") {
+if (typeof window.gazelaBatteryColorBand !== "string") {
 
-        // Inicjalizacja pierwszego odczytu: czerwony do 20%, pomarańczowy do 40%,
+// Inicjalizacja pierwszego odczytu: czerwony do 20%, pomarańczowy do 40%,
 
-        // żółty do 60%, a zielony dopiero powyżej 60%.
+// żółty do 60%, a zielony dopiero powyżej 60%.
 
-        window.gazelaBatteryColorBand = percentage <= 20 ? "red"
+window.gazelaBatteryColorBand = percentage <= 20 ? "red"
 
-            : percentage <= 40 ? "orange"
+: percentage <= 40 ? "orange"
 
-            : percentage <= 60 ? "yellow" : "green";
+: percentage <= 60 ? "yellow" : "green";
 
-    }
+}
 
-    let band = window.gazelaBatteryColorBand;
+let band = window.gazelaBatteryColorBand;
 
-    if (band === "red") {
+if (band === "red") {
 
-        if (percentage >= 25) band = "orange";
+if (percentage >= 25) band = "orange";
 
-    } else if (band === "orange") {
+} else if (band === "orange") {
 
-        if (percentage <= 15) band = "red";
+if (percentage <= 15) band = "red";
 
-        else if (percentage >= 45) band = "yellow";
+else if (percentage >= 45) band = "yellow";
 
-    } else if (band === "yellow") {
+} else if (band === "yellow") {
 
-        if (percentage <= 35) band = "orange";
+if (percentage <= 35) band = "orange";
 
-        else if (percentage >= 65) band = "green";
+else if (percentage >= 65) band = "green";
 
-    } else if (band === "green") {
+} else if (band === "green") {
 
-        if (percentage <= 55) band = "yellow";
+if (percentage <= 55) band = "yellow";
 
-    }
+}
 
-    window.gazelaBatteryColorBand = band;
+window.gazelaBatteryColorBand = band;
 
-    // Komunikat tekstowy jest informacyjny i ma stały kolor.
+// Komunikat tekstowy jest informacyjny i ma stały kolor.
 
-    // Nie pokazujemy osobnych opisów niskiego/średniego poziomu.
+// Nie pokazujemy osobnych opisów niskiego/średniego poziomu.
 
-    // Przy >=95% pokazujemy „Bateria naładowana”; w pozostałych przypadkach
+// Przy >=95% pokazujemy „Bateria naładowana”; w pozostałych przypadkach
 
-    // pozostaje neutralny opis. Samo napięcie nie potwierdza, że ładowarka
+// pozostaje neutralny opis. Samo napięcie nie potwierdza, że ładowarka
 
-    // faktycznie zakończyła ładowanie — firmware musiałby udostępnić taki sygnał.
+// faktycznie zakończyła ładowanie — firmware musiałby udostępnić taki sygnał.
 
-    const batteryMessage = "";
+const batteryMessage = "";
 
-    // 6 segmentów: od dołu czerwony, pomarańczowy, żółty i 3 zielone.
+// 6 segmentów: od dołu czerwony, pomarańczowy, żółty i 3 zielone.
 
-    // Dzięki temu niski poziom baterii zapala czerwony segment jako pierwszy.
+// Dzięki temu niski poziom baterii zapala czerwony segment jako pierwszy.
 
-    const segmentColors = ["red", "orange", "yellow", "green", "green", "green"];
+const segmentColors = ["red", "orange", "yellow", "green", "green", "green"];
 
-    const segmentCount = segmentColors.length;
+const segmentCount = segmentColors.length;
 
-    // Liczba schodków wynika z procentu, ale jest ograniczona przez stan histerezy.
+// Liczba schodków wynika z procentu, ale jest ograniczona przez stan histerezy.
 
-    // Dzięki temu każda zmiana koloru zmienia liczbę aktywnych schodków o jeden:
+// Dzięki temu każda zmiana koloru zmienia liczbę aktywnych schodków o jeden:
 
-    // czerwony = maks. 1, pomarańczowy = maks. 2, żółty = maks. 3,
+// czerwony = maks. 1, pomarańczowy = maks. 2, żółty = maks. 3,
 
-    // zielony = 4–6 (zależnie od poziomu procentowego).
+// zielony = 4–6 (zależnie od poziomu procentowego).
 
-    const calculatedSegments = percentage <= 0
+const calculatedSegments = percentage <= 0
 
-        ? 0
+? 0
 
-        : Math.min(segmentCount, Math.ceil((percentage / 100) * segmentCount));
+: Math.min(segmentCount, Math.ceil((percentage / 100) * segmentCount));
 
-    const maxSegmentsByBand = {
+const maxSegmentsByBand = {
 
-        red: 1,
+red: 1,
 
-        orange: 2,
+orange: 2,
 
-        yellow: 3,
+yellow: 3,
 
-        green: 6
+green: 6
 
-    };
+};
 
-    const activeSegments = Math.min(
+const activeSegments = Math.min(
 
-        calculatedSegments,
+calculatedSegments,
 
-        maxSegmentsByBand[band] ?? segmentCount
+maxSegmentsByBand[band] ?? segmentCount
 
-    );
+);
 
-    if (batteryLevelFill) {
+if (batteryLevelFill) {
 
-        // Segmenty są układane od dołu; pierwszy segment znajduje się na dole.
+// Segmenty są układane od dołu; pierwszy segment znajduje się na dole.
 
-        if (batteryLevelFill.children.length !== segmentCount) {
+if (batteryLevelFill.children.length !== segmentCount) {
 
-            batteryLevelFill.replaceChildren();
+batteryLevelFill.replaceChildren();
 
-            for (let i = 0; i < segmentCount; i++) {
+for (let i = 0; i < segmentCount; i++) {
 
-                const segment = document.createElement("span");
+const segment = document.createElement("span");
 
-                segment.className = "battery-segment";
+segment.className = "battery-segment";
 
-                batteryLevelFill.appendChild(segment);
+batteryLevelFill.appendChild(segment);
 
-            }
+}
 
-        }
+}
 
-        batteryLevelFill.classList.remove("level-high", "level-medium", "level-low",
+batteryLevelFill.classList.remove("level-high", "level-medium", "level-low",
 
-            "level-green", "level-yellow", "level-orange", "level-red");
+"level-green", "level-yellow", "level-orange", "level-red");
 
-        batteryLevelFill.classList.add("level-" + band);
+batteryLevelFill.classList.add("level-" + band);
 
-        batteryLevelFill.style.height = "100%";
+batteryLevelFill.style.height = "100%";
 
-        Array.from(batteryLevelFill.children).forEach((segment, index) => {
+Array.from(batteryLevelFill.children).forEach((segment, index) => {
 
-            const active = index < activeSegments;
+const active = index < activeSegments;
 
-            segment.classList.toggle("active", active);
+segment.classList.toggle("active", active);
 
-            segment.classList.remove("segment-green", "segment-yellow", "segment-orange", "segment-red");
+segment.classList.remove("segment-green", "segment-yellow", "segment-orange", "segment-red");
 
-            // Wszystkie aktywne schodki mają kolor aktualnego pasma histerezy.
+// Wszystkie aktywne schodki mają kolor aktualnego pasma histerezy.
 
-            // Liczba aktywnych schodków jest ograniczona przez pasmo:
+// Liczba aktywnych schodków jest ograniczona przez pasmo:
 
-            // czerwony maks. 1, pomarańczowy maks. 2, żółty maks. 3,
+// czerwony maks. 1, pomarańczowy maks. 2, żółty maks. 3,
 
-            // zielony od 4 do 6. Nieaktywne zachowują kolory tła.
+// zielony od 4 do 6. Nieaktywne zachowują kolory tła.
 
-            segment.classList.add("segment-" + (active ? band : segmentColors[index]));
+segment.classList.add("segment-" + (active ? band : segmentColors[index]));
 
-        });
+});
 
-    }
+}
 
-    if (batteryPercent) batteryPercent.textContent = percentage + "%";
+if (batteryPercent) batteryPercent.textContent = percentage + "%";
 
-    if (batteryLevelLabel) {
+if (batteryLevelLabel) {
 
-        batteryLevelLabel.textContent = batteryMessage;
+batteryLevelLabel.textContent = batteryMessage;
 
-        // Celowo nie ustawiamy style.color — kolor napisu jest stały w CSS.
+// Celowo nie ustawiamy style.color — kolor napisu jest stały w CSS.
 
-    }
+}
 
-    if (batteryVisual) {
+if (batteryVisual) {
 
-        batteryVisual.setAttribute(
+batteryVisual.setAttribute(
 
-            "aria-label",
+"aria-label",
 
-            "Szacowany poziom naładowania baterii: " + percentage + " procent"
+"Szacowany poziom naładowania baterii: " + percentage + " procent"
 
-        );
+);
 
-    }
+}
 
 }
 
 function resetBatteryValues() {
 
     if (batteryPackValue) batteryPackValue.textContent = "--";
-
-    if (batteryCell1Value) batteryCell1Value.textContent = "--";
-
-    if (batteryCell2Value) batteryCell2Value.textContent = "--";
-
-    if (batteryDifferenceValue) batteryDifferenceValue.textContent = "--";
-
-    if (batteryStatusValue) {
-
-        batteryStatusValue.textContent = "--";
-
-        batteryStatusValue.className = "battery-status";
-
-    }
 
     if (batteryUpdatedValue) batteryUpdatedValue.textContent = "Updated: --";
 
@@ -3488,7 +3456,7 @@ function resetBatteryValues() {
 
     if (batteryPercent) batteryPercent.textContent = "--%";
 
-    if (batteryLevelLabel) batteryLevelLabel.textContent = "--";
+    if (batteryLevelLabel) batteryLevelLabel.textContent = "Oczekiwanie na dane";
 
     if (batteryVisual) {
 
@@ -3496,105 +3464,47 @@ function resetBatteryValues() {
 
     }
 
-    // Nie resetujemy pasma koloru przy krótkim rozłączeniu.
-
 }
 
 function parseBatteryData(line) {
 
     const parts = line.split(",");
 
-    if (parts.length < 4 || parts[0] !== "BAT") {
+    if (parts[0] !== "BAT") return;
+
+    // Obsługa obu formatów: BAT,cell1,pack,cell2 (obecny firmware)
+
+    // oraz BAT,pack (ewentualny format uproszczony).
+
+    let pack;
+
+    if (parts.length >= 4) {
+
+        pack = parseFloat(parts[2]);
+
+    } else if (parts.length === 2) {
+
+        pack = parseFloat(parts[1]);
+
+    } else {
 
         return;
 
     }
 
-    const cell1 = parseFloat(parts[1]);
-
-    const pack = parseFloat(parts[2]);
-
-    const cell2 = parseFloat(parts[3]);
-
-    if (
-
-        !Number.isFinite(cell1) ||
-
-        !Number.isFinite(pack) ||
-
-        !Number.isFinite(cell2)
-
-    ) {
-
-        return;
-
-    }
-
-    const difference = Math.abs(cell1 - cell2);
+    if (!Number.isFinite(pack) || pack < 4 || pack > 10) return;
 
     if (batteryPackValue) {
 
-        batteryPackValue.textContent =
-
-            formatNumber(pack, 2) + " V";
+        batteryPackValue.textContent = formatNumber(pack, 2) + " V";
 
     }
-
-    if (batteryCell1Value) {
-
-        batteryCell1Value.textContent =
-
-            formatNumber(cell1, 2) + " V";
-
-    }
-
-    if (batteryCell2Value) {
-
-        batteryCell2Value.textContent =
-
-            formatNumber(cell2, 2) + " V";
-
-    }
-
-    if (batteryDifferenceValue) {
-
-        batteryDifferenceValue.textContent =
-
-            formatNumber(difference, 2) + " V";
-
-    }
-
-    const status =
-
-        (pack < 7.0 || cell1 < 3.5 || cell2 < 3.5)
-
-            ? "LOW"
-
-            : "OK";
-
-    if (batteryStatusValue) {
-
-        batteryStatusValue.textContent = status;
-
-        batteryStatusValue.className =
-
-            status === "OK"
-
-                ? "battery-status ok"
-
-                : "battery-status low";
-
-    }
-
-    // Aktualizacja pionowego wskaźnika baterii.
 
     updateBatteryLevel(pack);
 
     if (batteryUpdatedValue) {
 
-        batteryUpdatedValue.textContent =
-
-            "Updated: " + new Date().toLocaleTimeString();
+        batteryUpdatedValue.textContent = "Aktualizacja: " + new Date().toLocaleTimeString();
 
     }
 
@@ -3608,87 +3518,87 @@ function parseBatteryData(line) {
 
 async function handleSensorReady() {
 
-    sensorReady = true;
+sensorReady = true;
 
-    lastHeartbeatTime =
+lastHeartbeatTime =
 
-        Date.now();
+Date.now();
 
-    // Resolve waiting connection.
+// Resolve waiting connection.
 
-    if (
+if (
 
-        typeof window.__gazelaReadyWaiter ===
+typeof window.__gazelaReadyWaiter ===
 
-        "function"
+"function"
 
-    ) {
+) {
 
-        const waiter =
+const waiter =
 
-            window.__gazelaReadyWaiter;
+window.__gazelaReadyWaiter;
 
-        window.__gazelaReadyWaiter =
+window.__gazelaReadyWaiter =
 
-            null;
+null;
 
-        waiter();
+waiter();
 
-    }
+}
 
-    // ----------------------------------------------------
+// ----------------------------------------------------
 
-    // AFTER MEASUREMENT
+// AFTER MEASUREMENT
 
-    // ----------------------------------------------------
+// ----------------------------------------------------
 
-    //
+//
 
-    // END,ALL_MOVEMENTS
+// END,ALL_MOVEMENTS
 
-    // READY
+// READY
 
-    // L
+// L
 
-    // LIVE
+// LIVE
 
-    // ----------------------------------------------------
+// ----------------------------------------------------
 
-    if (
+if (
 
-        returnToLiveAfterReady &&
+returnToLiveAfterReady &&
 
-        sensorTransport &&
+sensorTransport &&
 
-        selectedTransport ===
+selectedTransport ===
 
-            "usb"
+"usb"
 
-    ) {
+) {
 
-        returnToLiveAfterReady =
+returnToLiveAfterReady =
 
-            false;
+false;
 
-        try {
+try {
 
-            await startLiveMode();
+await startLiveMode();
 
-        }
+}
 
-        catch (error) {
+catch (error) {
 
-            console.error(
+console.error(
 
-                "Automatic return to LIVE failed:",
+"Automatic return to LIVE failed:",
 
-                error
+error
 
-            );
+);
 
-        }
+}
 
-    }
+}
 
 }
 
@@ -3700,65 +3610,61 @@ async function handleSensorReady() {
 
 function parseLiveData(line) {
 
-    const parts = line.split(",");
+const parts = line.split(",");
 
-    // LIVE,AX,AY,AZ,G,Angle,GX,GY,GZ,AngleY
+// LIVE,AX,AY,AZ,G,Angle,GX,GY,GZ,AngleY
 
-    if (parts.length < 10 || parts[0] !== "LIVE") {
+if (parts.length < 10 || parts[0] !== "LIVE") {
 
-        return;
+return;
 
-    }
+}
 
-    const AX = parseFloat(parts[1]);
+const AX = parseFloat(parts[1]);
 
-    const AY = parseFloat(parts[2]);
+const AY = parseFloat(parts[2]);
 
-    const AZ = parseFloat(parts[3]);
+const AZ = parseFloat(parts[3]);
 
-    const G = parseFloat(parts[4]);
+const G = parseFloat(parts[4]);
 
-    const Angle = parseFloat(parts[5]);
+const Angle = parseFloat(parts[5]);
 
-    const GX = parseFloat(parts[6]);
+const GX = parseFloat(parts[6]);
 
-    const GY = parseFloat(parts[7]);
+const GY = parseFloat(parts[7]);
 
-    const GZ = parseFloat(parts[8]);
+const GZ = parseFloat(parts[8]);
 
-    const AngleY = parseFloat(parts[9]);
+const AngleY = parseFloat(parts[9]);
 
-    if (![AX, AY, AZ, G, Angle, GX, GY, GZ, AngleY]
+if (![AX, AY, AZ, G, Angle, GX, GY, GZ, AngleY]
 
-        .every(Number.isFinite)) {
+.every(Number.isFinite)) {
 
-        return;
+return;
 
-    }
+}
 
-    lastHeartbeatTime = Date.now();
+lastHeartbeatTime = Date.now();
 
-    if (axValue) axValue.textContent = formatNumber(AX);
+if (axValue) axValue.textContent = formatNumber(AX);
 
-    if (ayValue) ayValue.textContent = formatNumber(AY);
+if (ayValue) ayValue.textContent = formatNumber(AY);
 
-    if (azValue) azValue.textContent = formatNumber(AZ);
+if (azValue) azValue.textContent = formatNumber(AZ);
 
-    if (gValue) gValue.textContent = formatNumber(G);
+if (gValue) gValue.textContent = formatNumber(G);
 
-    if (angleValue) angleValue.textContent = formatNumber(Angle, 1);
+if (angleValue) angleValue.textContent = formatNumber(Angle, 1);
 
-    if (gxValue) gxValue.textContent = formatNumber(GX);
+if (gxValue) gxValue.textContent = formatNumber(GX);
 
-    if (gyValue) gyValue.textContent = formatNumber(GY);
+if (gyValue) gyValue.textContent = formatNumber(GY);
 
-    if (gzValue) gzValue.textContent = formatNumber(GZ);
+if (gzValue) gzValue.textContent = formatNumber(GZ);
 
-    if (angleyValue) angleyValue.textContent = formatNumber(AngleY, 1);
-
-    // Feed the manual gesture recorder from the existing LIVE stream.
-    // This is local browser-side processing only; no Arduino command is sent.
-    gestureReceiveSample({ AX, AY, AZ, G, Angle, GX, GY, GZ, AngleY });
+if (angleyValue) angleyValue.textContent = formatNumber(AngleY, 1);
 
 }
 
@@ -3770,953 +3676,953 @@ function parseLiveData(line) {
 
 function processSerialLine(line) {
 
-    if (!line) {
+if (!line) {
 
-        return;
+return;
 
-    }
-
-    // ====================================================
-
-    // SERIAL MONITOR
-
-    // ====================================================
-
-    if (!isSensorDataLine(line)) {
-
-        addSerialLine(line);
-
-    }
-
-    // ====================================================
-
-    // HEARTBEAT
-
-    // ====================================================
-
-    if (
-
-        line ===
-
-        "HEARTBEAT"
-
-    ) {
-
-        lastHeartbeatTime =
-
-            Date.now();
-
-        sensorReady =
-
-            true;
-
-        if (
-
-            typeof window.__gazelaReadyWaiter ===
-
-            "function"
-
-        ) {
-
-            const waiter =
-
-                window.__gazelaReadyWaiter;
-
-            window.__gazelaReadyWaiter =
-
-                null;
-
-            waiter();
-
-        }
-
-        if (
-
-            returnToLiveAfterReady &&
-
-            sensorTransport &&
-
-            selectedTransport ===
-
-                "usb"
-
-        ) {
-
-            returnToLiveAfterReady =
-
-                false;
-
-            startLiveMode()
-
-                .catch(
-
-                    error => {
-
-                        console.error(
-
-                            "Automatic return to LIVE failed:",
-
-                            error
-
-                        );
-
-                    }
-
-                );
-
-        }
-
-        if (!measuring) {
-
-            setStatus(
-
-                "Sensor ready",
-
-                "connected"
-
-            );
-
-        }
-
-        // V40:
-
-        // HEARTBEAT is the current USB readiness signal.
-
-        // V39 set sensorReady=true but did not enable START.
-
-        if (startButton) {
-
-            startButton.disabled = false;
-
-        }
-
-        if (stopButton && !measuring) {
-
-            stopButton.disabled = true;
-
-        }
-
-        if (measurementStatus && !measuring) {
-
-            measurementStatus.textContent =
-
-                "Sensor ready.";
-
-            measurementStatus.className =
-
-                "measurement-status";
-
-        }
-
-        return;
-
-    }
-
-    // ====================================================
-
-    // READY
-
-    // ====================================================
-
-    if (
-
-        line ===
-
-        "READY"
-
-    ) {
-
-        measuring = false;
-
-        handleSensorReady();
-
-        if (measurementStatus) {
-
-            measurementStatus.textContent =
-
-                "Sensor ready.";
-
-            measurementStatus.className =
-
-                "measurement-status";
-
-        }
-
-        if (startButton) {
-
-            startButton.disabled =
-
-                false;
-
-        }
-
-        if (stopButton) {
-
-            stopButton.disabled =
-
-                true;
-
-        }
-
-        return;
-
-    }
-
-    // ====================================================
-
-    // BLE READY
-
-    // ====================================================
-
-    if (
-
-        line ===
-
-        "BLE READY"
-
-    ) {
-
-        sensorReady =
-
-            true;
-
-        lastHeartbeatTime =
-
-            Date.now();
-
-        if (
-
-            typeof window.__gazelaReadyWaiter ===
-
-            "function"
-
-        ) {
-
-            const waiter =
-
-                window.__gazelaReadyWaiter;
-
-            window.__gazelaReadyWaiter =
-
-                null;
-
-            waiter();
-
-        }
-
-        return;
-
-    }
-
-    // ====================================================
-
-    // LIVE MODE
-
-    // ====================================================
-
-    if (
-
-        line ===
-
-        "INFO,LIVE_MODE"
-
-    ) {
-
-        measuring = false;
-
-        setStatus(
-
-            "Live sensor",
-
-            "connected"
-
-        );
-
-        if (measurementStatus) {
-
-            measurementStatus.textContent =
-
-                "Live sensor mode active.";
-
-            measurementStatus.className =
-
-                "measurement-status active";
-
-        }
-
-        if (startButton) {
-
-            startButton.disabled =
-
-                false;
-
-        }
-
-        if (stopButton) {
-
-            stopButton.disabled =
-
-                true;
-
-        }
-
-        return;
-
-    }
-
-    // ====================================================
-
-    // LIVE START
-
-    // ====================================================
-
-    if (
-
-        line ===
-
-        "INFO,LIVE_START"
-
-    ) {
-
-        measuring = false;
-
-        setStatus(
-
-            "Live sensor",
-
-            "connected"
-
-        );
-
-        if (measurementStatus) {
-
-            measurementStatus.textContent =
-
-                "Live sensor mode active.";
-
-            measurementStatus.className =
-
-                "measurement-status active";
-
-        }
-
-        if (startButton) {
-
-            startButton.disabled =
-
-                false;
-
-        }
-
-        if (stopButton) {
-
-            stopButton.disabled =
-
-                true;
-
-        }
-
-        return;
-
-    }
-
-    // ====================================================
-
-    // LIVE STOP
-
-    // ====================================================
-
-    if (
-
-        line ===
-
-        "INFO,LIVE_STOP"
-
-    ) {
-
-        return;
-
-    }
-
-    // ====================================================
-
-    // MEASUREMENT START
-
-    // ====================================================
-
-    if (
-
-        line ===
-
-        "INFO,START"
-
-    ) {
-
-        /*
-
-         * INFO,START is accepted only when this page
-
-         * explicitly sent command S.
-
-         *
-
-         * This prevents CONNECT -> L -> INFO,START
-
-         * from accidentally starting a measurement.
-
-         */
-
-        if (!measurementCommandSent) {
-
-            return;
-
-        }
-
-        measurementCommandSent =
-
-            false;
-
-        measuring = true;
-
-        sessionStartTime =
-
-            Date.now();
-
-        sessionEndTime = null;
-
-        sampleCount = 0;
-
-        currentMovement = 0;
-
-        if (sessionBadge) {
-
-            sessionBadge.textContent =
-
-                "Measurement";
-
-        }
-
-        setStatus(
-
-            "Measurement running",
-
-            "connected"
-
-        );
-
-        if (measurementStatus) {
-
-            measurementStatus.textContent =
-
-                "Measurement running.";
-
-            measurementStatus.className =
-
-                "measurement-status active";
-
-        }
-
-        if (startButton) {
-
-            startButton.disabled =
-
-                true;
-
-        }
-
-        if (stopButton) {
-
-            stopButton.disabled =
-
-                false;
-
-        }
-
-        return;
-
-    }
-
-    // ====================================================
-
-    // PREPARE
-
-    // ====================================================
-
-    if (
-
-        line ===
-
-        "INFO,PREPARE"
-
-    ) {
-
-        if (measurementStatus) {
-
-            measurementStatus.textContent =
-
-                "Preparing measurement...";
-
-            measurementStatus.className =
-
-                "measurement-status active";
-
-        }
-
-        return;
-
-    }
-
-    // ====================================================
-
-    // COUNTDOWN
-
-    // ====================================================
-
-    if (
-
-        line.startsWith(
-
-            "COUNTDOWN,"
-
-        )
-
-    ) {
-
-        const value =
-
-            line.split(",")[1];
-
-        if (measurementStatus) {
-
-            measurementStatus.textContent =
-
-                "Countdown: " +
-
-                value;
-
-        }
-
-        return;
-
-    }
-
-    // ====================================================
-
-    // MOVEMENT
-
-    // ====================================================
-
-    if (
-
-        line.startsWith(
-
-            "MOVEMENT,"
-
-        )
-
-    ) {
-
-        const parts =
-
-            line.split(",");
-
-        if (
-
-            parts.length >= 2
-
-        ) {
-
-            currentMovement =
-
-                parseInt(
-
-                    parts[1],
-
-                    10
-
-                );
-
-        }
-
-        if (movementValue) {
-
-            movementValue.textContent =
-
-                currentMovement;
-
-        }
-
-        return;
-
-    }
-
-    // ====================================================
-
-    // WAIT
-
-    // ====================================================
-
-    if (
-
-        line ===
-
-        "INFO,WAIT"
-
-    ) {
-
-        return;
-
-    }
-
-    // ====================================================
-
-    // WAIT AFTER MOVEMENT
-
-    // ====================================================
-
-    if (
-
-        line.startsWith(
-
-            "INFO,WAIT_AFTER_MOVEMENT_"
-
-        )
-
-    ) {
-
-        return;
-
-    }
-
-    // ====================================================
-
-    // MOVEMENT COMPLETE
-
-    // ====================================================
-
-    if (
-
-        line.startsWith(
-
-            "INFO,MOVEMENT_"
-
-        ) &&
-
-        line.endsWith(
-
-            "_COMPLETE"
-
-        )
-
-    ) {
-
-        return;
-
-    }
-
-    // ====================================================
-
-    // CSV HEADER
-
-    // ====================================================
-
-    if (
-
-        line.startsWith(
-
-            "MOVEMENT,TIME_ms"
-
-        )
-
-    ) {
-
-        return;
-
-    }
-
-    // ====================================================
-
-    // CSV SAMPLE
-
-    // ====================================================
-
-    if (
-
-        /^\d+,/.test(line)
-
-    ) {
-
-        sampleCount++;
-
-        if (samplesValue) {
-
-            samplesValue.textContent =
-
-                sampleCount;
-
-        }
-
-        const parts =
-
-            line.split(",");
-
-        if (
-
-            parts.length >= 11
-
-        ) {
-
-            const movement =
-
-                parseInt(
-
-                    parts[0],
-
-                    10
-
-                );
-
-            const time =
-
-                parseInt(
-
-                    parts[1],
-
-                    10
-
-                );
-
-            const AX =
-
-                parseFloat(parts[2]);
-
-            const AY =
-
-                parseFloat(parts[3]);
-
-            const AZ =
-
-                parseFloat(parts[4]);
-
-            const G =
-
-                parseFloat(parts[5]);
-
-            const Angle =
-
-                parseFloat(parts[6]);
-
-            const GX =
-
-                parseFloat(parts[7]);
-
-            const GY =
-
-                parseFloat(parts[8]);
-
-            const GZ =
-
-                parseFloat(parts[9]);
-
-            const AngleY =
-
-                parseFloat(parts[10]);
-
-            if (movementValue) {
-
-                movementValue.textContent =
-
-                    movement;
-
-            }
-
-            if (timeValue) {
-
-                timeValue.textContent =
-
-                    formatTime(time);
-
-            }
-
-            if (axValue) {
-
-                axValue.textContent =
-
-                    formatNumber(AX);
-
-            }
-
-            if (ayValue) {
-
-                ayValue.textContent =
-
-                    formatNumber(AY);
-
-            }
-
-            if (azValue) {
-
-                azValue.textContent =
-
-                    formatNumber(AZ);
-
-            }
-
-            if (gValue) {
-
-                gValue.textContent =
-
-                    formatNumber(G);
-
-            }
-
-            if (angleValue) {
-
-                angleValue.textContent =
-
-                    formatNumber(
-
-                        Angle,
-
-                        1
-
-                    );
-
-            }
-
-            if (gxValue) {
-
-                gxValue.textContent =
-
-                    formatNumber(GX);
-
-            }
-
-            if (gyValue) {
-
-                gyValue.textContent =
-
-                    formatNumber(GY);
-
-            }
-
-            if (gzValue) {
-
-                gzValue.textContent =
-
-                    formatNumber(GZ);
-
-            }
-
-            if (angleyValue) {
-
-                angleyValue.textContent =
-
-                    formatNumber(
-
-                        AngleY,
-
-                        1
-
-                    );
-
-            }
-
-        }
-
-        return;
-
-    }
-
-    // ====================================================
-
-    // END OF SESSION
-
-    // ====================================================
-
-    if (
-
-        line ===
-
-        "END,ALL_MOVEMENTS"
-
-    ) {
-
-        finishSession();
-
-        return;
-
-    }
-
-    // ====================================================
-
-    // BATTERY DATA
-
-    // ====================================================
-
-    if (line.startsWith("BAT,")) {
-
-        parseBatteryData(line);
-
-        return;
-
-    }
+}
 
 // ====================================================
 
-    // LIVE DATA
+// SERIAL MONITOR
 
-    // ====================================================
+// ====================================================
 
-    if (
+if (!isSensorDataLine(line)) {
 
-        line.startsWith(
+addSerialLine(line);
 
-            "LIVE,"
+}
 
-        )
+// ====================================================
 
-    ) {
+// HEARTBEAT
 
-        // V47: LIVE itself proves that the sensor is reachable and already
+// ====================================================
 
-        // running. After USB reconnect the firmware may remain in LIVE and
+if (
 
-        // may not emit a new HEARTBEAT/READY transition.
+line ===
 
-        if (waitingForInitialReady) {
+"HEARTBEAT"
 
-            liveDetectedDuringInitialConnect =
+) {
 
-                true;
+lastHeartbeatTime =
 
-            sensorReady =
+Date.now();
 
-                true;
+sensorReady =
 
-            if (typeof window.__gazelaReadyWaiter ===
+true;
 
-                "function") {
+if (
 
-                const waiter =
+typeof window.__gazelaReadyWaiter ===
 
-                    window.__gazelaReadyWaiter;
+"function"
 
-                window.__gazelaReadyWaiter =
+) {
 
-                    null;
+const waiter =
 
-                waiter();
+window.__gazelaReadyWaiter;
 
-            }
+window.__gazelaReadyWaiter =
 
-        }
+null;
 
-        parseLiveData(line);
+waiter();
 
-        return;
+}
 
-    }
+if (
+
+returnToLiveAfterReady &&
+
+sensorTransport &&
+
+selectedTransport ===
+
+"usb"
+
+) {
+
+returnToLiveAfterReady =
+
+false;
+
+startLiveMode()
+
+.catch(
+
+error => {
+
+console.error(
+
+"Automatic return to LIVE failed:",
+
+error
+
+);
+
+}
+
+);
+
+}
+
+if (!measuring) {
+
+setStatus(
+
+"Sensor ready",
+
+"connected"
+
+);
+
+}
+
+// V40:
+
+// HEARTBEAT is the current USB readiness signal.
+
+// V39 set sensorReady=true but did not enable START.
+
+if (startButton) {
+
+startButton.disabled = false;
+
+}
+
+if (stopButton && !measuring) {
+
+stopButton.disabled = true;
+
+}
+
+if (measurementStatus && !measuring) {
+
+measurementStatus.textContent =
+
+"Sensor ready.";
+
+measurementStatus.className =
+
+"measurement-status";
+
+}
+
+return;
+
+}
+
+// ====================================================
+
+// READY
+
+// ====================================================
+
+if (
+
+line ===
+
+"READY"
+
+) {
+
+measuring = false;
+
+handleSensorReady();
+
+if (measurementStatus) {
+
+measurementStatus.textContent =
+
+"Sensor ready.";
+
+measurementStatus.className =
+
+"measurement-status";
+
+}
+
+if (startButton) {
+
+startButton.disabled =
+
+false;
+
+}
+
+if (stopButton) {
+
+stopButton.disabled =
+
+true;
+
+}
+
+return;
+
+}
+
+// ====================================================
+
+// BLE READY
+
+// ====================================================
+
+if (
+
+line ===
+
+"BLE READY"
+
+) {
+
+sensorReady =
+
+true;
+
+lastHeartbeatTime =
+
+Date.now();
+
+if (
+
+typeof window.__gazelaReadyWaiter ===
+
+"function"
+
+) {
+
+const waiter =
+
+window.__gazelaReadyWaiter;
+
+window.__gazelaReadyWaiter =
+
+null;
+
+waiter();
+
+}
+
+return;
+
+}
+
+// ====================================================
+
+// LIVE MODE
+
+// ====================================================
+
+if (
+
+line ===
+
+"INFO,LIVE_MODE"
+
+) {
+
+measuring = false;
+
+setStatus(
+
+"Live sensor",
+
+"connected"
+
+);
+
+if (measurementStatus) {
+
+measurementStatus.textContent =
+
+"Live sensor mode active.";
+
+measurementStatus.className =
+
+"measurement-status active";
+
+}
+
+if (startButton) {
+
+startButton.disabled =
+
+false;
+
+}
+
+if (stopButton) {
+
+stopButton.disabled =
+
+true;
+
+}
+
+return;
+
+}
+
+// ====================================================
+
+// LIVE START
+
+// ====================================================
+
+if (
+
+line ===
+
+"INFO,LIVE_START"
+
+) {
+
+measuring = false;
+
+setStatus(
+
+"Live sensor",
+
+"connected"
+
+);
+
+if (measurementStatus) {
+
+measurementStatus.textContent =
+
+"Live sensor mode active.";
+
+measurementStatus.className =
+
+"measurement-status active";
+
+}
+
+if (startButton) {
+
+startButton.disabled =
+
+false;
+
+}
+
+if (stopButton) {
+
+stopButton.disabled =
+
+true;
+
+}
+
+return;
+
+}
+
+// ====================================================
+
+// LIVE STOP
+
+// ====================================================
+
+if (
+
+line ===
+
+"INFO,LIVE_STOP"
+
+) {
+
+return;
+
+}
+
+// ====================================================
+
+// MEASUREMENT START
+
+// ====================================================
+
+if (
+
+line ===
+
+"INFO,START"
+
+) {
+
+/*
+
+* INFO,START is accepted only when this page
+
+* explicitly sent command S.
+
+*
+
+* This prevents CONNECT -> L -> INFO,START
+
+* from accidentally starting a measurement.
+
+*/
+
+if (!measurementCommandSent) {
+
+return;
+
+}
+
+measurementCommandSent =
+
+false;
+
+measuring = true;
+
+sessionStartTime =
+
+Date.now();
+
+sessionEndTime = null;
+
+sampleCount = 0;
+
+currentMovement = 0;
+
+if (sessionBadge) {
+
+sessionBadge.textContent =
+
+"Measurement";
+
+}
+
+setStatus(
+
+"Measurement running",
+
+"connected"
+
+);
+
+if (measurementStatus) {
+
+measurementStatus.textContent =
+
+"Measurement running.";
+
+measurementStatus.className =
+
+"measurement-status active";
+
+}
+
+if (startButton) {
+
+startButton.disabled =
+
+true;
+
+}
+
+if (stopButton) {
+
+stopButton.disabled =
+
+false;
+
+}
+
+return;
+
+}
+
+// ====================================================
+
+// PREPARE
+
+// ====================================================
+
+if (
+
+line ===
+
+"INFO,PREPARE"
+
+) {
+
+if (measurementStatus) {
+
+measurementStatus.textContent =
+
+"Preparing measurement...";
+
+measurementStatus.className =
+
+"measurement-status active";
+
+}
+
+return;
+
+}
+
+// ====================================================
+
+// COUNTDOWN
+
+// ====================================================
+
+if (
+
+line.startsWith(
+
+"COUNTDOWN,"
+
+)
+
+) {
+
+const value =
+
+line.split(",")[1];
+
+if (measurementStatus) {
+
+measurementStatus.textContent =
+
+"Countdown: " +
+
+value;
+
+}
+
+return;
+
+}
+
+// ====================================================
+
+// MOVEMENT
+
+// ====================================================
+
+if (
+
+line.startsWith(
+
+"MOVEMENT,"
+
+)
+
+) {
+
+const parts =
+
+line.split(",");
+
+if (
+
+parts.length >= 2
+
+) {
+
+currentMovement =
+
+parseInt(
+
+parts[1],
+
+10
+
+);
+
+}
+
+if (movementValue) {
+
+movementValue.textContent =
+
+currentMovement;
+
+}
+
+return;
+
+}
+
+// ====================================================
+
+// WAIT
+
+// ====================================================
+
+if (
+
+line ===
+
+"INFO,WAIT"
+
+) {
+
+return;
+
+}
+
+// ====================================================
+
+// WAIT AFTER MOVEMENT
+
+// ====================================================
+
+if (
+
+line.startsWith(
+
+"INFO,WAIT_AFTER_MOVEMENT_"
+
+)
+
+) {
+
+return;
+
+}
+
+// ====================================================
+
+// MOVEMENT COMPLETE
+
+// ====================================================
+
+if (
+
+line.startsWith(
+
+"INFO,MOVEMENT_"
+
+) &&
+
+line.endsWith(
+
+"_COMPLETE"
+
+)
+
+) {
+
+return;
+
+}
+
+// ====================================================
+
+// CSV HEADER
+
+// ====================================================
+
+if (
+
+line.startsWith(
+
+"MOVEMENT,TIME_ms"
+
+)
+
+) {
+
+return;
+
+}
+
+// ====================================================
+
+// CSV SAMPLE
+
+// ====================================================
+
+if (
+
+/^\d+,/.test(line)
+
+) {
+
+sampleCount++;
+
+if (samplesValue) {
+
+samplesValue.textContent =
+
+sampleCount;
+
+}
+
+const parts =
+
+line.split(",");
+
+if (
+
+parts.length >= 11
+
+) {
+
+const movement =
+
+parseInt(
+
+parts[0],
+
+10
+
+);
+
+const time =
+
+parseInt(
+
+parts[1],
+
+10
+
+);
+
+const AX =
+
+parseFloat(parts[2]);
+
+const AY =
+
+parseFloat(parts[3]);
+
+const AZ =
+
+parseFloat(parts[4]);
+
+const G =
+
+parseFloat(parts[5]);
+
+const Angle =
+
+parseFloat(parts[6]);
+
+const GX =
+
+parseFloat(parts[7]);
+
+const GY =
+
+parseFloat(parts[8]);
+
+const GZ =
+
+parseFloat(parts[9]);
+
+const AngleY =
+
+parseFloat(parts[10]);
+
+if (movementValue) {
+
+movementValue.textContent =
+
+movement;
+
+}
+
+if (timeValue) {
+
+timeValue.textContent =
+
+formatTime(time);
+
+}
+
+if (axValue) {
+
+axValue.textContent =
+
+formatNumber(AX);
+
+}
+
+if (ayValue) {
+
+ayValue.textContent =
+
+formatNumber(AY);
+
+}
+
+if (azValue) {
+
+azValue.textContent =
+
+formatNumber(AZ);
+
+}
+
+if (gValue) {
+
+gValue.textContent =
+
+formatNumber(G);
+
+}
+
+if (angleValue) {
+
+angleValue.textContent =
+
+formatNumber(
+
+Angle,
+
+1
+
+);
+
+}
+
+if (gxValue) {
+
+gxValue.textContent =
+
+formatNumber(GX);
+
+}
+
+if (gyValue) {
+
+gyValue.textContent =
+
+formatNumber(GY);
+
+}
+
+if (gzValue) {
+
+gzValue.textContent =
+
+formatNumber(GZ);
+
+}
+
+if (angleyValue) {
+
+angleyValue.textContent =
+
+formatNumber(
+
+AngleY,
+
+1
+
+);
+
+}
+
+}
+
+return;
+
+}
+
+// ====================================================
+
+// END OF SESSION
+
+// ====================================================
+
+if (
+
+line ===
+
+"END,ALL_MOVEMENTS"
+
+) {
+
+finishSession();
+
+return;
+
+}
+
+// ====================================================
+
+// BATTERY DATA
+
+// ====================================================
+
+if (line.startsWith("BAT,")) {
+
+parseBatteryData(line);
+
+return;
+
+}
+
+// ====================================================
+
+// LIVE DATA
+
+// ====================================================
+
+if (
+
+line.startsWith(
+
+"LIVE,"
+
+)
+
+) {
+
+// V47: LIVE itself proves that the sensor is reachable and already
+
+// running. After USB reconnect the firmware may remain in LIVE and
+
+// may not emit a new HEARTBEAT/READY transition.
+
+if (waitingForInitialReady) {
+
+liveDetectedDuringInitialConnect =
+
+true;
+
+sensorReady =
+
+true;
+
+if (typeof window.__gazelaReadyWaiter ===
+
+"function") {
+
+const waiter =
+
+window.__gazelaReadyWaiter;
+
+window.__gazelaReadyWaiter =
+
+null;
+
+waiter();
+
+}
+
+}
+
+parseLiveData(line);
+
+return;
+
+}
 
 }
 
@@ -4728,29 +4634,29 @@ function processSerialLine(line) {
 
 async function sendCommand(command) {
 
-    if (!sensorTransport) {
+if (!sensorTransport) {
 
-        throw new Error(
+throw new Error(
 
-            "Sensor nie jest podłączony."
+"Sensor nie jest podłączony."
 
-        );
+);
 
-    }
+}
 
-    await sensorTransport.send(
+await sensorTransport.send(
 
-        command
+command
 
-    );
+);
 
-    addSerialLine(
+addSerialLine(
 
-        "> " + command,
+"> " + command,
 
-        "serial-command"
+"serial-command"
 
-    );
+);
 
 }
 
@@ -4762,107 +4668,107 @@ async function sendCommand(command) {
 
 async function startLiveMode() {
 
-    if (!sensorTransport) {
+if (!sensorTransport) {
 
-        return;
+return;
 
-    }
+}
 
-    try {
+try {
 
-        await sendCommand(
+await sendCommand(
 
-            "L"
+"L"
 
-        );
+);
 
-        measuring = false;
+measuring = false;
 
-        lastHeartbeatTime =
+lastHeartbeatTime =
 
-            Date.now();
+Date.now();
 
-        setStatus(
+setStatus(
 
-            "Live sensor",
+"Live sensor",
 
-            "connected"
+"connected"
 
-        );
+);
 
-        if (measurementStatus) {
+if (measurementStatus) {
 
-            measurementStatus.textContent =
+measurementStatus.textContent =
 
-                "Live sensor mode active.";
+"Live sensor mode active.";
 
-            measurementStatus.className =
+measurementStatus.className =
 
-                "measurement-status active";
+"measurement-status active";
 
-        }
+}
 
-        if (startButton) {
+if (startButton) {
 
-            startButton.disabled =
+startButton.disabled =
 
-                false;
+false;
 
-        }
+}
 
-        if (stopButton) {
+if (stopButton) {
 
-            stopButton.disabled =
+stopButton.disabled =
 
-                true;
+true;
 
-        }
+}
 
-    }
+}
 
-    catch (error) {
+catch (error) {
 
-        console.error(
+console.error(
 
-            "LIVE error:",
+"LIVE error:",
 
-            error
+error
 
-        );
+);
 
-        setStatus(
+setStatus(
 
-            "Live mode error",
+"Live mode error",
 
-            "error"
+"error"
 
-        );
+);
 
-        if (measurementStatus) {
+if (measurementStatus) {
 
-            measurementStatus.textContent =
+measurementStatus.textContent =
 
-                "Unable to start LIVE mode.";
+"Unable to start LIVE mode.";
 
-            measurementStatus.className =
+measurementStatus.className =
 
-                "measurement-status";
+"measurement-status";
 
-        }
+}
 
-        addSerialLine(
+addSerialLine(
 
-            "LIVE ERROR: " +
+"LIVE ERROR: " +
 
-            error.message,
+error.message,
 
-            "serial-error"
+"serial-error"
 
-        );
+);
 
-        throw error;
+throw error;
 
-    }
+}
 
 }
 
@@ -4874,279 +4780,279 @@ async function startLiveMode() {
 
 async function connectSensor() {
 
-    if (sensorTransport) {
+if (sensorTransport) {
 
-        return;
+return;
 
-    }
+}
 
-    sensorReady = false;
+sensorReady = false;
 
-    liveDetectedDuringInitialConnect =
+liveDetectedDuringInitialConnect =
 
-        false;
+false;
 
-    waitingForInitialReady =
+waitingForInitialReady =
 
-        true;
+true;
 
-    returnToLiveAfterReady =
+returnToLiveAfterReady =
 
-        false;
+false;
 
-    measurementCommandSent =
+measurementCommandSent =
 
-        false;
+false;
 
-    try {
+try {
 
-        sensorTransport =
+sensorTransport =
 
-            await createSensorTransport();
+await createSensorTransport();
 
-        transportType =
+transportType =
 
-            sensorTransport.name;
+sensorTransport.name;
 
-        setTransportStatus(
+setTransportStatus(
 
-            "Transport: " +
+"Transport: " +
 
-            transportType
+transportType
 
-        );
+);
 
-        // ------------------------------------------------
+// ------------------------------------------------
 
-        // CONNECT
+// CONNECT
 
-        // ------------------------------------------------
+// ------------------------------------------------
 
-        await sensorTransport.connect();
+await sensorTransport.connect();
 
-        // ------------------------------------------------
+// ------------------------------------------------
 
-        // UI
+// UI
 
-        // ------------------------------------------------
+// ------------------------------------------------
 
-        if (connectButton) {
+if (connectButton) {
 
-            connectButton.disabled =
+connectButton.disabled =
 
-                true;
+true;
 
-        }
+}
 
-        if (disconnectButton) {
+if (disconnectButton) {
 
-            disconnectButton.disabled =
+disconnectButton.disabled =
 
-                false;
+false;
 
-        }
+}
 
-        setStatus(
+setStatus(
 
-            "Sensor connected",
+"Sensor connected",
 
-            "connected"
+"connected"
 
-        );
+);
 
-        addSerialLine(
+addSerialLine(
 
-            "Transport connected: " +
+"Transport connected: " +
 
-            transportType,
+transportType,
 
-            "serial-info"
+"serial-info"
 
-        );
+);
 
-        resetLiveValues();
+resetLiveValues();
 
-        startHeartbeatMonitor();
+startHeartbeatMonitor();
 
-        // ------------------------------------------------
+// ------------------------------------------------
 
-        // BLE
+// BLE
 
-        // ------------------------------------------------
+// ------------------------------------------------
 
-        if (
+if (
 
-            selectedTransport ===
+selectedTransport ===
 
-            "ble"
+"ble"
 
-        ) {
+) {
 
-            sensorReady =
+sensorReady =
 
-                true;
+true;
 
-            waitingForInitialReady =
+waitingForInitialReady =
 
-                false;
+false;
 
-            await startLiveMode();
+await startLiveMode();
 
-            return;
+return;
 
-        }
+}
 
-        // ------------------------------------------------
+// ------------------------------------------------
 
-        // USB
+// USB
 
-        // ------------------------------------------------
+// ------------------------------------------------
 
-        if (
+if (
 
-            selectedTransport ===
+selectedTransport ===
 
-            "usb"
+"usb"
 
-        ) {
+) {
 
-            // V48 FIX:
+// V48 FIX:
 
-            // Do NOT wait for READY after USB connect.
+// Do NOT wait for READY after USB connect.
 
-            // The sensor may already be in LIVE mode and therefore
+// The sensor may already be in LIVE mode and therefore
 
-            // may not send a new READY/HEARTBEAT transition.
+// may not send a new READY/HEARTBEAT transition.
 
-            //
+//
 
-            // CONNECT -> send L -> LIVE
+// CONNECT -> send L -> LIVE
 
-            //
+//
 
-            // This does not start a measurement.
+// This does not start a measurement.
 
-            // Measurement is still started only by the explicit S command.
+// Measurement is still started only by the explicit S command.
 
-            waitingForInitialReady =
+waitingForInitialReady =
 
-                false;
+false;
 
-            await startLiveMode();
+await startLiveMode();
 
-        }
+}
 
-    }
+}
 
-    catch (error) {
+catch (error) {
 
-        console.error(
+console.error(
 
-            "Connection error:",
+"Connection error:",
 
-            error
+error
 
-        );
+);
 
-        if (sensorTransport) {
+if (sensorTransport) {
 
-            try {
+try {
 
-                await sensorTransport
+await sensorTransport
 
-                    .disconnect();
+.disconnect();
 
-            }
+}
 
-            catch (disconnectError) {
+catch (disconnectError) {
 
-                console.warn(
+console.warn(
 
-                    disconnectError
+disconnectError
 
-                );
+);
 
-            }
+}
 
-        }
+}
 
-        sensorTransport = null;
+sensorTransport = null;
 
-        transportType = null;
+transportType = null;
 
-        sensorReady = false;
+sensorReady = false;
 
-        waitingForInitialReady =
+waitingForInitialReady =
 
-            false;
+false;
 
-        returnToLiveAfterReady =
+returnToLiveAfterReady =
 
-            false;
+false;
 
-        measurementCommandSent =
+measurementCommandSent =
 
-            false;
+false;
 
-        stopHeartbeatMonitor();
+stopHeartbeatMonitor();
 
-        setTransportStatus(
+setTransportStatus(
 
-            "Transport: not connected"
+"Transport: not connected"
 
-        );
+);
 
-        setStatus(
+setStatus(
 
-            "Connection failed",
+"Connection failed",
 
-            "error"
+"error"
 
-        );
+);
 
-        addSerialLine(
+addSerialLine(
 
-            "CONNECT ERROR: " +
+"CONNECT ERROR: " +
 
-            error.message,
+error.message,
 
-            "serial-error"
+"serial-error"
 
-        );
+);
 
-        if (connectButton) {
+if (connectButton) {
 
-            connectButton.disabled =
+connectButton.disabled =
 
-                false;
+false;
 
-        }
+}
 
-        if (disconnectButton) {
+if (disconnectButton) {
 
-            disconnectButton.disabled =
+disconnectButton.disabled =
 
-                true;
+true;
 
-        }
+}
 
-        if (startButton) {
+if (startButton) {
 
-            startButton.disabled =
+startButton.disabled =
 
-                true;
+true;
 
-        }
+}
 
-        if (stopButton) {
+if (stopButton) {
 
-            stopButton.disabled =
+stopButton.disabled =
 
-                true;
+true;
 
-        }
+}
 
-    }
+}
 
 }
 
@@ -5158,231 +5064,231 @@ async function connectSensor() {
 
 async function startMeasurement() {
 
-    if (!sensorTransport) {
+if (!sensorTransport) {
 
-        return;
+return;
 
-    }
+}
 
-    // ----------------------------------------------------
+// ----------------------------------------------------
 
-    // BLE CURRENT LIMITATION
+// BLE CURRENT LIMITATION
 
-    // ----------------------------------------------------
+// ----------------------------------------------------
 
-    if (
+if (
 
-        selectedTransport ===
+selectedTransport ===
 
-        "ble"
+"ble"
 
-    ) {
+) {
 
-        setStatus(
+setStatus(
 
-            "BLE measurement not available yet",
+"BLE measurement not available yet",
 
-            "error"
+"error"
 
-        );
+);
 
-        if (measurementStatus) {
+if (measurementStatus) {
 
-            measurementStatus.textContent =
+measurementStatus.textContent =
 
-                "BLE currently supports LIVE only. Measurement protocol will be added later.";
+"BLE currently supports LIVE only. Measurement protocol will be added later.";
 
-            measurementStatus.className =
+measurementStatus.className =
 
-                "measurement-status";
+"measurement-status";
 
-        }
+}
 
-        addSerialLine(
+addSerialLine(
 
-            "BLE: command S is not implemented in BLE firmware v5.",
+"BLE: command S is not implemented in BLE firmware v5.",
 
-            "serial-info"
+"serial-info"
 
-        );
+);
 
-        return;
+return;
 
-    }
+}
 
-    // ----------------------------------------------------
+// ----------------------------------------------------
 
-    // USB MEASUREMENT
+// USB MEASUREMENT
 
-    // ----------------------------------------------------
+// ----------------------------------------------------
 
-    try {
+try {
 
-        measuring = true;
+measuring = true;
 
-        sampleCount = 0;
+sampleCount = 0;
 
-        currentMovement = 0;
+currentMovement = 0;
 
-        sessionStartTime =
+sessionStartTime =
 
-            Date.now();
+Date.now();
 
-        sessionEndTime = null;
+sessionEndTime = null;
 
-        returnToLiveAfterReady =
+returnToLiveAfterReady =
 
-            false;
+false;
 
-        /*
+/*
 
-         * Authorize INFO,START only for this explicit
+* Authorize INFO,START only for this explicit
 
-         * START button action.
+* START button action.
 
-         */
+*/
 
-        measurementCommandSent =
+measurementCommandSent =
 
-            true;
+true;
 
-        if (samplesValue) {
+if (samplesValue) {
 
-            samplesValue.textContent =
+samplesValue.textContent =
 
-                "0";
+"0";
 
-        }
+}
 
-        if (movementValue) {
+if (movementValue) {
 
-            movementValue.textContent =
+movementValue.textContent =
 
-                "--";
+"--";
 
-        }
+}
 
-        if (timeValue) {
+if (timeValue) {
 
-            timeValue.textContent =
+timeValue.textContent =
 
-                "--";
+"--";
 
-        }
+}
 
-        if (movementList) {
+if (movementList) {
 
-            movementList.innerHTML =
+movementList.innerHTML =
 
-                "";
+"";
 
-        }
+}
 
-        if (sessionBadge) {
+if (sessionBadge) {
 
-            sessionBadge.textContent =
+sessionBadge.textContent =
 
-                "Measurement";
+"Measurement";
 
-        }
+}
 
-        setStatus(
+setStatus(
 
-            "Measurement starting",
+"Measurement starting",
 
-            "connected"
+"connected"
 
-        );
+);
 
-        if (measurementStatus) {
+if (measurementStatus) {
 
-            measurementStatus.textContent =
+measurementStatus.textContent =
 
-                "Starting measurement...";
+"Starting measurement...";
 
-            measurementStatus.className =
+measurementStatus.className =
 
-                "measurement-status active";
+"measurement-status active";
 
-        }
+}
 
-        if (startButton) {
+if (startButton) {
 
-            startButton.disabled =
+startButton.disabled =
 
-                true;
+true;
 
-        }
+}
 
-        if (stopButton) {
+if (stopButton) {
 
-            stopButton.disabled =
+stopButton.disabled =
 
-                false;
+false;
 
-        }
+}
 
-        await sendCommand(
+await sendCommand(
 
-            "S"
+"S"
 
-        );
+);
 
-    }
+}
 
-    catch (error) {
+catch (error) {
 
-        console.error(
+console.error(
 
-            "Measurement start error:",
+"Measurement start error:",
 
-            error
+error
 
-        );
+);
 
-        measuring = false;
+measuring = false;
 
-        measurementCommandSent =
+measurementCommandSent =
 
-            false;
+false;
 
-        setStatus(
+setStatus(
 
-            "Measurement error",
+"Measurement error",
 
-            "error"
+"error"
 
-        );
+);
 
-        if (measurementStatus) {
+if (measurementStatus) {
 
-            measurementStatus.textContent =
+measurementStatus.textContent =
 
-                "Unable to start measurement.";
+"Unable to start measurement.";
 
-            measurementStatus.className =
+measurementStatus.className =
 
-                "measurement-status";
+"measurement-status";
 
-        }
+}
 
-        if (startButton) {
+if (startButton) {
 
-            startButton.disabled =
+startButton.disabled =
 
-                false;
+false;
 
-        }
+}
 
-        if (stopButton) {
+if (stopButton) {
 
-            stopButton.disabled =
+stopButton.disabled =
 
-                true;
+true;
 
-        }
+}
 
-    }
+}
 
 }
 
@@ -5394,71 +5300,71 @@ async function startMeasurement() {
 
 function finishSession() {
 
-    measuring = false;
+measuring = false;
 
-    measurementCommandSent =
+measurementCommandSent =
 
-        false;
+false;
 
-    sessionEndTime =
+sessionEndTime =
 
-        Date.now();
+Date.now();
 
-    returnToLiveAfterReady =
+returnToLiveAfterReady =
 
-        true;
+true;
 
-    if (sessionBadge) {
+if (sessionBadge) {
 
-        sessionBadge.textContent =
+sessionBadge.textContent =
 
-            "Session complete";
+"Session complete";
 
-    }
+}
 
-    setStatus(
+setStatus(
 
-        "Measurement complete",
+"Measurement complete",
 
-        "connected"
+"connected"
 
-    );
+);
 
-    if (measurementStatus) {
+if (measurementStatus) {
 
-        measurementStatus.textContent =
+measurementStatus.textContent =
 
-            "Five movements completed. Waiting for sensor READY...";
+"Five movements completed. Waiting for sensor READY...";
 
-        measurementStatus.className =
+measurementStatus.className =
 
-            "measurement-status active";
+"measurement-status active";
 
-    }
+}
 
-    if (startButton) {
+if (startButton) {
 
-        startButton.disabled =
+startButton.disabled =
 
-            true;
+true;
 
-    }
+}
 
-    if (stopButton) {
+if (stopButton) {
 
-        stopButton.disabled =
+stopButton.disabled =
 
-            true;
+true;
 
-    }
+}
 
-    // NO setTimeout().
+// NO setTimeout().
 
-    //
+//
 
-    // Arduino will send READY.
+// Arduino will send READY.
 
-    // READY / HEARTBEAT will trigger L.
+// READY / HEARTBEAT will trigger L.
 
 }
 
@@ -5470,107 +5376,107 @@ function finishSession() {
 
 async function stopMeasurement() {
 
-    if (!sensorTransport) {
+if (!sensorTransport) {
 
-        return;
+return;
 
-    }
+}
 
-    try {
+try {
 
-        measuring = false;
+measuring = false;
 
-        measurementCommandSent =
+measurementCommandSent =
 
-            false;
+false;
 
-        // Manual STOP follows the same state machine as the
+// Manual STOP follows the same state machine as the
 
-        // natural end of a measurement:
+// natural end of a measurement:
 
-        // Q -> READY/HEARTBEAT -> L -> LIVE.
+// Q -> READY/HEARTBEAT -> L -> LIVE.
 
-        returnToLiveAfterReady =
+returnToLiveAfterReady =
 
-            true;
+true;
 
-        await sendCommand(
+await sendCommand(
 
-            "Q"
+"Q"
 
-        );
+);
 
-        if (measurementStatus) {
+if (measurementStatus) {
 
-            measurementStatus.textContent =
+measurementStatus.textContent =
 
-                "Stopping... Waiting for sensor READY...";
+"Stopping... Waiting for sensor READY...";
 
-            measurementStatus.className =
+measurementStatus.className =
 
-                "measurement-status active";
+"measurement-status active";
 
-        }
+}
 
-        setStatus(
+setStatus(
 
-            "Stopping measurement",
+"Stopping measurement",
 
-            "connected"
+"connected"
 
-        );
+);
 
-        if (startButton) {
+if (startButton) {
 
-            startButton.disabled =
+startButton.disabled =
 
-                true;
+true;
 
-        }
+}
 
-        if (stopButton) {
+if (stopButton) {
 
-            stopButton.disabled =
+stopButton.disabled =
 
-                true;
+true;
 
-        }
+}
 
-    }
+}
 
-    catch (error) {
+catch (error) {
 
-        console.error(
+console.error(
 
-            "Stop measurement error:",
+"Stop measurement error:",
 
-            error
+error
 
-        );
+);
 
-        returnToLiveAfterReady =
+returnToLiveAfterReady =
 
-            false;
+false;
 
-        setStatus(
+setStatus(
 
-            "Stop error",
+"Stop error",
 
-            "error"
+"error"
 
-        );
+);
 
-        addSerialLine(
+addSerialLine(
 
-            "STOP ERROR: " +
+"STOP ERROR: " +
 
-            error.message,
+error.message,
 
-            "serial-error"
+"serial-error"
 
-        );
+);
 
-    }
+}
 
 }
 
@@ -5582,137 +5488,137 @@ async function stopMeasurement() {
 
 async function disconnectSensor() {
 
-    stopHeartbeatMonitor();
+stopHeartbeatMonitor();
 
-    const transport =
+const transport =
 
-        sensorTransport;
+sensorTransport;
 
-    sensorTransport = null;
+sensorTransport = null;
 
-    transportType = null;
+transportType = null;
 
-    sensorReady = false;
+sensorReady = false;
 
-    waitingForInitialReady =
+waitingForInitialReady =
 
-        false;
+false;
 
-    returnToLiveAfterReady =
+returnToLiveAfterReady =
 
-        false;
+false;
 
-    measurementCommandSent =
+measurementCommandSent =
 
-        false;
+false;
 
-    try {
+try {
 
-        if (transport) {
+if (transport) {
 
-            // ------------------------------------------------
+// ------------------------------------------------
 
-            // V39 WEBUSB DISCONNECT
+// V39 WEBUSB DISCONNECT
 
-            // ------------------------------------------------
+// ------------------------------------------------
 
-            //
+//
 
-            // Do NOT send Q here.
+// Do NOT send Q here.
 
-            // V39 WebUSB disconnect test.
+// V39 WebUSB disconnect test.
 
-            // ------------------------------------------------
+// ------------------------------------------------
 
-            await transport.disconnect();
+await transport.disconnect();
 
-        }
+}
 
-    }
+}
 
-    catch (error) {
+catch (error) {
 
-        console.warn(
+console.warn(
 
-            "Disconnect error:",
+"Disconnect error:",
 
-            error
+error
 
-        );
+);
 
-    }
+}
 
-    finally {
+finally {
 
-        measuring = false;
+measuring = false;
 
-        if (connectButton) {
+if (connectButton) {
 
-            connectButton.disabled =
+connectButton.disabled =
 
-                false;
+false;
 
-        }
+}
 
-        if (disconnectButton) {
+if (disconnectButton) {
 
-            disconnectButton.disabled =
+disconnectButton.disabled =
 
-                true;
+true;
 
-        }
+}
 
-        if (startButton) {
+if (startButton) {
 
-            startButton.disabled =
+startButton.disabled =
 
-                true;
+true;
 
-        }
+}
 
-        if (stopButton) {
+if (stopButton) {
 
-            stopButton.disabled =
+stopButton.disabled =
 
-                true;
+true;
 
-        }
+}
 
-        setStatus(
+setStatus(
 
-            "Sensor not connected",
+"Sensor not connected",
 
-            "neutral"
+"neutral"
 
-        );
+);
 
-        setTransportStatus(
+setTransportStatus(
 
-            "Transport: not connected"
+"Transport: not connected"
 
-        );
+);
 
-        if (measurementStatus) {
+if (measurementStatus) {
 
-            measurementStatus.textContent =
+measurementStatus.textContent =
 
-                "Sensor disconnected.";
+"Sensor disconnected.";
 
-            measurementStatus.className =
+measurementStatus.className =
 
-                "measurement-status";
+"measurement-status";
 
-        }
+}
 
-        addSerialLine(
+addSerialLine(
 
-            "Sensor disconnected.",
+"Sensor disconnected.",
 
-            "serial-info"
+"serial-info"
 
-        );
+);
 
-    }
+}
 
 }
 
@@ -5724,49 +5630,49 @@ async function disconnectSensor() {
 
 function selectUSBTransport() {
 
-    if (sensorTransport) {
+if (sensorTransport) {
 
-        return;
+return;
 
-    }
+}
 
-    selectedTransport =
+selectedTransport =
 
-        "usb";
+"usb";
 
-    if (usbButton) {
+if (usbButton) {
 
-        usbButton.classList.add(
+usbButton.classList.add(
 
-            "active"
+"active"
 
-        );
+);
 
-    }
+}
 
-    if (bleButton) {
+if (bleButton) {
 
-        bleButton.classList.remove(
+bleButton.classList.remove(
 
-            "active"
+"active"
 
-        );
+);
 
-    }
+}
 
-    setTransportStatus(
+setTransportStatus(
 
-        "Transport: USB"
+"Transport: USB"
 
-    );
+);
 
-    addSerialLine(
+addSerialLine(
 
-        "Selected transport: USB",
+"Selected transport: USB",
 
-        "serial-info"
+"serial-info"
 
-    );
+);
 
 }
 
@@ -5778,49 +5684,49 @@ function selectUSBTransport() {
 
 function selectBLETransport() {
 
-    if (sensorTransport) {
+if (sensorTransport) {
 
-        return;
+return;
 
-    }
+}
 
-    selectedTransport =
+selectedTransport =
 
-        "ble";
+"ble";
 
-    if (bleButton) {
+if (bleButton) {
 
-        bleButton.classList.add(
+bleButton.classList.add(
 
-            "active"
+"active"
 
-        );
+);
 
-    }
+}
 
-    if (usbButton) {
+if (usbButton) {
 
-        usbButton.classList.remove(
+usbButton.classList.remove(
 
-            "active"
+"active"
 
-        );
+);
 
-    }
+}
 
-    setTransportStatus(
+setTransportStatus(
 
-        "Transport: BLE"
+"Transport: BLE"
 
-    );
+);
 
-    addSerialLine(
+addSerialLine(
 
-        "Selected transport: BLE",
+"Selected transport: BLE",
 
-        "serial-info"
+"serial-info"
 
-    );
+);
 
 }
 
@@ -5832,73 +5738,73 @@ function selectBLETransport() {
 
 if (usbButton) {
 
-    usbButton.addEventListener(
+usbButton.addEventListener(
 
-        "click",
+"click",
 
-        selectUSBTransport
+selectUSBTransport
 
-    );
+);
 
 }
 
 if (bleButton) {
 
-    bleButton.addEventListener(
+bleButton.addEventListener(
 
-        "click",
+"click",
 
-        selectBLETransport
+selectBLETransport
 
-    );
+);
 
 }
 
 if (connectButton) {
 
-    connectButton.addEventListener(
+connectButton.addEventListener(
 
-        "click",
+"click",
 
-        connectSensor
+connectSensor
 
-    );
+);
 
 }
 
 if (disconnectButton) {
 
-    disconnectButton.addEventListener(
+disconnectButton.addEventListener(
 
-        "click",
+"click",
 
-        disconnectSensor
+disconnectSensor
 
-    );
+);
 
 }
 
 if (startButton) {
 
-    startButton.addEventListener(
+startButton.addEventListener(
 
-        "click",
+"click",
 
-        startMeasurement
+startMeasurement
 
-    );
+);
 
 }
 
 if (stopButton) {
 
-    stopButton.addEventListener(
+stopButton.addEventListener(
 
-        "click",
+"click",
 
-        stopMeasurement
+stopMeasurement
 
-    );
+);
 
 }
 
@@ -5918,15 +5824,15 @@ selectUSBTransport();
 
 setStatus(
 
-    "Sensor not connected",
+"Sensor not connected",
 
-    "neutral"
+"neutral"
 
 );
 
 setTransportStatus(
 
-    "Transport: USB"
+"Transport: USB"
 
 );
 
@@ -5942,19 +5848,19 @@ resetBatteryValues();
 
 window.gazelaSensor = {
 
-    getTransport: () =>
+getTransport: () =>
 
-        sensorTransport,
+sensorTransport,
 
-    getTransportType: () =>
+getTransportType: () =>
 
-        transportType,
+transportType,
 
-    getSelectedTransport: () =>
+getSelectedTransport: () =>
 
-        selectedTransport,
+selectedTransport,
 
-    send: sendCommand
+send: sendCommand
 
 };
 
@@ -5962,407 +5868,4 @@ window.gazelaSensor = {
 
 // END OF APP.JS
 
-// ========================================================
-
-
-
-// ========================================================
-// GESTURE RECORDER / COMPARATOR — BROWSER SIDE ONLY
-// ========================================================
-// Receives the already validated LIVE samples. It does not send
-// L, S, Q or any other command and does not change firmware protocol.
-// The reference is stored locally in this browser's localStorage.
-// ========================================================
-
-const GESTURE_MAX_SAMPLES = 1500;
-const GESTURE_COMPARE_POINTS = 64;
-const GESTURE_REFERENCE_KEY = "gazelaGestureReferenceV1";
-const GESTURE_CHANNELS = ["AX", "AY", "AZ", "GX", "GY", "GZ"];
-
-let gestureRecording = false;
-let gestureCurrentBuffer = [];
-let gestureCompletedRecording = null;
-let gestureReference = null;
-let gestureHistoryItems = [];
-let gestureRecordingStartedAt = 0;
-let gestureLastDrawAt = 0;
-
-const gestureElements = {
-  badge: document.getElementById("gestureStatusBadge"),
-  buffer: document.getElementById("gestureBufferCount"),
-  duration: document.getElementById("gestureDuration"),
-  samples: document.getElementById("gestureSampleCount"),
-  reference: document.getElementById("gestureReferenceStatus"),
-  record: document.getElementById("gestureRecordButton"),
-  stop: document.getElementById("gestureStopButton"),
-  save: document.getElementById("gestureReferenceButton"),
-  compare: document.getElementById("gestureCompareButton"),
-  clear: document.getElementById("gestureClearButton"),
-  message: document.getElementById("gestureMessage"),
-  accelerationCanvas: document.getElementById("gestureAccelerationChart"),
-  gyroscopeCanvas: document.getElementById("gestureGyroscopeChart"),
-  score: document.getElementById("gestureMatchScore"),
-  description: document.getElementById("gestureMatchDescription"),
-  history: document.getElementById("gestureHistory")
-};
-
-function gestureSetMessage(message, active = false) {
-  if (!gestureElements.message) return;
-  gestureElements.message.textContent = message;
-  gestureElements.message.className = active
-    ? "measurement-status active"
-    : "measurement-status";
-}
-
-function gestureSetBadge(text, state = "") {
-  if (!gestureElements.badge) return;
-  gestureElements.badge.textContent = text;
-  gestureElements.badge.className = "gesture-status-badge";
-  if (state) gestureElements.badge.classList.add(state);
-}
-
-function gestureLoadReference() {
-  try {
-    const raw = localStorage.getItem(GESTURE_REFERENCE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (!parsed || !Array.isArray(parsed.samples) || parsed.samples.length < 2) {
-      return null;
-    }
-    return parsed;
-  } catch (error) {
-    console.warn("Gesture reference could not be loaded:", error);
-    return null;
-  }
-}
-
-function gestureUpdateUI() {
-  const count = gestureCurrentBuffer.length;
-  const duration = count > 1
-    ? (gestureCurrentBuffer[count - 1].t - gestureCurrentBuffer[0].t) / 1000
-    : 0;
-
-  if (gestureElements.buffer) gestureElements.buffer.textContent = String(count);
-  if (gestureElements.duration) gestureElements.duration.textContent = duration.toFixed(2) + " s";
-  if (gestureElements.samples) gestureElements.samples.textContent = String(count);
-  if (gestureElements.reference) {
-    gestureElements.reference.textContent = gestureReference ? "Saved" : "Not saved";
-  }
-
-  if (gestureElements.record) {
-    gestureElements.record.disabled = gestureRecording || !sensorTransport || selectedTransport !== "usb" && selectedTransport !== "ble";
-  }
-  if (gestureElements.stop) gestureElements.stop.disabled = !gestureRecording;
-  if (gestureElements.save) gestureElements.save.disabled = gestureRecording || !gestureCompletedRecording || gestureCompletedRecording.length < 2;
-  if (gestureElements.compare) {
-    gestureElements.compare.disabled = gestureRecording || !gestureReference || !gestureCompletedRecording;
-  }
-  if (gestureElements.clear) gestureElements.clear.disabled = gestureRecording;
-
-  if (!gestureRecording && !sensorTransport) {
-    gestureSetBadge("Waiting for LIVE");
-  } else if (!gestureRecording && sensorTransport) {
-    gestureSetBadge("Sensor connected", "ready");
-  }
-}
-
-function gestureReceiveSample(sample) {
-  if (!gestureRecording || !sample) return;
-  const values = {};
-  for (const key of GESTURE_CHANNELS) {
-    const value = Number(sample[key]);
-    if (!Number.isFinite(value)) return;
-    values[key] = value;
-  }
-
-  const now = performance.now();
-  gestureCurrentBuffer.push({
-    t: now - gestureRecordingStartedAt,
-    ...values
-  });
-
-  if (gestureCurrentBuffer.length > GESTURE_MAX_SAMPLES) {
-    gestureCurrentBuffer.shift();
-    const offset = gestureCurrentBuffer[0].t;
-    gestureCurrentBuffer.forEach(point => { point.t -= offset; });
-    gestureRecordingStartedAt = now - gestureCurrentBuffer[0].t;
-  }
-
-  if (now - gestureLastDrawAt >= 100) {
-    gestureLastDrawAt = now;
-    gestureUpdateUI();
-    gestureDrawCharts(gestureCurrentBuffer);
-  }
-}
-
-function gestureStartRecording() {
-  if (!sensorTransport) {
-    gestureSetMessage("Najpierw połącz sensor. Rejestracja korzysta z istniejącego strumienia LIVE.");
-    return;
-  }
-  if (gestureRecording) return;
-
-  gestureCurrentBuffer = [];
-  gestureRecordingStartedAt = performance.now();
-  gestureLastDrawAt = 0;
-  gestureRecording = true;
-
-  if (gestureElements.score) gestureElements.score.textContent = "—";
-  if (gestureElements.description) {
-    gestureElements.description.textContent = "Nagrywanie gestu. Wykonaj ruch i naciśnij STOP.";
-  }
-
-  gestureSetBadge("Recording", "recording");
-  gestureSetMessage("Trwa ręczna rejestracja danych LIVE…", true);
-  gestureUpdateUI();
-  gestureDrawCharts([]);
-}
-
-function gestureStopRecording() {
-  if (!gestureRecording) return;
-  gestureRecording = false;
-
-  if (gestureCurrentBuffer.length >= 2) {
-    // Keep the completed take separate so a later recording cannot overwrite it.
-    gestureCompletedRecording = gestureCurrentBuffer.map(point => ({ ...point }));
-    const duration = (gestureCompletedRecording.at(-1).t - gestureCompletedRecording[0].t) / 1000;
-    gestureHistoryItems.unshift({
-      id: Date.now(),
-      count: gestureCompletedRecording.length,
-      duration,
-      label: "Gesture " + (gestureHistoryItems.length + 1)
-    });
-    gestureHistoryItems = gestureHistoryItems.slice(0, 10);
-    gestureRenderHistory();
-    gestureSetBadge("Recording complete", "ready");
-    gestureSetMessage("Zapisano gest: " + gestureCompletedRecording.length + " próbek, " + duration.toFixed(2) + " s.");
-    gestureDrawCharts(gestureCompletedRecording);
-  } else {
-    gestureCompletedRecording = null;
-    gestureSetBadge("Too few samples");
-    gestureSetMessage("Za mało próbek. Sprawdź, czy sensor wysyła dane LIVE i spróbuj ponownie.");
-    gestureDrawCharts([]);
-  }
-
-  gestureUpdateUI();
-}
-
-function gestureSaveReference() {
-  if (!gestureCompletedRecording || gestureCompletedRecording.length < 2) return;
-
-  const reference = {
-    version: 1,
-    savedAt: new Date().toISOString(),
-    samples: gestureResample(gestureCompletedRecording, GESTURE_COMPARE_POINTS)
-  };
-
-  try {
-    localStorage.setItem(GESTURE_REFERENCE_KEY, JSON.stringify(reference));
-    gestureReference = reference;
-    gestureSetMessage("Gest referencyjny zapisany lokalnie w tej przeglądarce.");
-    gestureUpdateUI();
-  } catch (error) {
-    console.error("Could not save gesture reference:", error);
-    gestureSetMessage("Nie udało się zapisać wzorca. Sprawdź dostępność pamięci lokalnej przeglądarki.");
-  }
-}
-
-function gestureResample(samples, targetCount) {
-  if (!Array.isArray(samples) || samples.length < 2) return [];
-  const firstT = samples[0].t;
-  const lastT = samples[samples.length - 1].t;
-  const duration = Math.max(1, lastT - firstT);
-  const output = [];
-
-  for (let i = 0; i < targetCount; i++) {
-    const targetT = firstT + duration * i / (targetCount - 1);
-    let right = samples.findIndex(point => point.t >= targetT);
-    if (right < 0) right = samples.length - 1;
-    const left = Math.max(0, right - 1);
-    const a = samples[left];
-    const b = samples[right];
-    const span = b.t - a.t;
-    const ratio = span > 0 ? (targetT - a.t) / span : 0;
-    const point = { t: i / (targetCount - 1) };
-
-    for (const key of GESTURE_CHANNELS) {
-      point[key] = a[key] + (b[key] - a[key]) * ratio;
-    }
-    output.push(point);
-  }
-  return output;
-}
-
-function gestureCompare() {
-  if (!gestureReference || !gestureCompletedRecording) return;
-
-  const current = gestureResample(gestureCompletedRecording, GESTURE_COMPARE_POINTS);
-  const reference = gestureReference.samples;
-  if (current.length !== reference.length || current.length < 2) return;
-
-  let totalError = 0;
-  let totalReferenceEnergy = 0;
-  let channelCount = 0;
-
-  for (const channel of GESTURE_CHANNELS) {
-    const refValues = reference.map(point => Number(point[channel]));
-    const curValues = current.map(point => Number(point[channel]));
-    const refMean = refValues.reduce((sum, value) => sum + value, 0) / refValues.length;
-    const curMean = curValues.reduce((sum, value) => sum + value, 0) / curValues.length;
-    const refScale = Math.sqrt(refValues.reduce((sum, value) => sum + (value - refMean) ** 2, 0) / refValues.length) || 1;
-    const curScale = Math.sqrt(curValues.reduce((sum, value) => sum + (value - curMean) ** 2, 0) / curValues.length) || 1;
-
-    for (let i = 0; i < GESTURE_COMPARE_POINTS; i++) {
-      const normalizedRef = (refValues[i] - refMean) / refScale;
-      const normalizedCur = (curValues[i] - curMean) / curScale;
-      totalError += (normalizedRef - normalizedCur) ** 2;
-      totalReferenceEnergy += normalizedRef ** 2;
-    }
-    channelCount++;
-  }
-
-  const rmse = Math.sqrt(totalError / (channelCount * GESTURE_COMPARE_POINTS));
-  const similarity = Math.max(0, Math.min(100, Math.round(100 * Math.exp(-rmse / 2))));
-
-  if (gestureElements.score) gestureElements.score.textContent = similarity + "/100";
-  if (gestureElements.description) {
-    gestureElements.description.textContent =
-      "Wstępne podobieństwo kształtu sygnałów: " + similarity +
-      "/100. Porównanie obejmuje AX, AY, AZ, GX, GZ i GY po normalizacji i resamplingu do 64 punktów.";
-  }
-  gestureSetMessage("Porównanie zakończone. Wynik traktuj jako wskaźnik eksperymentalny, nie ocenę jakości techniki.");
-}
-
-function gestureClearCurrent() {
-  if (gestureRecording) return;
-  gestureCurrentBuffer = [];
-  gestureCompletedRecording = null;
-  if (gestureElements.score) gestureElements.score.textContent = "—";
-  if (gestureElements.description) {
-    gestureElements.description.textContent = "Zarejestruj gest i zapisz ruch referencyjny, aby rozpocząć porównanie.";
-  }
-  gestureSetMessage("Bieżące nagranie wyczyszczone. Wzorzec referencyjny pozostaje zapisany.");
-  gestureDrawCharts([]);
-  gestureUpdateUI();
-}
-
-function gestureRenderHistory() {
-  if (!gestureElements.history) return;
-  gestureElements.history.replaceChildren();
-
-  if (!gestureHistoryItems.length) {
-    const empty = document.createElement("div");
-    empty.className = "gesture-history-empty";
-    empty.textContent = "Brak zakończonych nagrań.";
-    gestureElements.history.appendChild(empty);
-    return;
-  }
-
-  gestureHistoryItems.forEach(item => {
-    const row = document.createElement("div");
-    row.className = "gesture-history-item";
-
-    const label = document.createElement("span");
-    label.textContent = item.label + " — " + item.count + " próbek, " + item.duration.toFixed(2) + " s";
-
-    const status = document.createElement("span");
-    status.textContent = "Saved in current page session";
-
-    row.append(label, status);
-    gestureElements.history.appendChild(row);
-  });
-}
-
-function gestureDrawSingleChart(canvas, samples, channels) {
-  if (!canvas) return;
-  const rect = canvas.getBoundingClientRect();
-  const width = Math.max(320, Math.floor(rect.width || 600));
-  const height = 190;
-  const dpr = window.devicePixelRatio || 1;
-
-  canvas.width = width * dpr;
-  canvas.height = height * dpr;
-
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return;
-  ctx.scale(dpr, dpr);
-  ctx.clearRect(0, 0, width, height);
-
-  ctx.strokeStyle = "#e5e7eb";
-  ctx.lineWidth = 1;
-  for (let i = 1; i <= 4; i++) {
-    const y = height * i / 5;
-    ctx.beginPath();
-    ctx.moveTo(34, y);
-    ctx.lineTo(width - 10, y);
-    ctx.stroke();
-  }
-
-  ctx.fillStyle = "#64748b";
-  ctx.font = "11px Arial";
-  ctx.fillText("LIVE samples", 34, 13);
-
-  if (!samples || samples.length < 2) {
-    ctx.fillStyle = "#94a3b8";
-    ctx.font = "13px Arial";
-    ctx.fillText("No recorded gesture", 34, height / 2);
-    return;
-  }
-
-  const colors = ["#2563eb", "#16a34a", "#dc2626"];
-  const values = channels.flatMap(channel => samples.map(point => point[channel]).filter(Number.isFinite));
-  if (!values.length) return;
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const range = Math.max(0.0001, max - min);
-  const plotTop = 22;
-  const plotBottom = height - 18;
-
-  channels.forEach((channel, channelIndex) => {
-    ctx.strokeStyle = colors[channelIndex];
-    ctx.lineWidth = 1.7;
-    ctx.beginPath();
-
-    samples.forEach((point, index) => {
-      const x = 34 + (width - 46) * index / (samples.length - 1);
-      const y = plotBottom - ((point[channel] - min) / range) * (plotBottom - plotTop);
-      if (index === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
-
-    ctx.stroke();
-    ctx.fillStyle = colors[channelIndex];
-    ctx.fillText(channel, 36 + channelIndex * 48, height - 3);
-  });
-}
-
-function gestureDrawCharts(samples) {
-  gestureDrawSingleChart(gestureElements.accelerationCanvas, samples, ["AX", "AY", "AZ"]);
-  gestureDrawSingleChart(gestureElements.gyroscopeCanvas, samples, ["GX", "GY", "GZ"]);
-}
-
-if (gestureElements.record) gestureElements.record.addEventListener("click", gestureStartRecording);
-if (gestureElements.stop) gestureElements.stop.addEventListener("click", gestureStopRecording);
-if (gestureElements.save) gestureElements.save.addEventListener("click", gestureSaveReference);
-if (gestureElements.compare) gestureElements.compare.addEventListener("click", gestureCompare);
-if (gestureElements.clear) gestureElements.clear.addEventListener("click", gestureClearCurrent);
-
-gestureReference = gestureLoadReference();
-gestureRenderHistory();
-gestureDrawCharts([]);
-gestureUpdateUI();
-
-// Keep recorder controls in sync with sensor connection lifecycle.
-const gestureOriginalSetTransportStatus = setTransportStatus;
-setTransportStatus = function(text) {
-  gestureOriginalSetTransportStatus(text);
-  if (typeof gestureUpdateUI === "function") gestureUpdateUI();
-};
-
-window.addEventListener("resize", () => {
-  gestureDrawCharts(gestureRecording ? gestureCurrentBuffer : (gestureCompletedRecording || []));
-});
-
-// ========================================================
-// END GESTURE RECORDER / COMPARATOR
 // ========================================================
