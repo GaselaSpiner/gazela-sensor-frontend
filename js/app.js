@@ -1,3 +1,5 @@
+// GAZELA SPINER SENSOR — SENSOR LAB
+
 // app.js — V47 LIVE RECONNECT READY + WEBUSB DETECTION + TRANSPORT LAYER + USB SERIAL/WEBUSB + BLE
 
 // ========================================================
