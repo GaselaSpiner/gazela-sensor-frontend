@@ -3756,6 +3756,10 @@ function parseLiveData(line) {
 
     if (angleyValue) angleyValue.textContent = formatNumber(AngleY, 1);
 
+    // Feed the manual gesture recorder from the existing LIVE stream.
+    // This is local browser-side processing only; no Arduino command is sent.
+    gestureReceiveSample({ AX, AY, AZ, G, Angle, GX, GY, GZ, AngleY });
+
 }
 
 // ========================================================
@@ -5958,4 +5962,407 @@ window.gazelaSensor = {
 
 // END OF APP.JS
 
+// ========================================================
+
+
+
+// ========================================================
+// GESTURE RECORDER / COMPARATOR — BROWSER SIDE ONLY
+// ========================================================
+// Receives the already validated LIVE samples. It does not send
+// L, S, Q or any other command and does not change firmware protocol.
+// The reference is stored locally in this browser's localStorage.
+// ========================================================
+
+const GESTURE_MAX_SAMPLES = 1500;
+const GESTURE_COMPARE_POINTS = 64;
+const GESTURE_REFERENCE_KEY = "gazelaGestureReferenceV1";
+const GESTURE_CHANNELS = ["AX", "AY", "AZ", "GX", "GY", "GZ"];
+
+let gestureRecording = false;
+let gestureCurrentBuffer = [];
+let gestureCompletedRecording = null;
+let gestureReference = null;
+let gestureHistoryItems = [];
+let gestureRecordingStartedAt = 0;
+let gestureLastDrawAt = 0;
+
+const gestureElements = {
+  badge: document.getElementById("gestureStatusBadge"),
+  buffer: document.getElementById("gestureBufferCount"),
+  duration: document.getElementById("gestureDuration"),
+  samples: document.getElementById("gestureSampleCount"),
+  reference: document.getElementById("gestureReferenceStatus"),
+  record: document.getElementById("gestureRecordButton"),
+  stop: document.getElementById("gestureStopButton"),
+  save: document.getElementById("gestureReferenceButton"),
+  compare: document.getElementById("gestureCompareButton"),
+  clear: document.getElementById("gestureClearButton"),
+  message: document.getElementById("gestureMessage"),
+  accelerationCanvas: document.getElementById("gestureAccelerationChart"),
+  gyroscopeCanvas: document.getElementById("gestureGyroscopeChart"),
+  score: document.getElementById("gestureMatchScore"),
+  description: document.getElementById("gestureMatchDescription"),
+  history: document.getElementById("gestureHistory")
+};
+
+function gestureSetMessage(message, active = false) {
+  if (!gestureElements.message) return;
+  gestureElements.message.textContent = message;
+  gestureElements.message.className = active
+    ? "measurement-status active"
+    : "measurement-status";
+}
+
+function gestureSetBadge(text, state = "") {
+  if (!gestureElements.badge) return;
+  gestureElements.badge.textContent = text;
+  gestureElements.badge.className = "gesture-status-badge";
+  if (state) gestureElements.badge.classList.add(state);
+}
+
+function gestureLoadReference() {
+  try {
+    const raw = localStorage.getItem(GESTURE_REFERENCE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || !Array.isArray(parsed.samples) || parsed.samples.length < 2) {
+      return null;
+    }
+    return parsed;
+  } catch (error) {
+    console.warn("Gesture reference could not be loaded:", error);
+    return null;
+  }
+}
+
+function gestureUpdateUI() {
+  const count = gestureCurrentBuffer.length;
+  const duration = count > 1
+    ? (gestureCurrentBuffer[count - 1].t - gestureCurrentBuffer[0].t) / 1000
+    : 0;
+
+  if (gestureElements.buffer) gestureElements.buffer.textContent = String(count);
+  if (gestureElements.duration) gestureElements.duration.textContent = duration.toFixed(2) + " s";
+  if (gestureElements.samples) gestureElements.samples.textContent = String(count);
+  if (gestureElements.reference) {
+    gestureElements.reference.textContent = gestureReference ? "Saved" : "Not saved";
+  }
+
+  if (gestureElements.record) {
+    gestureElements.record.disabled = gestureRecording || !sensorTransport || selectedTransport !== "usb" && selectedTransport !== "ble";
+  }
+  if (gestureElements.stop) gestureElements.stop.disabled = !gestureRecording;
+  if (gestureElements.save) gestureElements.save.disabled = gestureRecording || !gestureCompletedRecording || gestureCompletedRecording.length < 2;
+  if (gestureElements.compare) {
+    gestureElements.compare.disabled = gestureRecording || !gestureReference || !gestureCompletedRecording;
+  }
+  if (gestureElements.clear) gestureElements.clear.disabled = gestureRecording;
+
+  if (!gestureRecording && !sensorTransport) {
+    gestureSetBadge("Waiting for LIVE");
+  } else if (!gestureRecording && sensorTransport) {
+    gestureSetBadge("Sensor connected", "ready");
+  }
+}
+
+function gestureReceiveSample(sample) {
+  if (!gestureRecording || !sample) return;
+  const values = {};
+  for (const key of GESTURE_CHANNELS) {
+    const value = Number(sample[key]);
+    if (!Number.isFinite(value)) return;
+    values[key] = value;
+  }
+
+  const now = performance.now();
+  gestureCurrentBuffer.push({
+    t: now - gestureRecordingStartedAt,
+    ...values
+  });
+
+  if (gestureCurrentBuffer.length > GESTURE_MAX_SAMPLES) {
+    gestureCurrentBuffer.shift();
+    const offset = gestureCurrentBuffer[0].t;
+    gestureCurrentBuffer.forEach(point => { point.t -= offset; });
+    gestureRecordingStartedAt = now - gestureCurrentBuffer[0].t;
+  }
+
+  if (now - gestureLastDrawAt >= 100) {
+    gestureLastDrawAt = now;
+    gestureUpdateUI();
+    gestureDrawCharts(gestureCurrentBuffer);
+  }
+}
+
+function gestureStartRecording() {
+  if (!sensorTransport) {
+    gestureSetMessage("Najpierw połącz sensor. Rejestracja korzysta z istniejącego strumienia LIVE.");
+    return;
+  }
+  if (gestureRecording) return;
+
+  gestureCurrentBuffer = [];
+  gestureRecordingStartedAt = performance.now();
+  gestureLastDrawAt = 0;
+  gestureRecording = true;
+
+  if (gestureElements.score) gestureElements.score.textContent = "—";
+  if (gestureElements.description) {
+    gestureElements.description.textContent = "Nagrywanie gestu. Wykonaj ruch i naciśnij STOP.";
+  }
+
+  gestureSetBadge("Recording", "recording");
+  gestureSetMessage("Trwa ręczna rejestracja danych LIVE…", true);
+  gestureUpdateUI();
+  gestureDrawCharts([]);
+}
+
+function gestureStopRecording() {
+  if (!gestureRecording) return;
+  gestureRecording = false;
+
+  if (gestureCurrentBuffer.length >= 2) {
+    // Keep the completed take separate so a later recording cannot overwrite it.
+    gestureCompletedRecording = gestureCurrentBuffer.map(point => ({ ...point }));
+    const duration = (gestureCompletedRecording.at(-1).t - gestureCompletedRecording[0].t) / 1000;
+    gestureHistoryItems.unshift({
+      id: Date.now(),
+      count: gestureCompletedRecording.length,
+      duration,
+      label: "Gesture " + (gestureHistoryItems.length + 1)
+    });
+    gestureHistoryItems = gestureHistoryItems.slice(0, 10);
+    gestureRenderHistory();
+    gestureSetBadge("Recording complete", "ready");
+    gestureSetMessage("Zapisano gest: " + gestureCompletedRecording.length + " próbek, " + duration.toFixed(2) + " s.");
+    gestureDrawCharts(gestureCompletedRecording);
+  } else {
+    gestureCompletedRecording = null;
+    gestureSetBadge("Too few samples");
+    gestureSetMessage("Za mało próbek. Sprawdź, czy sensor wysyła dane LIVE i spróbuj ponownie.");
+    gestureDrawCharts([]);
+  }
+
+  gestureUpdateUI();
+}
+
+function gestureSaveReference() {
+  if (!gestureCompletedRecording || gestureCompletedRecording.length < 2) return;
+
+  const reference = {
+    version: 1,
+    savedAt: new Date().toISOString(),
+    samples: gestureResample(gestureCompletedRecording, GESTURE_COMPARE_POINTS)
+  };
+
+  try {
+    localStorage.setItem(GESTURE_REFERENCE_KEY, JSON.stringify(reference));
+    gestureReference = reference;
+    gestureSetMessage("Gest referencyjny zapisany lokalnie w tej przeglądarce.");
+    gestureUpdateUI();
+  } catch (error) {
+    console.error("Could not save gesture reference:", error);
+    gestureSetMessage("Nie udało się zapisać wzorca. Sprawdź dostępność pamięci lokalnej przeglądarki.");
+  }
+}
+
+function gestureResample(samples, targetCount) {
+  if (!Array.isArray(samples) || samples.length < 2) return [];
+  const firstT = samples[0].t;
+  const lastT = samples[samples.length - 1].t;
+  const duration = Math.max(1, lastT - firstT);
+  const output = [];
+
+  for (let i = 0; i < targetCount; i++) {
+    const targetT = firstT + duration * i / (targetCount - 1);
+    let right = samples.findIndex(point => point.t >= targetT);
+    if (right < 0) right = samples.length - 1;
+    const left = Math.max(0, right - 1);
+    const a = samples[left];
+    const b = samples[right];
+    const span = b.t - a.t;
+    const ratio = span > 0 ? (targetT - a.t) / span : 0;
+    const point = { t: i / (targetCount - 1) };
+
+    for (const key of GESTURE_CHANNELS) {
+      point[key] = a[key] + (b[key] - a[key]) * ratio;
+    }
+    output.push(point);
+  }
+  return output;
+}
+
+function gestureCompare() {
+  if (!gestureReference || !gestureCompletedRecording) return;
+
+  const current = gestureResample(gestureCompletedRecording, GESTURE_COMPARE_POINTS);
+  const reference = gestureReference.samples;
+  if (current.length !== reference.length || current.length < 2) return;
+
+  let totalError = 0;
+  let totalReferenceEnergy = 0;
+  let channelCount = 0;
+
+  for (const channel of GESTURE_CHANNELS) {
+    const refValues = reference.map(point => Number(point[channel]));
+    const curValues = current.map(point => Number(point[channel]));
+    const refMean = refValues.reduce((sum, value) => sum + value, 0) / refValues.length;
+    const curMean = curValues.reduce((sum, value) => sum + value, 0) / curValues.length;
+    const refScale = Math.sqrt(refValues.reduce((sum, value) => sum + (value - refMean) ** 2, 0) / refValues.length) || 1;
+    const curScale = Math.sqrt(curValues.reduce((sum, value) => sum + (value - curMean) ** 2, 0) / curValues.length) || 1;
+
+    for (let i = 0; i < GESTURE_COMPARE_POINTS; i++) {
+      const normalizedRef = (refValues[i] - refMean) / refScale;
+      const normalizedCur = (curValues[i] - curMean) / curScale;
+      totalError += (normalizedRef - normalizedCur) ** 2;
+      totalReferenceEnergy += normalizedRef ** 2;
+    }
+    channelCount++;
+  }
+
+  const rmse = Math.sqrt(totalError / (channelCount * GESTURE_COMPARE_POINTS));
+  const similarity = Math.max(0, Math.min(100, Math.round(100 * Math.exp(-rmse / 2))));
+
+  if (gestureElements.score) gestureElements.score.textContent = similarity + "/100";
+  if (gestureElements.description) {
+    gestureElements.description.textContent =
+      "Wstępne podobieństwo kształtu sygnałów: " + similarity +
+      "/100. Porównanie obejmuje AX, AY, AZ, GX, GZ i GY po normalizacji i resamplingu do 64 punktów.";
+  }
+  gestureSetMessage("Porównanie zakończone. Wynik traktuj jako wskaźnik eksperymentalny, nie ocenę jakości techniki.");
+}
+
+function gestureClearCurrent() {
+  if (gestureRecording) return;
+  gestureCurrentBuffer = [];
+  gestureCompletedRecording = null;
+  if (gestureElements.score) gestureElements.score.textContent = "—";
+  if (gestureElements.description) {
+    gestureElements.description.textContent = "Zarejestruj gest i zapisz ruch referencyjny, aby rozpocząć porównanie.";
+  }
+  gestureSetMessage("Bieżące nagranie wyczyszczone. Wzorzec referencyjny pozostaje zapisany.");
+  gestureDrawCharts([]);
+  gestureUpdateUI();
+}
+
+function gestureRenderHistory() {
+  if (!gestureElements.history) return;
+  gestureElements.history.replaceChildren();
+
+  if (!gestureHistoryItems.length) {
+    const empty = document.createElement("div");
+    empty.className = "gesture-history-empty";
+    empty.textContent = "Brak zakończonych nagrań.";
+    gestureElements.history.appendChild(empty);
+    return;
+  }
+
+  gestureHistoryItems.forEach(item => {
+    const row = document.createElement("div");
+    row.className = "gesture-history-item";
+
+    const label = document.createElement("span");
+    label.textContent = item.label + " — " + item.count + " próbek, " + item.duration.toFixed(2) + " s";
+
+    const status = document.createElement("span");
+    status.textContent = "Saved in current page session";
+
+    row.append(label, status);
+    gestureElements.history.appendChild(row);
+  });
+}
+
+function gestureDrawSingleChart(canvas, samples, channels) {
+  if (!canvas) return;
+  const rect = canvas.getBoundingClientRect();
+  const width = Math.max(320, Math.floor(rect.width || 600));
+  const height = 190;
+  const dpr = window.devicePixelRatio || 1;
+
+  canvas.width = width * dpr;
+  canvas.height = height * dpr;
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, width, height);
+
+  ctx.strokeStyle = "#e5e7eb";
+  ctx.lineWidth = 1;
+  for (let i = 1; i <= 4; i++) {
+    const y = height * i / 5;
+    ctx.beginPath();
+    ctx.moveTo(34, y);
+    ctx.lineTo(width - 10, y);
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = "#64748b";
+  ctx.font = "11px Arial";
+  ctx.fillText("LIVE samples", 34, 13);
+
+  if (!samples || samples.length < 2) {
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = "13px Arial";
+    ctx.fillText("No recorded gesture", 34, height / 2);
+    return;
+  }
+
+  const colors = ["#2563eb", "#16a34a", "#dc2626"];
+  const values = channels.flatMap(channel => samples.map(point => point[channel]).filter(Number.isFinite));
+  if (!values.length) return;
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = Math.max(0.0001, max - min);
+  const plotTop = 22;
+  const plotBottom = height - 18;
+
+  channels.forEach((channel, channelIndex) => {
+    ctx.strokeStyle = colors[channelIndex];
+    ctx.lineWidth = 1.7;
+    ctx.beginPath();
+
+    samples.forEach((point, index) => {
+      const x = 34 + (width - 46) * index / (samples.length - 1);
+      const y = plotBottom - ((point[channel] - min) / range) * (plotBottom - plotTop);
+      if (index === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+
+    ctx.stroke();
+    ctx.fillStyle = colors[channelIndex];
+    ctx.fillText(channel, 36 + channelIndex * 48, height - 3);
+  });
+}
+
+function gestureDrawCharts(samples) {
+  gestureDrawSingleChart(gestureElements.accelerationCanvas, samples, ["AX", "AY", "AZ"]);
+  gestureDrawSingleChart(gestureElements.gyroscopeCanvas, samples, ["GX", "GY", "GZ"]);
+}
+
+if (gestureElements.record) gestureElements.record.addEventListener("click", gestureStartRecording);
+if (gestureElements.stop) gestureElements.stop.addEventListener("click", gestureStopRecording);
+if (gestureElements.save) gestureElements.save.addEventListener("click", gestureSaveReference);
+if (gestureElements.compare) gestureElements.compare.addEventListener("click", gestureCompare);
+if (gestureElements.clear) gestureElements.clear.addEventListener("click", gestureClearCurrent);
+
+gestureReference = gestureLoadReference();
+gestureRenderHistory();
+gestureDrawCharts([]);
+gestureUpdateUI();
+
+// Keep recorder controls in sync with sensor connection lifecycle.
+const gestureOriginalSetTransportStatus = setTransportStatus;
+setTransportStatus = function(text) {
+  gestureOriginalSetTransportStatus(text);
+  if (typeof gestureUpdateUI === "function") gestureUpdateUI();
+};
+
+window.addEventListener("resize", () => {
+  gestureDrawCharts(gestureRecording ? gestureCurrentBuffer : (gestureCompletedRecording || []));
+});
+
+// ========================================================
+// END GESTURE RECORDER / COMPARATOR
 // ========================================================
