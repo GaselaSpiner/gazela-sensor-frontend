@@ -6,1155 +6,203 @@
 
   <meta charset="UTF-8">
 
-  <meta
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    name="viewport"
+  <meta name="theme-color" content="#101713">
 
-    content="width=device-width, initial-scale=1.0"
+  <title>GAZELA SPINER — Sensor Lab</title>
 
-  >
+  <link rel="preconnect" href="https://fonts.googleapis.com">
 
-  <title>Gazela Spiner Sensor Lab</title>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-  <link
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-    rel="stylesheet"
-
-    href="css/style.css"
-
-  >
+  <link rel="stylesheet" href="css/style.css">
 
 </head>
 
 <body>
 
-<header>
+  <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
 
-  <h1>GAZELA SPINER SENSOR</h1>
+  <header class="topbar">
 
-  <p>Sensor Lab</p>
+    <a class="brand" href="#top" aria-label="Gazela Sensor Lab — początek">
 
-</header>
+      <span class="brand-mark"><span></span><span></span><span></span></span>
 
-<main>
+      <span><strong>GAZELA</strong><small>SPINER / SENSOR LAB</small></span>
 
-  <!-- =====================================================
+    </a>
 
-       HERO
+    <div class="topbar-right"><span class="system-label">MOTION INTELLIGENCE SYSTEM</span><span class="version-chip">LAB / V1</span></div>
 
-       ===================================================== -->
+  </header>
 
-  <section class="hero">
+  <main id="top" class="page-shell">
 
-    <h2>Sensor Lab</h2>
+    <section class="hero">
 
-    <p>
+      <div class="hero-copy">
 
-      Środowisko do rejestracji, obserwacji i analizy ruchu
+        <div class="eyebrow"><span class="eyebrow-line"></span> SENSOR WORKSPACE</div>
 
-      rakiety z wykorzystaniem sensora Gazela Spiner.
+        <h1>Ruch zaczyna<br><em>się od danych.</em></h1>
 
-    </p>
+        <p>Środowisko do rejestracji i obserwacji ruchu rakiety. Jeden przepływ pracy — od połączenia sensora po zapis pomiaru.</p>
 
-    <!-- SENSOR CONNECTION STATUS -->
+      </div>
 
-    <div class="status">
+      <div class="hero-orbit" aria-hidden="true"><div class="orbit-ring ring-a"></div><div class="orbit-ring ring-b"></div><div class="orbit-core"><span>G</span></div><i class="orbit-dot"></i></div>
 
-      <span
+    </section>
 
-        id="statusDot"
+    <section class="connection-panel stage-card" id="deviceConnection">
 
-        class="status-dot">
+      <div class="stage-heading">
 
-      </span>
+        <div class="stage-index">01</div><div class="stage-title"><div class="eyebrow">DEVICE / LINK</div><h2>Połączenie z sensorem</h2><p>Wybierz interfejs i uruchom komunikację z urządzeniem.</p></div>
 
-      <span id="statusText">
+        <div class="connection-state"><span id="statusDot" class="status-dot"></span><span id="statusText">Sensor not connected</span></div>
 
-        Sensor not connected
+      </div>
 
-      </span>
+      <div class="connection-layout">
 
-    </div>
+        <div class="transport-picker" aria-label="Wybór transportu">
 
-  </section>
+          <button id="usbButton" class="transport-option selected" type="button"><span class="transport-icon">⌁</span><span><b>USB</b><small>Web Serial / WebUSB</small></span></button>
 
-  <!-- =====================================================
-
-       MODULE NAVIGATION
-
-       ===================================================== -->
-
-  <section class="modules">
-
-    <button
-
-      class="module module-button active"
-
-      id="liveSensorModule"
-
-      type="button"
-
-    >
-
-      <h3>LIVE SENSOR</h3>
-
-      <p>
-
-        Dane z sensora w czasie rzeczywistym:
-
-        przyspieszenie, żyroskop, G oraz kąty.
-
-      </p>
-
-    </button>
-
-    <button
-
-      class="module module-button"
-
-      id="liveChartsModule"
-
-      type="button"
-
-    >
-
-      <h3>LIVE CHARTS</h3>
-
-      <p>
-
-        Wizualizacja danych z czujnika
-
-        i parametrów ruchu.
-
-      </p>
-
-    </button>
-
-    <button
-
-      class="module module-button"
-
-      id="movementPlayerModule"
-
-      type="button"
-
-    >
-
-      <h3>MOVEMENT PLAYER</h3>
-
-      <p>
-
-        Odtwarzanie zapisanych ruchów
-
-        i obserwacja ich przebiegu w czasie.
-
-      </p>
-
-    </button>
-
-    <button
-
-      class="module module-button"
-
-      id="sessionModule"
-
-      type="button"
-
-    >
-
-      <h3>SESSION</h3>
-
-      <p>
-
-        Rejestracja i organizacja danych
-
-        z kolejnych sesji pomiarowych.
-
-      </p>
-
-    </button>
-
-  </section>
-
-  <!-- =====================================================
-
-       LIVE SENSOR
-
-       ===================================================== -->
-
-  <section class="card">
-
-    <h2>LIVE SENSOR</h2>
-
-    <div class="card-description">
-
-      Dane odbierane bezpośrednio
-
-      z sensora Gazela Spiner.
-
-    </div>
-
-    <div class="sensor-summary">
-
-      <div class="summary-item">
-
-        <div class="summary-label">
-
-          MOVEMENT
+          <button id="bleButton" class="transport-option" type="button"><span class="transport-icon">ᛒ</span><span><b>Bluetooth</b><small>BLE wireless</small></span></button>
 
         </div>
 
-        <div
+        <div class="connection-actions">
 
-          id="movementValue"
+          <button id="connectButton" class="btn btn-primary" type="button">Połącz sensor <span>↗</span></button>
 
-          class="summary-value"
-
-        >
-
-          —
+          <button id="disconnectButton" class="btn btn-quiet" type="button" disabled>Rozłącz</button>
 
         </div>
 
       </div>
 
-      <div class="summary-item">
+      <div class="status-strip"><span id="transportStatus">Transport: USB</span><span class="strip-separator"></span><span id="measurementStatus">Sensor is waiting.</span></div>
 
-        <div class="summary-label">
+      <div class="battery-block">
 
-          TIME
+        <div class="battery-copy"><div class="eyebrow">POWER SYSTEM</div><h3>Stan zasilania</h3><p>Wskaźnik szacunkowy na podstawie napięcia całego pakietu.</p><div class="battery-pack-line"><span>PACK VOLTAGE</span><strong id="batteryPack">—</strong></div><div id="batteryUpdated" class="battery-updated">Aktualizacja: —</div></div>
 
-        </div>
-
-        <div
-
-          id="timeValue"
-
-          class="summary-value"
-
-        >
-
-          —
-
-        </div>
+        <div class="battery-meter-wrap"><div class="battery-visual" role="img" aria-label="Poziom naładowania baterii nieznany"><div class="battery-cap"></div><div class="battery-shell"><div id="batteryLevelFill" class="battery-level-fill" style="height:100%"></div></div></div><div class="battery-level-details"><div id="batteryPercent" class="battery-percent">—%</div><div id="batteryLevelLabel" class="battery-level-label">Oczekiwanie na dane</div><div class="battery-level-note">ESTIMATED CHARGE</div></div></div>
 
       </div>
 
-      <div class="summary-item">
+    </section>
 
-        <div class="summary-label">
+    <div class="flow-connector"><span></span><small>LIVE DATA STREAM</small><span></span></div>
 
-          SAMPLES RECEIVED
+    <section class="stage-card" id="liveSensor">
 
-        </div>
+      <div class="stage-heading"><div class="stage-index">02</div><div class="stage-title"><div class="eyebrow">SENSOR ACQUISITION</div><h2>Live sensor</h2><p>Surowe parametry odczytywane bezpośrednio z układu pomiarowego.</p></div><div class="live-indicator"><i></i> LIVE INPUT</div></div>
 
-        <div
+      <div class="sensor-summary">
 
-          id="samplesValue"
+        <div class="summary-item"><span>MOVEMENT</span><strong id="movementValue">—</strong></div>
 
-          class="summary-value"
+        <div class="summary-item"><span>TIME</span><strong id="timeValue">—</strong></div>
 
-        >
-
-          0
-
-        </div>
+        <div class="summary-item"><span>SAMPLES RECEIVED</span><strong id="samplesValue">0</strong></div>
 
       </div>
 
-    </div>
+      <div class="sensor-group-label"><span>ACCELEROMETER</span><small>g</small></div>
 
-    <div class="values">
+      <div class="values values-primary">
 
-      <!-- AX -->
+        <div class="value-card"><span>AX</span><strong id="ax">—</strong><small>g</small></div>
 
-      <div class="value-card">
+        <div class="value-card"><span>AY</span><strong id="ay">—</strong><small>g</small></div>
 
-        <div class="value-name">AX</div>
+        <div class="value-card"><span>AZ</span><strong id="az">—</strong><small>g</small></div>
 
-        <div
+        <div class="value-card value-highlight"><span>G / TOTAL</span><strong id="g">—</strong><small>g</small></div>
 
-          id="ax"
-
-          class="value-number"
-
-        >
-
-          —
-
-        </div>
-
-        <div class="value-unit">g</div>
+        <div class="value-card"><span>ANGLE</span><strong id="angle">—</strong><small>deg</small></div>
 
       </div>
 
-      <!-- AY -->
+      <div class="sensor-group-label"><span>GYROSCOPE</span><small>°/s</small></div>
 
-      <div class="value-card">
+      <div class="values values-secondary">
 
-        <div class="value-name">AY</div>
+        <div class="value-card"><span>GX</span><strong id="gx">—</strong><small>°/s</small></div>
 
-        <div
+        <div class="value-card"><span>GY</span><strong id="gy">—</strong><small>°/s</small></div>
 
-          id="ay"
+        <div class="value-card"><span>GZ</span><strong id="gz">—</strong><small>°/s</small></div>
 
-          class="value-number"
-
-        >
-
-          —
-
-        </div>
-
-        <div class="value-unit">g</div>
+        <div class="value-card"><span>ANGLE Y</span><strong id="angley">—</strong><small>deg</small></div>
 
       </div>
 
-      <!-- AZ -->
+    </section>
 
-      <div class="value-card">
+    <div class="flow-connector"><span></span><small>MEASUREMENT CONTROL</small><span></span></div>
 
-        <div class="value-name">AZ</div>
+    <section class="stage-card measurement-card" id="measurementControl">
 
-        <div
+      <div class="stage-heading"><div class="stage-index">03</div><div class="stage-title"><div class="eyebrow">CAPTURE</div><h2>Rejestracja ruchu</h2><p>LIVE działa po połączeniu. Pomiar rozpoczyna się wyłącznie po ręcznym uruchomieniu.</p></div></div>
 
-          id="az"
+      <div class="measurement-banner"><div><span class="eyebrow">CONTROL DECK</span><strong>Measurement session</strong><small>Start / stop steruje rejestracją po stronie sensora.</small></div><div class="measurement-buttons"><button id="startButton" class="btn btn-record" type="button" disabled><span class="record-dot"></span> START MEASUREMENT</button><button id="stopButton" class="btn btn-stop" type="button" disabled>STOP</button></div></div>
 
-          class="value-number"
+    </section>
 
-        >
+    <div class="flow-connector"><span></span><small>SESSION DATA</small><span></span></div>
 
-          —
+    <section class="stage-card" id="sessionData">
 
-        </div>
+      <div class="stage-heading"><div class="stage-index">04</div><div class="stage-title"><div class="eyebrow">SESSION / MOVEMENTS</div><h2>Sesja pomiarowa</h2><p>Lista ruchów odebranych w bieżącej sesji.</p></div><div id="sessionBadge" class="session-badge">No session</div></div>
 
-        <div class="value-unit">g</div>
+      <div id="movementList" class="movement-list"><div class="movement-card"><div class="movement-status">Brak aktywnej sesji.</div></div></div>
 
-      </div>
+    </section>
 
-      <!-- G -->
+    <div class="flow-connector planned-connector"><span></span><small>FUTURE PROCESSING</small><span></span></div>
 
-      <div class="value-card">
+    <section class="stage-card future-stage">
 
-        <div class="value-name">G</div>
+      <div class="stage-heading"><div class="stage-index">05</div><div class="stage-title"><div class="eyebrow">MOTION PROCESSING</div><h2>Przetwarzanie ruchu</h2><p>Przygotowanie danych do wykrywania i opisu uderzenia.</p></div><span class="planned-tag">PLANOWANE</span></div>
 
-        <div
+      <div class="planned-grid"><div><b>Ball contact detection</b><small>Wykrywanie chwili kontaktu piłki z rakietą.</small></div><div><b>Shoot buffer</b><small>Bufor próbek przed i po zdarzeniu.</small></div><div><b>Shoot signature</b><small>Wyodrębnienie kompletnego przebiegu uderzenia.</small></div></div>
 
-          id="g"
+      <p class="future-note">Te elementy są widoczne jako docelowe etapy architektury. Nie są jeszcze podłączone do aktualnego kodu.</p>
 
-          class="value-number"
+    </section>
 
-        >
+    <section class="stage-card future-stage">
 
-          —
+      <div class="stage-heading"><div class="stage-index">06</div><div class="stage-title"><div class="eyebrow">RECOGNITION / ANALYTICS</div><h2>Rozpoznawanie i analiza</h2><p>Docelowy silnik klasyfikacji i interpretacji zarejestrowanego ruchu.</p></div><span class="planned-tag">PLANOWANE</span></div>
 
-        </div>
+      <div class="planned-grid"><div><b>Gesture recognition</b><small>Porównanie wzorca ruchowego.</small></div><div><b>Analytics engine</b><small>Walidacja i analiza danych po stronie serwera.</small></div><div><b>Analysis response</b><small>Wynik, interpretacja i historia uderzeń.</small></div></div>
 
-        <div class="value-unit">g</div>
+      <p class="future-note">W tej wersji nie ma jeszcze aktywnego przesyłania sygnatury uderzenia do serwera ani odpowiedzi analitycznej.</p>
 
-      </div>
+    </section>
 
-      <!-- ANGLE -->
+    <section class="stage-card diagnostics-card" id="diagnostics">
 
-      <div class="value-card">
+      <div class="stage-heading"><div class="stage-index">07</div><div class="stage-title"><div class="eyebrow">TOOLS / DIAGNOSTICS</div><h2>Diagnostyka komunikacji</h2><p>Komunikaty techniczne transportu USB / BLE i statusów firmware.</p></div><span class="diagnostic-tag">TECH VIEW</span></div>
 
-        <div class="value-name">ANGLE</div>
+      <details class="monitor-details"><summary><span>Otwórz Serial Monitor</span><span class="details-plus">＋</span></summary><div id="serialMonitor" class="serial-monitor" aria-live="polite"></div></details>
 
-        <div
+    </section>
 
-          id="angle"
+    <footer class="page-footer"><span class="brand-mini">GAZELA <i>SPINER</i></span><span> SENSOR LAB <b>·</b> MOTION DATA WORKSPACE</span><span class="footer-version">BUILD / 01</span></footer>
 
-          class="value-number"
+  </main>
 
-        >
-
-          —
-
-        </div>
-
-        <div class="value-unit">°</div>
-
-      </div>
-
-      <!-- GX -->
-
-      <div class="value-card">
-
-        <div class="value-name">GX</div>
-
-        <div
-
-          id="gx"
-
-          class="value-number"
-
-        >
-
-          —
-
-        </div>
-
-        <div class="value-unit">°/s</div>
-
-      </div>
-
-      <!-- GY -->
-
-      <div class="value-card">
-
-        <div class="value-name">GY</div>
-
-        <div
-
-          id="gy"
-
-          class="value-number"
-
-        >
-
-          —
-
-        </div>
-
-        <div class="value-unit">°/s</div>
-
-      </div>
-
-      <!-- GZ -->
-
-      <div class="value-card">
-
-        <div class="value-name">GZ</div>
-
-        <div
-
-          id="gz"
-
-          class="value-number"
-
-        >
-
-          —
-
-        </div>
-
-        <div class="value-unit">°/s</div>
-
-      </div>
-
-      <!-- ANGLEY -->
-
-      <div class="value-card">
-
-        <div class="value-name">ANGLEY</div>
-
-        <div
-
-          id="angley"
-
-          class="value-number"
-
-        >
-
-          —
-
-        </div>
-
-        <div class="value-unit">°</div>
-
-      </div>
-
-    </div>
-
-  </section>
-
-  <!-- =====================================================
-
-       GESTURE RECORDER / COMPARATOR
-
-       ===================================================== -->
-
-  <section class="card gesture-card" id="gestureRecorder">
-
-    <div class="gesture-header">
-
-      <div>
-
-        <h2>GESTURE RECORDER</h2>
-
-        <div class="card-description">
-
-          Ręczna rejestracja gestu z danych LIVE oraz porównanie
-
-          przebiegu z zapisanym ruchem referencyjnym.
-
-        </div>
-
-      </div>
-
-      <span id="gestureStatusBadge" class="gesture-status-badge">Waiting for LIVE</span>
-
-    </div>
-
-    <div class="gesture-stats">
-
-      <div class="summary-item">
-
-        <div class="summary-label">LIVE BUFFER</div>
-
-        <div id="gestureBufferCount" class="summary-value">0</div>
-
-      </div>
-
-      <div class="summary-item">
-
-        <div class="summary-label">DURATION</div>
-
-        <div id="gestureDuration" class="summary-value">0.00 s</div>
-
-      </div>
-
-      <div class="summary-item">
-
-        <div class="summary-label">SAMPLES</div>
-
-        <div id="gestureSampleCount" class="summary-value">0</div>
-
-      </div>
-
-      <div class="summary-item">
-
-        <div class="summary-label">REFERENCE</div>
-
-        <div id="gestureReferenceStatus" class="summary-value">Not saved</div>
-
-      </div>
-
-    </div>
-
-    <div class="gesture-controls">
-
-      <button id="gestureRecordButton" class="start" type="button">● RECORD GESTURE</button>
-
-      <button id="gestureStopButton" class="stop" type="button" disabled>■ STOP RECORDING</button>
-
-      <button id="gestureReferenceButton" class="secondary" type="button" disabled>Save as reference</button>
-
-      <button id="gestureCompareButton" type="button" disabled>Compare with reference</button>
-
-      <button id="gestureClearButton" class="secondary" type="button">Clear current</button>
-
-    </div>
-
-    <div id="gestureMessage" class="measurement-status">
-
-      Połącz sensor i uruchom LIVE. Rejestrator nie wysyła komend do Arduino.
-
-    </div>
-
-    <div class="gesture-chart-grid">
-
-      <div class="gesture-chart-panel">
-
-        <h3>ACCELEROMETER — AX / AY / AZ</h3>
-
-        <canvas id="gestureAccelerationChart" height="190"></canvas>
-
-      </div>
-
-      <div class="gesture-chart-panel">
-
-        <h3>GYROSCOPE — GX / GY / GZ</h3>
-
-        <canvas id="gestureGyroscopeChart" height="190"></canvas>
-
-      </div>
-
-    </div>
-
-    <div class="gesture-result">
-
-      <div>
-
-        <div class="summary-label">PRELIMINARY SHAPE SIMILARITY</div>
-
-        <div id="gestureMatchScore" class="gesture-match-score">—</div>
-
-      </div>
-
-      <div id="gestureMatchDescription" class="gesture-match-description">
-
-        Zarejestruj gest i zapisz ruch referencyjny, aby rozpocząć porównanie.
-
-      </div>
-
-    </div>
-
-    <div class="gesture-history-wrap">
-
-      <h3>RECORDED GESTURES</h3>
-
-      <div id="gestureHistory" class="gesture-history">
-
-        <div class="gesture-history-empty">Brak zakończonych nagrań.</div>
-
-      </div>
-
-    </div>
-
-    <p class="gesture-disclaimer">
-
-      Wynik jest eksperymentalną miarą podobieństwa kształtu sygnałów,
-
-      a nie oceną techniki ani naukowo zwalidowaną dokładnością ruchu.
-
-    </p>
-
-  </section>
-
-  <!-- =====================================================
-
-       BATTERY
-
-       ===================================================== -->
-
-  <section class="card">
-
-    <h2 class="battery-heading">
-
-  <svg
-
-    class="battery-heading-icon"
-
-    viewBox="0 0 24 32"
-
-    aria-hidden="true"
-
-  >
-
-    <rect
-
-      x="8"
-
-      y="1"
-
-      width="8"
-
-      height="3"
-
-      rx="1.5"
-
-      fill="currentColor"
-
-    />
-
-    <rect
-
-      x="3"
-
-      y="5"
-
-      width="18"
-
-      height="25"
-
-      rx="3"
-
-      fill="none"
-
-      stroke="currentColor"
-
-      stroke-width="2"
-
-    />
-
-    <path
-
-      d="M7 24h10v3H7z"
-
-      fill="currentColor"
-
-    />
-
-  </svg>
-
-  <span>BATTERY</span>
-
-</h2>
-
-    <div class="card-description">
-
-      Aktualny stan pakietu baterii
-
-      oraz poszczególnych ogniw.
-
-    </div>
-
-    <!-- BATTERY LEVEL VISUALIZATION -->
-
-    <div
-
-      class="battery-visual-panel"
-
-      aria-live="polite"
-
-    >
-
-      <div
-
-        class="battery-visual"
-
-        role="img"
-
-        aria-label="Poziom naładowania baterii: nieznany"
-
-      >
-
-        <div class="battery-cap"></div>
-
-        <div class="battery-shell">
-
-          <div
-
-            id="batteryLevelFill"
-
-            class="battery-level-fill"
-
-            style="height: 0%"
-
-          ></div>
-
-        </div>
-
-      </div>
-
-      <div class="battery-level-details">
-
-        <div
-
-          id="batteryPercent"
-
-          class="battery-percent"
-
-        >
-
-          —%
-
-        </div>
-
-        <div
-
-          id="batteryLevelLabel"
-
-          class="battery-level-label"
-
-        >
-
-          Poziom naładowania
-
-        </div>
-
-        <div class="battery-level-note">
-
-          Szacunek na podstawie napięcia pakietu
-
-        </div>
-
-      </div>
-
-    </div>
-
-    <div class="sensor-summary">
-
-      <!-- PACK -->
-
-      <div class="summary-item">
-
-        <div class="summary-label">
-
-          PACK
-
-        </div>
-
-        <div
-
-          id="batteryPack"
-
-          class="summary-value"
-
-        >
-
-          —
-
-        </div>
-
-      </div>
-
-      <!-- CELL 1 -->
-
-      <div class="summary-item">
-
-        <div class="summary-label">
-
-          CELL 1
-
-        </div>
-
-        <div
-
-          id="batteryCell1"
-
-          class="summary-value"
-
-        >
-
-          —
-
-        </div>
-
-      </div>
-
-      <!-- CELL 2 -->
-
-      <div class="summary-item">
-
-        <div class="summary-label">
-
-          CELL 2
-
-        </div>
-
-        <div
-
-          id="batteryCell2"
-
-          class="summary-value"
-
-        >
-
-          —
-
-        </div>
-
-      </div>
-
-      <!-- CELL DIFFERENCE -->
-
-      <div class="summary-item">
-
-        <div class="summary-label">
-
-          CELL DIFFERENCE
-
-        </div>
-
-        <div
-
-          id="batteryDifference"
-
-          class="summary-value"
-
-        >
-
-          —
-
-        </div>
-
-      </div>
-
-      <!-- STATUS -->
-
-      <div class="summary-item">
-
-        <div class="summary-label">
-
-          STATUS
-
-        </div>
-
-        <div
-
-          id="batteryStatus"
-
-          class="battery-status"
-
-        >
-
-          —
-
-        </div>
-
-      </div>
-
-    </div>
-
-    <!-- UPDATED -->
-
-    <div
-
-      id="batteryUpdated"
-
-      class="measurement-status"
-
-    >
-
-      Updated: —
-
-    </div>
-
-  </section>
-
-  <!-- =====================================================
-
-       CONNECT SENSOR
-
-       ===================================================== -->
-
-  <section class="card">
-
-    <h2>Connect Sensor</h2>
-
-    <div class="card-description">
-
-      Wybierz sposób połączenia
-
-      z sensorem Gazela Spiner.
-
-    </div>
-
-    <div class="controls">
-
-      <!-- USB -->
-
-      <button
-
-        id="usbButton"
-
-        type="button"
-
-      >
-
-        USB
-
-      </button>
-
-      <!-- BLE -->
-
-      <button
-
-        id="bleButton"
-
-        type="button"
-
-      >
-
-        BLE
-
-      </button>
-
-      <!-- CONNECT -->
-
-      <button
-
-        id="connectButton"
-
-        type="button"
-
-      >
-
-        Connect Sensor
-
-      </button>
-
-      <!-- DISCONNECT -->
-
-      <button
-
-        id="disconnectButton"
-
-        class="secondary"
-
-        type="button"
-
-        disabled
-
-      >
-
-        Disconnect
-
-      </button>
-
-      <!-- START -->
-
-      <button
-
-        id="startButton"
-
-        class="start"
-
-        type="button"
-
-        disabled
-
-      >
-
-        ▶ START MEASUREMENT
-
-      </button>
-
-      <!-- STOP -->
-
-      <button
-
-        id="stopButton"
-
-        class="stop"
-
-        type="button"
-
-        disabled
-
-      >
-
-        ■ STOP
-
-      </button>
-
-    </div>
-
-    <!-- TRANSPORT STATUS -->
-
-    <div
-
-      id="transportStatus"
-
-      class="measurement-status"
-
-    >
-
-      Transport: USB
-
-    </div>
-
-    <!-- MEASUREMENT STATUS -->
-
-    <div
-
-      id="measurementStatus"
-
-      class="measurement-status"
-
-    >
-
-      Sensor is waiting.
-
-    </div>
-
-  </section>
-
-  <!-- =====================================================
-
-       SESSION
-
-       ===================================================== -->
-
-  <section class="card">
-
-    <div class="session-header">
-
-      <div>
-
-        <h2>SESSION</h2>
-
-        <div class="card-description">
-
-          Aktualna sesja pomiarowa
-
-          i jej ruchy.
-
-        </div>
-
-      </div>
-
-      <div
-
-        id="sessionBadge"
-
-        class="session-badge"
-
-      >
-
-        No session
-
-      </div>
-
-    </div>
-
-    <div
-
-      id="movementList"
-
-      class="movement-list"
-
-    >
-
-      <div class="movement-card">
-
-        <div class="movement-status">
-
-          Brak aktywnej sesji.
-
-        </div>
-
-      </div>
-
-    </div>
-
-  </section>
-
-  <!-- =====================================================
-
-       SERIAL MONITOR
-
-       ===================================================== -->
-
-  <section class="card">
-
-    <h2>Serial Monitor</h2>
-
-    <div class="card-description">
-
-      Dane kontrolne i status komunikacji
-
-      pomiędzy przeglądarką a Gazela Sensor.
-
-      Dane LIVE nie są tutaj wyświetlane.
-
-    </div>
-
-    <div
-
-      id="serialMonitor"
-
-      class="serial-monitor"
-
-    ></div>
-
-  </section>
-
-</main>
-
-<footer>
-
-  GAZELA SPINER SENSOR
-
-  &nbsp; | &nbsp;
-
-  Sensor Lab
-
-</footer>
-
-<script src="js/app.js"></script>
+  <script src="js/app.js"></script>
 
 </body>
 
