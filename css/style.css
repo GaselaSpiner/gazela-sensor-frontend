@@ -1445,3 +1445,126 @@ footer {
   }
 
 }
+
+/* =====================================================
+   GESTURE RECORDER / COMPARATOR
+   ===================================================== */
+
+.gesture-card { overflow: hidden; }
+.gesture-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.gesture-status-badge {
+  display: inline-block;
+  padding: 7px 12px;
+  border-radius: 20px;
+  background: #eef2f7;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 700;
+}
+.gesture-status-badge.recording {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+.gesture-status-badge.ready {
+  background: #dcfce7;
+  color: #166534;
+}
+.gesture-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 18px 0;
+}
+.gesture-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 18px 0;
+}
+.gesture-controls button { min-height: 42px; }
+.gesture-chart-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+.gesture-chart-panel {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fff;
+}
+.gesture-chart-panel h3,
+.gesture-history-wrap h3 {
+  margin: 0 0 12px;
+  font-size: 14px;
+}
+.gesture-chart-panel canvas {
+  display: block;
+  width: 100%;
+  height: 190px;
+}
+.gesture-result {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fafafa;
+}
+.gesture-match-score {
+  font-size: 34px;
+  line-height: 1.1;
+  font-weight: 800;
+  color: #1d4ed8;
+}
+.gesture-match-description {
+  flex: 1 1 240px;
+  color: #475569;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.gesture-history-wrap { margin-top: 22px; }
+.gesture-history {
+  display: grid;
+  gap: 8px;
+}
+.gesture-history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 13px;
+}
+.gesture-history-empty {
+  padding: 12px;
+  color: #888;
+  font-size: 13px;
+}
+.gesture-disclaimer {
+  margin: 16px 0 0;
+  color: #888;
+  font-size: 12px;
+  line-height: 1.5;
+}
+@media (max-width: 700px) {
+  .gesture-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .gesture-chart-grid { grid-template-columns: 1fr; }
+  .gesture-controls button { flex: 1 1 100%; }
+}
+
