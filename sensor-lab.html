@@ -1,1570 +1,590 @@
-* {
-
-  box-sizing: border-box;
-
-}
-
- 
-
-body {
-
-  margin: 0;
-
-  font-family: Arial, Helvetica, sans-serif;
-
-  background: #f7f7f5;
-
-  color: #202124;
-
-}
-
- 
-
-header {
-
-  background: white;
-
-  border-bottom: 1px solid #e5e5e5;
-
-  padding: 24px 7%;
-
-}
-
- 
-
-header h1 {
-
-  margin: 0;
-
-  font-size: 24px;
-
-  letter-spacing: 0.5px;
-
-}
-
- 
-
-header p {
-
-  margin: 5px 0 0;
-
-  color: #777;
-
-  font-size: 14px;
-
-}
-
- 
-
-main {
-
-  width: 86%;
-
-  max-width: 1200px;
-
-  margin: 45px auto;
-
-}
-
- 
-
-.hero {
-
-  margin-bottom: 30px;
-
-}
-
- 
-
-.hero h2 {
-
-  font-size: 38px;
-
-  margin: 0 0 12px;
-
-}
-
- 
-
-.hero p {
-
-  margin: 0;
-
-  color: #666;
-
-  font-size: 17px;
-
-}
-
- 
-
-.status {
-
-  margin-top: 25px;
-
-  font-size: 14px;
-
-  color: #777;
-
-  display: flex;
-
-  align-items: center;
-
-  gap: 8px;
-
-}
-
- 
-
-.status-dot {
-
-  width: 9px;
-
-  height: 9px;
-
-  border-radius: 50%;
-
-  background: #aaa;
-
-}
-
- 
-
-.status-dot.connected {
-
-  background: #22a06b;
-
-}
-
- 
-
-.status-dot.measuring {
-
-  background: #2563eb;
-
-}
-
- 
-
-.status-dot.error {
-
-  background: #d93025;
-
-}
-
- 
-
- 
-
-/* =====================================================
-
-   MODULE NAVIGATION
-
-   ===================================================== */
-
- 
-
-.modules {
-
-  display: grid;
-
-  grid-template-columns: repeat(2, 1fr);
-
-  gap: 22px;
-
-  margin-bottom: 30px;
-
-}
-
- 
-
-.module-button {
-
-  width: 100%;
-
-  min-height: 170px;
-
-  padding: 30px;
-
-  border: 1px solid #dfe5ec;
-
-  border-radius: 16px;
-
-  background: #ffffff;
-
-  color: #202124;
-
-  text-align: left;
-
-  cursor: pointer;
-
-  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
-
- 
-
-  transition:
-
-    transform 0.2s ease,
-
-    box-shadow 0.2s ease,
-
-    border-color 0.2s ease,
-
-    background 0.2s ease;
-
-}
-
- 
-
-.module-button:hover {
-
-  background: #f8fbff;
-
-  color: #202124;
-
-  border-color: #2563eb;
-
-  transform: translateY(-3px);
-
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.10);
-
-}
-
- 
-
-.module-button:active {
-
-  transform: translateY(-1px);
-
-}
-
- 
-
-.module-button.active {
-
-  background: #eff6ff;
-
-  color: #202124;
-
-  border-color: #2563eb;
-
-  box-shadow: 0 10px 26px rgba(37, 99, 235, 0.12);
-
-}
-
- 
-
-.module-button h3 {
-
-  margin: 0 0 14px;
-
-  font-size: 22px;
-
-  font-weight: 700;
-
-  letter-spacing: 0.04em;
-
-  color: #111827;
-
-}
-
- 
-
-.module-button p {
-
-  margin: 0;
-
-  font-size: 15px;
-
-  line-height: 1.6;
-
-  color: #64748b;
-
-}
-
- 
-
-.module-button:hover h3 {
-
-  color: #111827;
-
-}
-
- 
-
-.module-button:hover p {
-
-  color: #64748b;
-
-}
-
- 
-
-.module-button:focus {
-
-  outline: none;
-
-}
-
- 
-
-.module-button:focus-visible {
-
-  outline: 3px solid rgba(37, 99, 235, 0.25);
-
-  outline-offset: 3px;
-
-}
-
- 
-
- 
-
-/* =====================================================
-
-   GENERAL CARDS
-
-   ===================================================== */
-
- 
-
-.card {
-
-  background: white;
-
-  border: 1px solid #e3e3e3;
-
-  border-radius: 12px;
-
-  padding: 25px;
-
-  margin-bottom: 20px;
-
-}
-
- 
-
-.card h2 {
-
-  margin: 0 0 8px;
-
-  font-size: 23px;
-
-}
-
- 
-
- 
-
-/* =====================================================
-
-   BATTERY HEADING ICON
-
-   ===================================================== */
-
- 
-
-.battery-heading {
-
-  display: flex;
-
-  align-items: center;
-
-  gap: 12px;
-
-}
-
- 
-
-.battery-heading-icon {
-
-  display: block;
-
-  width: 28px;
-
-  height: 36px;
-
-  flex-shrink: 0;
-
-  color: #2563eb;
-
-  filter: drop-shadow(0 1px 1px rgba(37, 99, 235, 0.12));
-
-}
-
- 
-
-/* Kolor małej ikony zależny od poziomu baterii */
-
- 
-
-.battery-heading-icon.level-high {
-
-  color: #22a06b;
-
-}
-
- 
-
-.battery-heading-icon.level-medium {
-
-  color: #eab308;
-
-}
-
- 
-
-.battery-heading-icon.level-low {
-
-  color: #dc2626;
-
-}
-
- 
-
- 
-
-/* =====================================================
-
-   CARD DESCRIPTION
-
-   ===================================================== */
-
- 
-
-.card-description {
-
-  color: #777;
-
-  font-size: 14px;
-
-  margin-bottom: 20px;
-
-}
-
- 
-
- 
-
-/* =====================================================
-
-   SENSOR SUMMARY
-
-   ===================================================== */
-
- 
-
-.sensor-summary {
-
-  display: grid;
-
-  grid-template-columns: repeat(3, 1fr);
-
-  gap: 12px;
-
-  margin-bottom: 20px;
-
-}
-
- 
-
-.summary-item {
-
-  border: 1px solid #e5e5e5;
-
-  border-radius: 9px;
-
-  padding: 15px;
-
-}
-
- 
-
-.summary-label {
-
-  color: #777;
-
-  font-size: 12px;
-
-  margin-bottom: 8px;
-
-}
-
- 
-
-.summary-value {
-
-  font-size: 18px;
-
-  font-weight: bold;
-
-}
-
- 
-
- 
-
-/* =====================================================
-
-   BATTERY VISUALIZATION
-
-   Pionowa ikona baterii
-
-   ===================================================== */
-
- 
-
-.battery-visual-panel {
-
-  display: flex;
-
-  align-items: center;
-
-  justify-content: center;
-
-  gap: 28px;
-
-  min-height: 190px;
-
-  margin: 10px 0 25px;
-
-  padding: 24px;
-
-  background: #fafafa;
-
-  border: 1px solid #e8e8e8;
-
-  border-radius: 12px;
-
-}
-
- 
-
-/* Cała ikona baterii */
-
- 
-
-.battery-visual {
-
-  position: relative;
-
-  display: flex;
-
-  flex-direction: column;
-
-  align-items: center;
-
-  justify-content: flex-end;
-
-  width: 66px;
-
-  height: 126px;
-
-  flex-shrink: 0;
-
-}
-
- 
-
-/* Górny styk baterii */
-
- 
-
-.battery-cap {
-
-  width: 25px;
-
-  height: 8px;
-
-  background: #2563eb;
-
-  border-radius: 4px 4px 0 0;
-
-  margin-bottom: 3px;
-
-}
-
- 
-
-/* Obudowa baterii */
-
- 
-
-.battery-shell {
-
-  position: relative;
-
-  width: 62px;
-
-  height: 112px;
-
-  overflow: hidden;
-
-  border: 4px solid #2563eb;
-
-  border-radius: 10px;
-
-  background: #ffffff;
-
-}
-
- 
-
-/* Dynamiczne wypełnienie sterowane przez JavaScript */
-
- 
-
-/* Kontener sześciu segmentów. Wysokość pozostaje stała, a JS zapala
-
-   odpowiednią liczbę segmentów od dołu zależnie od poziomu baterii. */
-
-.battery-level-fill {
-
-  position: absolute;
-
-  inset: 0;
-
-  display: flex;
-
-  flex-direction: column-reverse;
-
-  justify-content: flex-start;
-
-  gap: 3px;
-
-  padding: 4px;
-
-  box-sizing: border-box;
-
-  background: transparent;
-
-  transition: none;
-
-}
-
- 
-
-.battery-segment {
-
-  display: block;
-
-  flex: 1 1 0;
-
-  min-height: 0;
-
-  width: 100%;
-
-  border-radius: 3px;
-
-  opacity: 0.18;
-
-  transition: opacity 0.25s ease, background-color 0.25s ease;
-
-}
-
- 
-
-.battery-segment.active { opacity: 1; }
-
-.battery-segment.segment-red { background: #dc2626; }
-
-.battery-segment.segment-orange { background: #f97316; }
-
-.battery-segment.segment-yellow { background: #eab308; }
-
-.battery-segment.segment-green { background: #22a06b; }
-
- 
-
-/* Informacje obok ikony */
-
- 
-
-.battery-level-details {
-
-  display: flex;
-
-  flex-direction: column;
-
-  align-items: flex-start;
-
-  gap: 8px;
-
-  min-width: 0;
-
-}
-
- 
-
-.battery-percent {
-
-  color: #202124;
-
-  font-size: 38px;
-
-  line-height: 1.1;
-
-  font-weight: 700;
-
-  font-variant-numeric: tabular-nums;
-
-}
-
- 
-
-.battery-level-label {
-
-  color: #475569;
-
-  font-size: 15px;
-
-  font-weight: 600;
-
-}
-
- 
-
-.battery-level-note {
-
-  color: #888;
-
-  font-size: 12px;
-
-  line-height: 1.5;
-
-}
-
- 
-
- 
-
-/* =====================================================
-
-   BATTERY STATUS
-
-   ===================================================== */
-
- 
-
-.battery-status {
-
-  font-size: 16px;
-
-  font-weight: 700;
-
-  color: #475569;
-
-}
-
- 
-
-.battery-status.ok {
-
-  color: #16803d;
-
-}
-
- 
-
-.battery-status.low {
-
-  color: #b45309;
-
-}
-
- 
-
-.battery-status.critical {
-
-  color: #dc2626;
-
-}
-
- 
-
- 
-
-/* =====================================================
-
-   SENSOR VALUES
-
-   ===================================================== */
-
- 
-
-.values {
-
-  display: grid;
-
-  grid-template-columns: repeat(5, 1fr);
-
-  gap: 12px;
-
-}
-
- 
-
-.value-card {
-
-  border: 1px solid #e5e5e5;
-
-  border-radius: 9px;
-
-  padding: 15px;
-
-  min-height: 85px;
-
-}
-
- 
-
-.value-name {
-
-  font-size: 12px;
-
-  color: #777;
-
-  margin-bottom: 8px;
-
-}
-
- 
-
-.value-number {
-
-  font-size: 22px;
-
-  font-weight: bold;
-
-}
-
- 
-
-.value-unit {
-
-  font-size: 11px;
-
-  color: #888;
-
-  margin-top: 4px;
-
-}
-
- 
-
- 
-
-/* =====================================================
-
-   CONTROLS
-
-   ===================================================== */
-
- 
-
-.controls {
-
-  display: flex;
-
-  flex-wrap: wrap;
-
-  gap: 12px;
-
-  margin-top: 20px;
-
-}
-
- 
-
-button {
-
-  border: none;
-
-  border-radius: 7px;
-
-  padding: 12px 20px;
-
-  font-size: 14px;
-
-  cursor: pointer;
-
-  background: #2563eb;
-
-  color: white;
-
-}
-
- 
-
-button:hover {
-
-  background: #1d4ed8;
-
-}
-
- 
-
-button:disabled {
-
-  background: #b8b8b8;
-
-  cursor: not-allowed;
-
-}
-
- 
-
-button.secondary {
-
-  background: #e8e8e8;
-
-  color: #333;
-
-}
-
- 
-
-button.secondary:hover {
-
-  background: #dcdcdc;
-
-}
-
- 
-
-button.start {
-
-  background: #16a34a;
-
-}
-
- 
-
-button.start:hover {
-
-  background: #15803d;
-
-}
-
- 
-
-button.stop {
-
-  background: #dc2626;
-
-}
-
- 
-
-button.stop:hover {
-
-  background: #b91c1c;
-
-}
-
- 
-
- 
-
-/* =====================================================
-
-   SESSION / MOVEMENTS
-
-   ===================================================== */
-
- 
-
-.session-header {
-
-  display: flex;
-
-  justify-content: space-between;
-
-  align-items: center;
-
-  gap: 15px;
-
-  flex-wrap: wrap;
-
-}
-
- 
-
-.session-badge {
-
-  display: inline-block;
-
-  padding: 6px 10px;
-
-  border-radius: 20px;
-
-  background: #eef2f7;
-
-  color: #555;
-
-  font-size: 12px;
-
-}
-
- 
-
-.movement-list {
-
-  display: grid;
-
-  gap: 12px;
-
-  margin-top: 20px;
-
-}
-
- 
-
-.movement-card {
-
-  border: 1px solid #e2e2e2;
-
-  border-radius: 10px;
-
-  padding: 18px;
-
-  background: #fafafa;
-
-}
-
- 
-
-.movement-card.active {
-
-  border-color: #2563eb;
-
-  background: #f4f8ff;
-
-}
-
- 
-
-.movement-card.completed {
-
-  border-color: #22a06b;
-
-  background: #f3fbf6;
-
-}
-
- 
-
-.movement-top {
-
-  display: flex;
-
-  justify-content: space-between;
-
-  align-items: center;
-
-  gap: 15px;
-
-  margin-bottom: 12px;
-
-}
-
- 
-
-.movement-title {
-
-  font-size: 17px;
-
-  font-weight: bold;
-
-}
-
- 
-
-.movement-status {
-
-  font-size: 12px;
-
-  color: #777;
-
-}
-
- 
-
-.movement-data {
-
-  display: grid;
-
-  grid-template-columns: repeat(3, 1fr);
-
-  gap: 10px;
-
-}
-
- 
-
-.movement-data-item {
-
-  background: white;
-
-  border: 1px solid #e8e8e8;
-
-  border-radius: 7px;
-
-  padding: 10px;
-
-}
-
- 
-
-.movement-data-label {
-
-  color: #888;
-
-  font-size: 11px;
-
-  margin-bottom: 4px;
-
-}
-
- 
-
-.movement-data-value {
-
-  font-size: 14px;
-
-  font-weight: bold;
-
-}
-
- 
-
- 
-
-/* =====================================================
-
-   SERIAL MONITOR
-
-   ===================================================== */
-
- 
-
-.serial-monitor {
-
-  background: #172033;
-
-  color: #dce3ef;
-
-  border-radius: 10px;
-
-  padding: 15px;
-
-  height: 300px;
-
-  overflow-y: auto;
-
-  font-family: Consolas, Monaco, monospace;
-
-  font-size: 12px;
-
-  line-height: 1.5;
-
-  white-space: pre-wrap;
-
-}
-
- 
-
-.serial-line {
-
-  min-height: 18px;
-
-}
-
- 
-
-.serial-data {
-
-  color: #b8f2c8;
-
-}
-
- 
-
-.serial-info {
-
-  color: #9cc8ff;
-
-}
-
- 
-
-.serial-error {
-
-  color: #ff9b9b;
-
-}
-
- 
-
- 
-
-/* =====================================================
-
-   MEASUREMENT STATUS
-
-   ===================================================== */
-
- 
-
-.measurement-status {
-
-  margin-top: 15px;
-
-  padding: 12px 15px;
-
-  border-radius: 8px;
-
-  background: #f1f3f5;
-
-  font-size: 14px;
-
-}
-
- 
-
-.measurement-status.active {
-
-  background: #eaf2ff;
-
-  color: #174ea6;
-
-}
-
- 
-
-.measurement-status.finished {
-
-  background: #eaf8ef;
-
-  color: #176b3a;
-
-}
-
- 
-
- 
-
-/* =====================================================
-
-   FOOTER
-
-   ===================================================== */
-
- 
-
-footer {
-
-  width: 86%;
-
-  max-width: 1200px;
-
-  margin: 50px auto 30px;
-
-  color: #999;
-
-  font-size: 12px;
-
-}
-
- 
-
- 
-
-/* =====================================================
-
-   TABLET
-
-   ===================================================== */
-
- 
-
-@media (max-width: 900px) {
-
-  .modules {
-
-    grid-template-columns: repeat(2, 1fr);
-
-  }
-
- 
-
-  .values {
-
-    grid-template-columns: repeat(3, 1fr);
-
-  }
-
- 
-
-  .movement-data {
-
-    grid-template-columns: 1fr 1fr;
-
-  }
-
- 
-
-  .sensor-summary {
-
-    grid-template-columns: 1fr;
-
-  }
-
-}
-
- 
-
- 
-
-/* =====================================================
-
-   MOBILE
-
-   ===================================================== */
-
- 
-
-@media (max-width: 600px) {
-
-  main {
-
-    width: 92%;
-
-    margin-top: 30px;
-
-  }
-
- 
-
-  .modules {
-
-    grid-template-columns: 1fr;
-
-    gap: 15px;
-
-  }
-
- 
-
-  .module-button {
-
-    min-height: 145px;
-
-    padding: 24px;
-
-  }
-
- 
-
-  .module-button h3 {
-
-    font-size: 20px;
-
-  }
-
- 
-
-  .module-button p {
-
-    font-size: 14px;
-
-  }
-
- 
-
-  .values {
-
-    grid-template-columns: repeat(2, 1fr);
-
-  }
-
- 
-
-  .hero h2 {
-
-    font-size: 30px;
-
-  }
-
- 
-
-  header {
-
-    padding: 20px 4%;
-
-  }
-
- 
-
-  .movement-data {
-
-    grid-template-columns: 1fr;
-
-  }
-
- 
-
-  /* Bateria na telefonie */
-
- 
-
-  .battery-visual-panel {
-
-    justify-content: flex-start;
-
-    gap: 22px;
-
-    padding: 18px;
-
-  }
-
- 
-
-  .battery-percent {
-
-    font-size: 32px;
-
-  }
-
- 
-
-  .battery-level-note {
-
-    font-size: 11px;
-
-  }
-
-}
-
-/* =====================================================
-   GESTURE RECORDER / COMPARATOR
-   ===================================================== */
-
-.gesture-card { overflow: hidden; }
-.gesture-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-.gesture-status-badge {
-  display: inline-block;
-  padding: 7px 12px;
-  border-radius: 20px;
-  background: #eef2f7;
-  color: #475569;
-  font-size: 12px;
-  font-weight: 700;
-}
-.gesture-status-badge.recording {
-  background: #fee2e2;
-  color: #b91c1c;
-}
-.gesture-status-badge.ready {
-  background: #dcfce7;
-  color: #166534;
-}
-.gesture-stats {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-  margin: 18px 0;
-}
-.gesture-controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin: 18px 0;
-}
-.gesture-controls button { min-height: 42px; }
-.gesture-chart-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-  margin-top: 20px;
-}
-.gesture-chart-panel {
-  min-width: 0;
-  padding: 14px;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  background: #fff;
-}
-.gesture-chart-panel h3,
-.gesture-history-wrap h3 {
-  margin: 0 0 12px;
-  font-size: 14px;
-}
-.gesture-chart-panel canvas {
-  display: block;
-  width: 100%;
-  height: 190px;
-}
-.gesture-result {
-  display: flex;
-  align-items: center;
-  gap: 22px;
-  flex-wrap: wrap;
-  margin-top: 18px;
-  padding: 18px;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  background: #fafafa;
-}
-.gesture-match-score {
-  font-size: 34px;
-  line-height: 1.1;
-  font-weight: 800;
-  color: #1d4ed8;
-}
-.gesture-match-description {
-  flex: 1 1 240px;
-  color: #475569;
-  font-size: 14px;
-  line-height: 1.5;
-}
-.gesture-history-wrap { margin-top: 22px; }
-.gesture-history {
-  display: grid;
-  gap: 8px;
-}
-.gesture-history-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  padding: 10px 12px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  background: #fff;
-  font-size: 13px;
-}
-.gesture-history-empty {
-  padding: 12px;
-  color: #888;
-  font-size: 13px;
-}
-.gesture-disclaimer {
-  margin: 16px 0 0;
-  color: #888;
-  font-size: 12px;
-  line-height: 1.5;
-}
-@media (max-width: 700px) {
-  .gesture-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .gesture-chart-grid { grid-template-columns: 1fr; }
-  .gesture-controls button { flex: 1 1 100%; }
-}
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+  <title>Gazela Spiner Sensor Lab</title>
+  <link
+    rel="stylesheet"
+    href="css/style.css"
+  >
+</head>
+<body>
+<header>
+  <h1>GAZELA SPINER SENSOR</h1>
+  <p>Sensor Lab</p>
+</header>
+<main>
+  <!-- =====================================================
+       HERO
+       ===================================================== -->
+  <section class="hero">
+    <h2>Sensor Lab</h2>
+    <p>
+      Środowisko do rejestracji, obserwacji i analizy ruchu
+      rakiety z wykorzystaniem sensora Gazela Spiner.
+    </p>
+    <!-- SENSOR CONNECTION STATUS -->
+    <div class="status">
+      <span
+        id="statusDot"
+        class="status-dot">
+      </span>
+      <span id="statusText">
+        Sensor not connected
+      </span>
+    </div>
+  </section>
+  <!-- =====================================================
+       MODULE NAVIGATION
+       ===================================================== -->
+  <section class="modules">
+    <button
+      class="module module-button active"
+      id="liveSensorModule"
+      type="button"
+    >
+      <h3>LIVE SENSOR</h3>
+      <p>
+        Dane z sensora w czasie rzeczywistym:
+        przyspieszenie, żyroskop, G oraz kąty.
+      </p>
+    </button>
+    <button
+      class="module module-button"
+      id="liveChartsModule"
+      type="button"
+    >
+      <h3>LIVE CHARTS</h3>
+      <p>
+        Wizualizacja danych z czujnika
+        i parametrów ruchu.
+      </p>
+    </button>
+    <button
+      class="module module-button"
+      id="movementPlayerModule"
+      type="button"
+    >
+      <h3>MOVEMENT PLAYER</h3>
+      <p>
+        Odtwarzanie zapisanych ruchów
+        i obserwacja ich przebiegu w czasie.
+      </p>
+    </button>
+    <button
+      class="module module-button"
+      id="sessionModule"
+      type="button"
+    >
+      <h3>SESSION</h3>
+      <p>
+        Rejestracja i organizacja danych
+        z kolejnych sesji pomiarowych.
+      </p>
+    </button>
+  </section>
+  <!-- =====================================================
+       LIVE SENSOR
+       ===================================================== -->
+  <section class="card">
+    <h2>LIVE SENSOR</h2>
+    <div class="card-description">
+      Dane odbierane bezpośrednio
+      z sensora Gazela Spiner.
+    </div>
+    <div class="sensor-summary">
+      <div class="summary-item">
+        <div class="summary-label">
+          MOVEMENT
+        </div>
+        <div
+          id="movementValue"
+          class="summary-value"
+        >
+          —
+        </div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-label">
+          TIME
+        </div>
+        <div
+          id="timeValue"
+          class="summary-value"
+        >
+          —
+        </div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-label">
+          SAMPLES RECEIVED
+        </div>
+        <div
+          id="samplesValue"
+          class="summary-value"
+        >
+          0
+        </div>
+      </div>
+    </div>
+    <div class="values">
+      <!-- AX -->
+      <div class="value-card">
+        <div class="value-name">AX</div>
+        <div
+          id="ax"
+          class="value-number"
+        >
+          —
+        </div>
+        <div class="value-unit">g</div>
+      </div>
+      <!-- AY -->
+      <div class="value-card">
+        <div class="value-name">AY</div>
+        <div
+          id="ay"
+          class="value-number"
+        >
+          —
+        </div>
+        <div class="value-unit">g</div>
+      </div>
+      <!-- AZ -->
+      <div class="value-card">
+        <div class="value-name">AZ</div>
+        <div
+          id="az"
+          class="value-number"
+        >
+          —
+        </div>
+        <div class="value-unit">g</div>
+      </div>
+      <!-- G -->
+      <div class="value-card">
+        <div class="value-name">G</div>
+        <div
+          id="g"
+          class="value-number"
+        >
+          —
+        </div>
+        <div class="value-unit">g</div>
+      </div>
+      <!-- ANGLE -->
+      <div class="value-card">
+        <div class="value-name">ANGLE</div>
+        <div
+          id="angle"
+          class="value-number"
+        >
+          —
+        </div>
+        <div class="value-unit">°</div>
+      </div>
+      <!-- GX -->
+      <div class="value-card">
+        <div class="value-name">GX</div>
+        <div
+          id="gx"
+          class="value-number"
+        >
+          —
+        </div>
+        <div class="value-unit">°/s</div>
+      </div>
+      <!-- GY -->
+      <div class="value-card">
+        <div class="value-name">GY</div>
+        <div
+          id="gy"
+          class="value-number"
+        >
+          —
+        </div>
+        <div class="value-unit">°/s</div>
+      </div>
+      <!-- GZ -->
+      <div class="value-card">
+        <div class="value-name">GZ</div>
+        <div
+          id="gz"
+          class="value-number"
+        >
+          —
+        </div>
+        <div class="value-unit">°/s</div>
+      </div>
+      <!-- ANGLEY -->
+      <div class="value-card">
+        <div class="value-name">ANGLEY</div>
+        <div
+          id="angley"
+          class="value-number"
+        >
+          —
+        </div>
+        <div class="value-unit">°</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =====================================================
+       GESTURE RECORDER / COMPARATOR
+       ===================================================== -->
+  <section class="card gesture-card" id="gestureRecorder">
+    <div class="gesture-header">
+      <div>
+        <h2>GESTURE RECORDER</h2>
+        <div class="card-description">
+          Ręczna rejestracja gestu z danych LIVE oraz porównanie
+          przebiegu z zapisanym ruchem referencyjnym.
+        </div>
+      </div>
+      <span id="gestureStatusBadge" class="gesture-status-badge">Waiting for LIVE</span>
+    </div>
+
+    <div class="gesture-stats">
+      <div class="summary-item">
+        <div class="summary-label">LIVE BUFFER</div>
+        <div id="gestureBufferCount" class="summary-value">0</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-label">DURATION</div>
+        <div id="gestureDuration" class="summary-value">0.00 s</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-label">SAMPLES</div>
+        <div id="gestureSampleCount" class="summary-value">0</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-label">REFERENCE</div>
+        <div id="gestureReferenceStatus" class="summary-value">Not saved</div>
+      </div>
+    </div>
+
+    <div class="gesture-controls">
+      <button id="gestureRecordButton" class="start" type="button">● RECORD GESTURE</button>
+      <button id="gestureStopButton" class="stop" type="button" disabled>■ STOP RECORDING</button>
+      <button id="gestureReferenceButton" class="secondary" type="button" disabled>Save as reference</button>
+      <button id="gestureCompareButton" type="button" disabled>Compare with reference</button>
+      <button id="gestureClearButton" class="secondary" type="button">Clear current</button>
+    </div>
+
+    <div id="gestureMessage" class="measurement-status">
+      Połącz sensor i uruchom LIVE. Rejestrator nie wysyła komend do Arduino.
+    </div>
+
+    <div class="gesture-chart-grid">
+      <div class="gesture-chart-panel">
+        <h3>ACCELEROMETER — AX / AY / AZ</h3>
+        <canvas id="gestureAccelerationChart" height="190"></canvas>
+      </div>
+      <div class="gesture-chart-panel">
+        <h3>GYROSCOPE — GX / GY / GZ</h3>
+        <canvas id="gestureGyroscopeChart" height="190"></canvas>
+      </div>
+    </div>
+
+    <div class="gesture-result">
+      <div>
+        <div class="summary-label">PRELIMINARY SHAPE SIMILARITY</div>
+        <div id="gestureMatchScore" class="gesture-match-score">—</div>
+      </div>
+      <div id="gestureMatchDescription" class="gesture-match-description">
+        Zarejestruj gest i zapisz ruch referencyjny, aby rozpocząć porównanie.
+      </div>
+    </div>
+
+    <div class="gesture-history-wrap">
+      <h3>RECORDED GESTURES</h3>
+      <div id="gestureHistory" class="gesture-history">
+        <div class="gesture-history-empty">Brak zakończonych nagrań.</div>
+      </div>
+    </div>
+    <p class="gesture-disclaimer">
+      Wynik jest eksperymentalną miarą podobieństwa kształtu sygnałów,
+      a nie oceną techniki ani naukowo zwalidowaną dokładnością ruchu.
+    </p>
+  </section>
+
+  <!-- =====================================================
+       BATTERY
+       ===================================================== -->
+  <section class="card">
+    <h2 class="battery-heading">
+  <svg
+    class="battery-heading-icon"
+    viewBox="0 0 24 32"
+    aria-hidden="true"
+  >
+    <rect
+      x="8"
+      y="1"
+      width="8"
+      height="3"
+      rx="1.5"
+      fill="currentColor"
+    />
+    <rect
+      x="3"
+      y="5"
+      width="18"
+      height="25"
+      rx="3"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+    />
+    <path
+      d="M7 24h10v3H7z"
+      fill="currentColor"
+    />
+  </svg>
+  <span>BATTERY</span>
+</h2>
+    <div class="card-description">
+      Aktualny stan pakietu baterii
+      oraz poszczególnych ogniw.
+    </div>
+    <!-- BATTERY LEVEL VISUALIZATION -->
+    <div
+      class="battery-visual-panel"
+      aria-live="polite"
+    >
+      <div
+        class="battery-visual"
+        role="img"
+        aria-label="Poziom naładowania baterii: nieznany"
+      >
+        <div class="battery-cap"></div>
+        <div class="battery-shell">
+          <div
+            id="batteryLevelFill"
+            class="battery-level-fill"
+            style="height: 0%"
+          ></div>
+        </div>
+      </div>
+      <div class="battery-level-details">
+        <div
+          id="batteryPercent"
+          class="battery-percent"
+        >
+          —%
+        </div>
+        <div
+          id="batteryLevelLabel"
+          class="battery-level-label"
+        >
+          Poziom naładowania
+        </div>
+        <div class="battery-level-note">
+          Szacunek na podstawie napięcia pakietu
+        </div>
+      </div>
+    </div>
+    <div class="sensor-summary">
+      <!-- PACK -->
+      <div class="summary-item">
+        <div class="summary-label">
+          PACK
+        </div>
+        <div
+          id="batteryPack"
+          class="summary-value"
+        >
+          —
+        </div>
+      </div>
+      <!-- CELL 1 -->
+      <div class="summary-item">
+        <div class="summary-label">
+          CELL 1
+        </div>
+        <div
+          id="batteryCell1"
+          class="summary-value"
+        >
+          —
+        </div>
+      </div>
+      <!-- CELL 2 -->
+      <div class="summary-item">
+        <div class="summary-label">
+          CELL 2
+        </div>
+        <div
+          id="batteryCell2"
+          class="summary-value"
+        >
+          —
+        </div>
+      </div>
+      <!-- CELL DIFFERENCE -->
+      <div class="summary-item">
+        <div class="summary-label">
+          CELL DIFFERENCE
+        </div>
+        <div
+          id="batteryDifference"
+          class="summary-value"
+        >
+          —
+        </div>
+      </div>
+      <!-- STATUS -->
+      <div class="summary-item">
+        <div class="summary-label">
+          STATUS
+        </div>
+        <div
+          id="batteryStatus"
+          class="battery-status"
+        >
+          —
+        </div>
+      </div>
+    </div>
+    <!-- UPDATED -->
+    <div
+      id="batteryUpdated"
+      class="measurement-status"
+    >
+      Updated: —
+    </div>
+  </section>
+  <!-- =====================================================
+       CONNECT SENSOR
+       ===================================================== -->
+  <section class="card">
+    <h2>Connect Sensor</h2>
+    <div class="card-description">
+      Wybierz sposób połączenia
+      z sensorem Gazela Spiner.
+    </div>
+    <div class="controls">
+      <!-- USB -->
+      <button
+        id="usbButton"
+        type="button"
+      >
+        USB
+      </button>
+      <!-- BLE -->
+      <button
+        id="bleButton"
+        type="button"
+      >
+        BLE
+      </button>
+      <!-- CONNECT -->
+      <button
+        id="connectButton"
+        type="button"
+      >
+        Connect Sensor
+      </button>
+      <!-- DISCONNECT -->
+      <button
+        id="disconnectButton"
+        class="secondary"
+        type="button"
+        disabled
+      >
+        Disconnect
+      </button>
+      <!-- START -->
+      <button
+        id="startButton"
+        class="start"
+        type="button"
+        disabled
+      >
+        ▶ START MEASUREMENT
+      </button>
+      <!-- STOP -->
+      <button
+        id="stopButton"
+        class="stop"
+        type="button"
+        disabled
+      >
+        ■ STOP
+      </button>
+    </div>
+    <!-- TRANSPORT STATUS -->
+    <div
+      id="transportStatus"
+      class="measurement-status"
+    >
+      Transport: USB
+    </div>
+    <!-- MEASUREMENT STATUS -->
+    <div
+      id="measurementStatus"
+      class="measurement-status"
+    >
+      Sensor is waiting.
+    </div>
+  </section>
+  <!-- =====================================================
+       SESSION
+       ===================================================== -->
+  <section class="card">
+    <div class="session-header">
+      <div>
+        <h2>SESSION</h2>
+        <div class="card-description">
+          Aktualna sesja pomiarowa
+          i jej ruchy.
+        </div>
+      </div>
+      <div
+        id="sessionBadge"
+        class="session-badge"
+      >
+        No session
+      </div>
+    </div>
+    <div
+      id="movementList"
+      class="movement-list"
+    >
+      <div class="movement-card">
+        <div class="movement-status">
+          Brak aktywnej sesji.
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- =====================================================
+       SERIAL MONITOR
+       ===================================================== -->
+  <section class="card">
+    <h2>Serial Monitor</h2>
+    <div class="card-description">
+      Dane kontrolne i status komunikacji
+      pomiędzy przeglądarką a Gazela Sensor.
+      Dane LIVE nie są tutaj wyświetlane.
+    </div>
+    <div
+      id="serialMonitor"
+      class="serial-monitor"
+    ></div>
+  </section>
+</main>
+<footer>
+  GAZELA SPINER SENSOR
+  &nbsp; | &nbsp;
+  Sensor Lab
+</footer>
+<script src="js/app.js"></script>
+</body>
+</html>
 
