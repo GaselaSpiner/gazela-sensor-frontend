@@ -282,7 +282,7 @@ let transportType = null;
 
  
 
-let selectedTransport = "usb";
+let selectedTransport = "ble";
 
  
 
@@ -561,6 +561,16 @@ const serviceConnectionStatus =
  
 
     document.getElementById("serviceConnectionStatus");
+
+ 
+
+const serviceTransportLog = document.getElementById("serviceTransportLog");
+
+const serviceFifoLog = document.getElementById("serviceFifoLog");
+
+const serviceBmiLog = document.getElementById("serviceBmiLog");
+
+const serviceBatteryLog = document.getElementById("serviceBatteryLog");
 
  
 
@@ -951,6 +961,64 @@ function addSerialLine(
         serialMonitor.scrollHeight;
 
  
+
+}
+
+ 
+
+// SERVICE MODE DIAGNOSTICS — READ ONLY
+
+ 
+
+function isServiceModeOpen() {
+
+    return !!(serviceModeToggle && serviceModeContent &&
+
+        serviceModeToggle.getAttribute("aria-expanded") === "true" &&
+
+        !serviceModeContent.hidden);
+
+}
+
+ 
+
+function appendServiceLog(element, line) {
+
+    if (!element || !isServiceModeOpen()) return;
+
+    if (element.textContent.startsWith("Brak odebranych") ||
+
+        element.textContent.startsWith("Oczekiwanie na")) {
+
+        element.textContent = "";
+
+    }
+
+    const rows = element.textContent ? element.textContent.split("\n") : [];
+
+    rows.push(String(line));
+
+    while (rows.length > 120) rows.shift();
+
+    element.textContent = rows.join("\n");
+
+    element.scrollTop = element.scrollHeight;
+
+}
+
+ 
+
+function routeServiceDiagnosticLine(line) {
+
+    if (selectedTransport !== "usb" || !isServiceModeOpen()) return;
+
+    appendServiceLog(serviceTransportLog, line);
+
+    if (/FIFO|SEQ|QUEUE|SAMPLE|FRAME|BUFFER|OVERFLOW|UNDERRUN/i.test(line)) appendServiceLog(serviceFifoLog, line);
+
+    if (/BMI270|BMI|IMU|ACCEL|GYRO|GYR|REGISTER|CHIP.?ID/i.test(line)) appendServiceLog(serviceBmiLog, line);
+
+    if (/BAT|BATTERY|CELL|PACK|VOLT|ADC|CHARG/i.test(line)) appendServiceLog(serviceBatteryLog, line);
 
 }
 
@@ -2002,103 +2070,7 @@ class WebSerialTransport
 
     async send(command) {
 
- 
-
-        if (
-
- 
-
-            !this.port ||
-
- 
-
-            !this.port.writable
-
- 
-
-        ) {
-
- 
-
-            throw new Error(
-
- 
-
-                "Web Serial nie jest gotowy do wysyłania."
-
- 
-
-            );
-
- 
-
-        }
-
- 
-
-        addSerialLine(
-
- 
-
-            "V43: USB TX " + command,
-
- 
-
-            "serial-info"
-
- 
-
-        );
-
- 
-
-        const writer =
-
- 
-
-            this.port.writable.getWriter();
-
- 
-
-        try {
-
- 
-
-            await writer.write(
-
- 
-
-                new TextEncoder().encode(
-
- 
-
-                    command + "\n"
-
- 
-
-                )
-
- 
-
-            );
-
- 
-
-        }
-
- 
-
-        finally {
-
- 
-
-            writer.releaseLock();
-
- 
-
-        }
-
- 
+        throw new Error("WebSerialTransport w SERVICE MODE jest tylko do odczytu. Polecenie nie zostało wysłane: " + command);
 
     }
 
@@ -3808,275 +3780,7 @@ class WebUSBTransport
 
     async send(command) {
 
- 
-
-        if (
-
- 
-
-            !this.device ||
-
- 
-
-            !this.device.opened ||
-
- 
-
-            !this.interface1Claimed
-
- 
-
-        ) {
-
- 
-
-            throw new Error(
-
- 
-
-                "WebUSB nie jest gotowy do wysyłania."
-
- 
-
-            );
-
- 
-
-        }
-
- 
-
-        const data =
-
- 
-
-            this.encoder.encode(
-
- 
-
-                command + "\n"
-
- 
-
-            );
-
- 
-
-        addSerialLine(
-
- 
-
-            "V40 TEST: USB TX " +
-
- 
-
-            command,
-
- 
-
-            "serial-info"
-
- 
-
-        );
-
- 
-
-        await this.device.transferOut(
-
- 
-
-            1,
-
- 
-
-            data
-
- 
-
-        );
-
- 
-
-    }
-
- 
-
-    async cleanupAfterConnectError() {
-
- 
-
-        this.running = false;
-
- 
-
-        if (this.device) {
-
- 
-
-            if (this.interface1Claimed) {
-
- 
-
-                try {
-
- 
-
-                    await this.device
-
- 
-
-                        .releaseInterface(1);
-
- 
-
-                }
-
- 
-
-                catch (error) {
-
- 
-
-                    console.warn(
-
- 
-
-                        "V39 releaseInterface(1):",
-
- 
-
-                        error
-
- 
-
-                    );
-
- 
-
-                }
-
- 
-
-                this.interface1Claimed =
-
- 
-
-                    false;
-
- 
-
-            }
-
- 
-
-            if (this.interface0Claimed) {
-
- 
-
-                try {
-
- 
-
-                    await this.device
-
- 
-
-                        .releaseInterface(0);
-
- 
-
-                }
-
- 
-
-                catch (error) {
-
- 
-
-                    console.warn(
-
- 
-
-                        "V39 releaseInterface(0):",
-
- 
-
-                        error
-
- 
-
-                    );
-
- 
-
-                }
-
- 
-
-                this.interface0Claimed =
-
- 
-
-                    false;
-
- 
-
-            }
-
- 
-
-            try {
-
- 
-
-                await this.device.close();
-
- 
-
-            }
-
- 
-
-            catch (error) {
-
- 
-
-                console.warn(
-
- 
-
-                    "V39 device.close():",
-
- 
-
-                    error
-
- 
-
-                );
-
- 
-
-            }
-
- 
-
-        }
-
- 
-
-        this.device = null;
-
- 
-
-        this.readTask = null;
-
- 
-
-        this.buffer = "";
-
- 
+        throw new Error("WebUSBTransport w SERVICE MODE jest tylko do odczytu. Polecenie nie zostało wysłane: " + command);
 
     }
 
@@ -4483,6 +4187,10 @@ class WebBluetoothTransport
  
 
             new TextDecoder();
+
+ 
+
+        this.notificationCount = 0;
 
  
 
@@ -4912,61 +4620,45 @@ class WebBluetoothTransport
 
         addSerialLine(
 
- 
-
-            "BLE: start notifications...",
-
- 
+            "BLE: registering notification listener...",
 
             "serial-info"
-
- 
 
         );
 
  
 
-        await this.liveCharacteristic
+        this.liveCharacteristic.addEventListener(
 
- 
+            "characteristicvaluechanged",
 
-            .startNotifications();
+            this.boundNotificationHandler
+
+        );
 
  
 
         addSerialLine(
 
- 
-
-            "BLE: notifications OK",
-
- 
+            "BLE: start notifications...",
 
             "serial-info"
-
- 
 
         );
 
  
 
-        this.liveCharacteristic
+        await this.liveCharacteristic.startNotifications();
 
  
 
-            .addEventListener(
+        addSerialLine(
 
- 
+            "BLE: notifications OK",
 
-                "characteristicvaluechanged",
+            "serial-info"
 
- 
-
-                this.boundNotificationHandler
-
- 
-
-            );
+        );
 
  
 
@@ -4996,83 +4688,47 @@ class WebBluetoothTransport
 
     handleNotification(event) {
 
- 
-
         try {
 
- 
+            const value = event && event.target ? event.target.value : null;
 
-            const value = event.target.value;
-
-            const chunk = this.decoder.decode(value, { stream: true });
+            if (!value) return;
 
  
 
-            this.rxBuffer += chunk;
+            // Each ArduinoBLE BLEStringCharacteristic.writeValue() is one
+
+            // complete GATT notification. It is not a newline-terminated stream.
+
+            const packet = this.decoder.decode(value).replace(/\0+$/g, "").trim();
+
+            if (!packet) return;
 
  
 
-            // Preserve incomplete lines between BLE notifications.
+            this.notificationCount++;
 
-            const lines = this.rxBuffer.split(/\r?\n/);
+            if (this.notificationCount <= 5) {
 
-            this.rxBuffer = lines.pop() || "";
+                addSerialLine("BLE RX #" + this.notificationCount + ": " + packet.slice(0, 140), "serial-info");
 
- 
-
-            for (const line of lines) {
-
-                const cleanLine = line.trim();
-
-                if (cleanLine) {
-
-                    this.onLine(cleanLine);
-
-                }
+                console.info("GAZELA BLE notification", this.notificationCount, packet);
 
             }
 
  
 
-            // Defensive limit for malformed input without a newline.
+            const messages = packet.split(/\r?\n/).map(message => message.trim()).filter(Boolean);
 
-            if (this.rxBuffer.length > 4096) {
-
-                addSerialLine(
-
-                    "BLE RX: oversized unterminated line discarded.",
-
-                    "serial-error"
-
-                );
-
-                this.rxBuffer = "";
-
-                this.decoder = new TextDecoder();
-
-            }
-
- 
+            for (const message of messages) this.onLine(message);
 
         } catch (error) {
 
- 
-
             console.error("BLE notification error:", error);
 
-            addSerialLine(
-
-                "BLE notification error: " + error.message,
-
-                "serial-error"
-
-            );
-
- 
+            addSerialLine("BLE notification error: " + error.message, "serial-error");
 
         }
-
- 
 
     }
 
@@ -5126,11 +4782,15 @@ class WebBluetoothTransport
 
  
 
-        await this.commandCharacteristic
+        if (typeof this.commandCharacteristic.writeValueWithResponse === "function") {
 
- 
+            await this.commandCharacteristic.writeValueWithResponse(data);
 
-            .writeValue(data);
+        } else {
+
+            await this.commandCharacteristic.writeValue(data);
+
+        }
 
  
 
@@ -7674,6 +7334,14 @@ function processSerialLine(line) {
 
  
 
+    // Route every USB line to the read-only service panels, including
+
+    // BAT/LIVE telemetry that is intentionally hidden from the text monitor.
+
+    routeServiceDiagnosticLine(line);
+
+ 
+
     if (!isSensorDataLine(line)) {
 
  
@@ -9562,19 +9230,13 @@ async function sendCommand(command) {
 
  
 
-    // USB is a read-only service/diagnostic transport in V48.
+    // SERVICE USB is strictly read-only. No command is sent to the sensor.
 
-    if (
-
-        selectedTransport === "usb" &&
-
-        ["L", "S", "Q"].includes(String(command).trim().toUpperCase())
-
-    ) {
+    if (selectedTransport === "usb") {
 
         throw new Error(
 
-            "Komendy L/S/Q są dostępne wyłącznie przez BLE. USB służy do diagnostyki."
+            "SERVICE MODE USB jest tylko do odczytu. Sterowanie sensorem odbywa się wyłącznie przez firmware/BLE."
 
         );
 
@@ -9883,6 +9545,16 @@ async function startLiveMode() {
  
 
 async function connectSensor() {
+
+ 
+
+    if (selectedTransport === "usb" && !isServiceModeOpen()) {
+
+        addSerialLine("USB CONNECT BLOCKED: SERVICE MODE is closed.", "serial-error");
+
+        return;
+
+    }
 
  
 
@@ -10208,11 +9880,13 @@ async function connectSensor() {
 
             addSerialLine(
 
-                "V48: USB connected as diagnostics-only transport. No L/S/Q command sent.",
+                "V48: USB connected as diagnostics-only transport. No commands are sent.",
 
                 "serial-info"
 
             );
+
+            routeServiceDiagnosticLine("USB CONNECTED: " + transportType + " (115200 baud, READ ONLY)");
 
  
 
@@ -11506,13 +11180,13 @@ async function disconnectSensor() {
 
  
 
-        if (serviceConnectionStatus && serviceModeToggle && serviceModeToggle.getAttribute("aria-expanded") === "true") {
+        if (serviceConnectionStatus && isServiceModeOpen()) {
 
             serviceConnectionStatus.textContent = selectedTransport === "usb"
 
-                ? "USB rozłączone. Naciśnij SERVICE MODE, aby ponowić połączenie."
+                ? "USB rozłączone. Możesz ponownie połączyć port z przycisku CONNECT USB."
 
-                : "BLE rozłączone. Możesz teraz uruchomić USB przez SERVICE MODE.";
+                : "BLE rozłączone. Możesz teraz połączyć USB w SERVICE MODE.";
 
         }
 
@@ -11579,6 +11253,16 @@ async function disconnectSensor() {
  
 
 function selectUSBTransport() {
+
+ 
+
+    if (!isServiceModeOpen()) {
+
+        addSerialLine("USB transport is locked until SERVICE MODE is opened.", "serial-error");
+
+        return;
+
+    }
 
  
 
@@ -11786,33 +11470,49 @@ function selectBLETransport() {
 
  
 
-// BUTTON EVENTS
+// BUTTON EVENTS — USER BLE / SERVICE USB
 
  
 
-// ========================================================
-
- 
+// USB selector exists only inside the hidden SERVICE MODE panel.
 
 if (usbButton) {
 
- 
+    usbButton.addEventListener("click", async () => {
 
-    usbButton.addEventListener(
+        if (!isServiceModeOpen()) return;
 
- 
+        if (sensorTransport && selectedTransport === "ble") {
 
-        "click",
+            if (serviceConnectionStatus) serviceConnectionStatus.textContent =
 
- 
+                "Aktywne jest połączenie BLE. Najpierw rozłącz BLE przyciskiem Disconnect, a następnie wybierz CONNECT USB.";
 
-        selectUSBTransport
+            return;
 
- 
+        }
 
-    );
+        if (sensorTransport && selectedTransport === "usb") {
 
- 
+            if (serviceConnectionStatus) serviceConnectionStatus.textContent = "USB jest już połączone. Odbiór diagnostyki jest aktywny.";
+
+            return;
+
+        }
+
+        selectUSBTransport();
+
+        if (serviceConnectionStatus) serviceConnectionStatus.textContent = "Otwieranie wyboru portu USB. Wybierz port Arduino.";
+
+        await connectSensor();
+
+        if (serviceConnectionStatus) serviceConnectionStatus.textContent = sensorTransport && selectedTransport === "usb"
+
+            ? "USB aktywne — transmisja diagnostyczna jest odbierana. Kanał pozostaje tylko do odczytu."
+
+            : "Nie udało się połączyć USB. Sprawdź Serial Monitor i spróbuj ponownie.";
+
+    });
 
 }
 
@@ -11820,159 +11520,69 @@ if (usbButton) {
 
 if (bleButton) {
 
- 
+    bleButton.addEventListener("click", () => {
 
-    bleButton.addEventListener(
+        if (sensorTransport && selectedTransport === "usb") {
 
- 
+            addSerialLine("Rozłącz USB w SERVICE MODE przed przełączeniem na BLE.", "serial-error");
 
-        "click",
+            return;
 
- 
+        }
 
-        selectBLETransport
+        selectBLETransport();
 
- 
-
-    );
-
- 
+    });
 
 }
 
  
 
-// SERVICE MODE: keep the original V48 transport implementations intact.
-
-// Opening this panel selects USB and starts the existing USB transport.
-
 if (serviceModeToggle && serviceModeContent) {
-
- 
 
     serviceModeToggle.addEventListener("click", async () => {
 
- 
-
         const isOpen = serviceModeToggle.getAttribute("aria-expanded") === "true";
 
- 
+        const description = serviceModeToggle.querySelector(".service-toggle-description");
 
-        // If USB is active, the same button closes the panel and disconnects USB.
+        if (isOpen) {
 
-        if (isOpen && sensorTransport && selectedTransport === "usb") {
-
-            serviceModeToggle.setAttribute("aria-expanded", "false");
-
-            serviceModeContent.hidden = true;
-
-            await disconnectSensor();
-
-            selectBLETransport();
-
-            if (serviceConnectionStatus) {
-
-                serviceConnectionStatus.textContent = "SERVICE MODE zamknięty. USB rozłączone; wybrany transport BLE.";
-
-            }
-
-            return;
-
-        }
-
- 
-
-        // If BLE is active, close the service panel without touching the BLE connection.
-
-        if (isOpen && sensorTransport && selectedTransport === "ble") {
+            if (sensorTransport && selectedTransport === "usb") await disconnectSensor();
 
             serviceModeToggle.setAttribute("aria-expanded", "false");
 
             serviceModeContent.hidden = true;
 
-            if (serviceConnectionStatus) {
-
-                serviceConnectionStatus.textContent = "SERVICE MODE zamknięty. Połączenie BLE pozostaje aktywne.";
-
-            }
+            if (description) description.textContent = "Otwórz moduły diagnostyczne i uzyskaj dostęp do USB.";
 
             return;
 
         }
 
- 
+        serviceModeToggle.setAttribute("aria-expanded", "true");
 
-        // Opening or retrying the already-open panel.
+        serviceModeContent.hidden = false;
 
-        if (!isOpen) {
-
-            serviceModeToggle.setAttribute("aria-expanded", "true");
-
-            serviceModeContent.hidden = false;
-
-        }
-
- 
+        if (description) description.textContent = "Moduły diagnostyczne są dostępne. Połącz USB, aby odczytać dane serwisowe.";
 
         if (sensorTransport && selectedTransport === "ble") {
 
-            if (serviceConnectionStatus) {
+            if (serviceConnectionStatus) serviceConnectionStatus.textContent =
 
-                serviceConnectionStatus.textContent = "Najpierw rozłącz aktywne BLE przyciskiem Rozłącz. Następnie naciśnij SERVICE MODE ponownie, aby uruchomić USB.";
+                "BLE USER MODE jest aktywny. Aby przejść na USB, najpierw rozłącz BLE przyciskiem Disconnect.";
 
-            }
+        } else if (sensorTransport && selectedTransport === "usb") {
 
-            return;
+            if (serviceConnectionStatus) serviceConnectionStatus.textContent = "USB jest już połączone — odbiór diagnostyki trwa.";
 
-        }
+        } else if (serviceConnectionStatus) {
 
- 
-
-        if (sensorTransport && selectedTransport === "usb") {
-
-            if (serviceConnectionStatus) {
-
-                serviceConnectionStatus.textContent = "USB jest już połączone. Odbieranie transmisji diagnostycznej jest aktywne.";
-
-            }
-
-            return;
+            serviceConnectionStatus.textContent = "SERVICE MODE aktywny. Naciśnij CONNECT USB, aby wybrać port i rozpocząć odbiór diagnostyki.";
 
         }
-
- 
-
-        // No active transport: this click is the user gesture that opens the USB picker.
-
-        selectUSBTransport();
-
-        if (serviceConnectionStatus) {
-
-            serviceConnectionStatus.textContent = "Otwieranie USB. Wybierz port Arduino w oknie przeglądarki.";
-
-        }
-
- 
-
-        await connectSensor();
-
- 
-
-        if (serviceConnectionStatus) {
-
-            serviceConnectionStatus.textContent = sensorTransport && selectedTransport === "usb"
-
-                ? "USB aktywne — odbieranie transmisji diagnostycznej."
-
-                : "USB nie zostało połączone. Sprawdź komunikat błędu w Serial Monitor i spróbuj ponownie.";
-
-        }
-
- 
 
     });
-
- 
 
 }
 
@@ -11980,23 +11590,21 @@ if (serviceModeToggle && serviceModeContent) {
 
 if (connectButton) {
 
- 
+    connectButton.addEventListener("click", async () => {
 
-    connectButton.addEventListener(
+        if (sensorTransport && selectedTransport === "usb") {
 
- 
+            addSerialLine("Rozłącz USB w SERVICE MODE przed połączeniem BLE.", "serial-error");
 
-        "click",
+            return;
 
- 
+        }
 
-        connectSensor
+        selectBLETransport();
 
- 
+        await connectSensor();
 
-    );
-
- 
+    });
 
 }
 
@@ -13001,3 +12609,9 @@ window.addEventListener("resize", () => {
 // END GESTURE RECORDER / COMPARATOR
 
 // ========================================================
+
+ 
+
+// USER MODE is the default transport on every page load.
+
+selectBLETransport();
