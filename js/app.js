@@ -1,4 +1,4 @@
-// app.js — GAZELA SENSOR V48 SINGLE-FILE MIGRATION
+// app.js — GAZELA SENSOR V50 USB RECONNECT RECOVERY
 
 //
 
@@ -19,6 +19,10 @@
 // 7. No firmware protocol, FIFO, sensor calculation, or battery calibration changes.
 
 // 8. V47 behavior is retained where not explicitly changed above.
+
+// 9. V50 detects an unexpectedly ended USB read loop, clears stale app state,
+
+//    and releases the transport so USB can reconnect without a page refresh.
 
 // ========================================================
 
@@ -820,13 +824,71 @@ function v45LogRawUSB(bytes, transportName, chunkNumber) {
 
 class SensorTransport {
 
-    constructor(onLine) {
+    constructor(onLine, onEnd = null) {
 
         this.onLine = onLine;
+
+        this.onEnd = onEnd;
 
         this.running = false;
 
         this.readTask = null;
+
+        this.intentionalDisconnect = false;
+
+    }
+
+    startReadTask(readTask) {
+
+        this.readTask = readTask;
+
+        this.readTask.then(() => {
+
+            if (
+
+                !this.running ||
+
+                this.intentionalDisconnect
+
+            ) {
+
+                return;
+
+            }
+
+            this.running = false;
+
+            addSerialLine(
+
+                "V50: transport read loop ended unexpectedly.",
+
+                "serial-error"
+
+            );
+
+            if (typeof this.onEnd === "function") {
+
+                return this.onEnd(
+
+                    this,
+
+                    "read-loop-ended"
+
+                );
+
+            }
+
+        }).catch(error => {
+
+            console.error(
+
+                "V50: read task completion handler:",
+
+                error
+
+            );
+
+        });
 
     }
 
@@ -860,6 +922,8 @@ class SensorTransport {
 
         );
 
+        this.intentionalDisconnect = true;
+
         this.running = false;
 
     }
@@ -882,9 +946,9 @@ class WebSerialTransport
 
     extends SensorTransport {
 
-    constructor(onLine) {
+    constructor(onLine, onEnd = null) {
 
-        super(onLine);
+        super(onLine, onEnd);
 
         this.port = null;
 
@@ -956,6 +1020,8 @@ class WebSerialTransport
 
         this.running = true;
 
+        this.intentionalDisconnect = false;
+
         this.v45RxChunkCount = 0;
 
         addSerialLine(
@@ -966,9 +1032,11 @@ class WebSerialTransport
 
         );
 
-        this.readTask =
+        this.startReadTask(
 
-            this.readLoop();
+            this.readLoop()
+
+        );
 
     }
 
@@ -1152,6 +1220,8 @@ class WebSerialTransport
 
     async disconnect() {
 
+        this.intentionalDisconnect = true;
+
         this.running = false;
 
         if (this.reader) {
@@ -1260,9 +1330,9 @@ class WebUSBTransport
 
     extends SensorTransport {
 
-    constructor(onLine) {
+    constructor(onLine, onEnd = null) {
 
-        super(onLine);
+        super(onLine, onEnd);
 
         this.device = null;
 
@@ -1814,6 +1884,8 @@ class WebUSBTransport
 
             this.running = true;
 
+            this.intentionalDisconnect = false;
+
             this.v45RxChunkCount = 0;
 
             addSerialLine(
@@ -1824,9 +1896,11 @@ class WebUSBTransport
 
             );
 
-            this.readTask =
+            this.startReadTask(
 
-                this.readLoop();
+                this.readLoop()
+
+            );
 
         }
 
@@ -2009,6 +2083,8 @@ class WebUSBTransport
     }
 
     async disconnect() {
+
+        this.intentionalDisconnect = true;
 
         this.running = false;
 
@@ -2968,7 +3044,13 @@ async function createSensorTransport() {
 
             addSerialLine("V43: USB transport = WebUSB (Android)", "serial-info");
 
-            return new WebUSBTransport(line => routeSensorMessage("usb", line));
+            return new WebUSBTransport(
+
+                line => routeSensorMessage("usb", line),
+
+                (transport, reason) => handleUnexpectedTransportEnd(transport, reason)
+
+            );
 
         }
 
@@ -2976,7 +3058,13 @@ async function createSensorTransport() {
 
             addSerialLine("V43: USB transport = Web Serial (PC)", "serial-info");
 
-            return new WebSerialTransport(line => routeSensorMessage("usb", line));
+            return new WebSerialTransport(
+
+                line => routeSensorMessage("usb", line),
+
+                (transport, reason) => handleUnexpectedTransportEnd(transport, reason)
+
+            );
 
         }
 
@@ -2984,7 +3072,13 @@ async function createSensorTransport() {
 
             addSerialLine("V43: USB transport = WebUSB fallback (PC)", "serial-info");
 
-            return new WebUSBTransport(line => routeSensorMessage("usb", line));
+            return new WebUSBTransport(
+
+                line => routeSensorMessage("usb", line),
+
+                (transport, reason) => handleUnexpectedTransportEnd(transport, reason)
+
+            );
 
         }
 
@@ -4998,6 +5092,54 @@ async function startLiveMode() {
 
 // ========================================================
 
+// V50 — UNEXPECTED TRANSPORT END RECOVERY
+
+// ========================================================
+
+async function handleUnexpectedTransportEnd(transport, reason) {
+
+    // Ignore stale transports and intentional/manual disconnects.
+
+    if (!transport || sensorTransport !== transport) {
+
+        return;
+
+    }
+
+    addSerialLine(
+
+        "V50: unexpected transport end detected (" + reason + "). Cleaning connection state.",
+
+        "serial-error"
+
+    );
+
+    // readTask has already settled before this callback is invoked,
+
+    // so disconnectSensor() can safely release the port/device.
+
+    await disconnectSensor();
+
+    if (serviceConnectionStatus && isServiceModeOpen() && selectedTransport === "usb") {
+
+        serviceConnectionStatus.textContent =
+
+            "USB zostało rozłączone lub przestało przesyłać dane. Możesz ponownie nacisnąć CONNECT USB — odświeżanie strony nie jest wymagane.";
+
+    }
+
+    addSerialLine(
+
+        "V50: transport state reset complete. USB can be reconnected.",
+
+        "serial-info"
+
+    );
+
+}
+
+// ========================================================
+
 // CONNECT SENSOR
 
 // ========================================================
@@ -5068,7 +5210,15 @@ async function connectSensor() {
 
         // ------------------------------------------------
 
-        await sensorTransport.connect();
+        const connectingTransport = sensorTransport;
+
+        await connectingTransport.connect();
+
+        if (sensorTransport !== connectingTransport) {
+
+            return;
+
+        }
 
         // ------------------------------------------------
 
