@@ -934,27 +934,13 @@
 
     <div class="card-description">
 
-      Wybierz sposób połączenia
-
-      z sensorem Gazela Spiner.
+USER MODE: połączenie treningowe z sensorem przez Bluetooth LE.
 
     </div>
 
     <div class="controls">
 
-      <!-- USB -->
-
-      <button
-
-        id="usbButton"
-
-        type="button"
-
-      >
-
-        USB
-
-      </button>
+      <!-- USER MODE: BLE is the only available transport -->
 
       <!-- BLE -->
 
@@ -1050,7 +1036,7 @@
 
     >
 
-      Transport: USB
+      Transport: BLE (USER MODE)
 
     </div>
 
@@ -1174,7 +1160,25 @@
 
       <div class="service-connection-status" id="serviceConnectionStatus" role="status" aria-live="polite">
 
-        Tryb serwisowy zamknięty. Po otwarciu wybierz port USB Arduino.
+        SERVICE MODE aktywny. Połącz USB, aby rozpocząć odbiór diagnostyki.
+
+      </div>
+
+ 
+
+      <div class="service-usb-controls">
+
+        <div class="card-description">
+
+          Połączenie USB jest dostępne wyłącznie w SERVICE MODE: Web Serial na komputerze, WebUSB na Androidzie. Kanał jest tylko do odczytu — aplikacja nie wysyła poleceń konfigurujących sensor.
+
+        </div>
+
+        <button id="usbButton" type="button" class="service-usb-button">
+
+          CONNECT USB — DIAGNOSTICS
+
+        </button>
 
       </div>
 
@@ -1188,9 +1192,9 @@
 
           <div class="service-module-body">
 
-            <p>Stan aktywnego transportu i połączenia jest widoczny w sekcji Connect Sensor powyżej.</p>
+            <p>Stan połączenia USB, typ transportu i aktywność odbioru.</p>
 
-            <p>Na komputerze V48 korzysta z Web Serial. Na Androidzie pozostaje obsługa WebUSB.</p>
+            <pre id="serviceTransportLog" class="service-data-log" aria-live="polite">Oczekiwanie na połączenie USB…</pre>
 
           </div>
 
@@ -1204,9 +1208,9 @@
 
           <div class="service-module-body">
 
-            <p>Odbiór danych i obsługa pól SEQ / FIFO_SEQ pozostają w oryginalnym silniku V48.</p>
+            <p>Wyłącznie komunikaty FIFO, kolejki, próbek i liczników sekwencji faktycznie odebrane z USB.</p>
 
-            <p>Ten panel nie udaje odczytów sprzętowych, których aktualny interfejs firmware nie udostępnia osobnym komunikatem.</p>
+            <pre id="serviceFifoLog" class="service-data-log">Brak odebranych danych FIFO.</pre>
 
           </div>
 
@@ -1220,7 +1224,9 @@
 
           <div class="service-module-body">
 
-            <p>Diagnostyka inicjalizacji i rejestrów BMI270 wymaga dedykowanych komunikatów serwisowych firmware. Nie zmieniamy teraz firmware.</p>
+            <p>Wyłącznie komunikaty inicjalizacji, statusu i błędów BMI270/IMU odebrane z USB. Brak komunikatu oznacza, że firmware go nie wysłał.</p>
+
+            <pre id="serviceBmiLog" class="service-data-log">Brak odebranych danych BMI270.</pre>
 
           </div>
 
@@ -1234,7 +1240,9 @@
 
           <div class="service-module-body">
 
-            <p>Odczyty baterii pozostają w istniejącym module baterii. Nie zmieniamy parsera ani kalibracji napięć.</p>
+            <p>Komunikaty BAT, napięcia ogniw, pakietu i ADC odebrane z USB — bez możliwości edycji.</p>
+
+            <pre id="serviceBatteryLog" class="service-data-log">Brak odebranych danych baterii.</pre>
 
           </div>
 
@@ -1248,7 +1256,7 @@
 
           <div class="service-module-body">
 
-            <p>Komunikaty diagnostyczne odebrane przez aktywny transport:</p>
+            <p>Pełny, tylko do odczytu dziennik komunikatów i surowych ramek odebranych przez USB.</p>
 
             <div class="service-monitor-card">
 
@@ -1290,7 +1298,7 @@
 
           <div class="service-module-body">
 
-            <p>Panel rezerwowy. Ustawienia administracyjne i kalibracja nie są jeszcze aktywne.</p>
+            <p>Panel informacyjny. Brak elementów sterujących, zapisu i kalibracji. Zmiany konfiguracji sensora pozostają wyłącznie po stronie firmware.</p>
 
           </div>
 
