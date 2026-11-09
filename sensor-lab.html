@@ -6,6 +6,7 @@
     name="viewport"
     content="width=device-width, initial-scale=1.0"
   >
+  <meta name="description" content="Gazela Spiner Sensor Lab — podgląd danych sensora, rejestracja gestów i diagnostyka połączenia.">
   <title>Gazela Spiner Sensor Lab</title>
   <link
     rel="stylesheet"
@@ -28,7 +29,7 @@
       rakiety z wykorzystaniem sensora Gazela Spiner.
     </p>
     <!-- SENSOR CONNECTION STATUS -->
-    <div class="status">
+    <div class="status" role="status" aria-live="polite">
       <span
         id="statusDot"
         class="status-dot">
@@ -41,7 +42,7 @@
   <!-- =====================================================
        MODULE NAVIGATION
        ===================================================== -->
-  <section class="modules">
+  <section class="modules" aria-label="Nawigacja modułów Sensor Lab">
     <button
       class="module module-button active"
       id="liveSensorModule"
@@ -233,7 +234,7 @@
       </div>
     </div>
   </section>
-
+ 
   <!-- =====================================================
        GESTURE RECORDER / COMPARATOR
        ===================================================== -->
@@ -246,9 +247,9 @@
           przebiegu z zapisanym ruchem referencyjnym.
         </div>
       </div>
-      <span id="gestureStatusBadge" class="gesture-status-badge">Waiting for LIVE</span>
+      <span id="gestureStatusBadge" class="gesture-status-badge" role="status" aria-live="polite">Waiting for LIVE</span>
     </div>
-
+ 
     <div class="gesture-stats">
       <div class="summary-item">
         <div class="summary-label">LIVE BUFFER</div>
@@ -267,7 +268,7 @@
         <div id="gestureReferenceStatus" class="summary-value">Not saved</div>
       </div>
     </div>
-
+ 
     <div class="gesture-controls">
       <button id="gestureRecordButton" class="start" type="button">● RECORD GESTURE</button>
       <button id="gestureStopButton" class="stop" type="button" disabled>■ STOP RECORDING</button>
@@ -275,22 +276,22 @@
       <button id="gestureCompareButton" type="button" disabled>Compare with reference</button>
       <button id="gestureClearButton" class="secondary" type="button">Clear current</button>
     </div>
-
-    <div id="gestureMessage" class="measurement-status">
+ 
+    <div id="gestureMessage" class="measurement-status" role="status" aria-live="polite">
       Połącz sensor i uruchom LIVE. Rejestrator nie wysyła komend do Arduino.
     </div>
-
+ 
     <div class="gesture-chart-grid">
       <div class="gesture-chart-panel">
         <h3>ACCELEROMETER — AX / AY / AZ</h3>
-        <canvas id="gestureAccelerationChart" height="190"></canvas>
+        <canvas id="gestureAccelerationChart" height="190" role="img" aria-label="Wykres przyspieszenia: AX, AY i AZ">Wykres przyspieszenia AX, AY i AZ.</canvas>
       </div>
       <div class="gesture-chart-panel">
         <h3>GYROSCOPE — GX / GY / GZ</h3>
-        <canvas id="gestureGyroscopeChart" height="190"></canvas>
+        <canvas id="gestureGyroscopeChart" height="190" role="img" aria-label="Wykres żyroskopu: GX, GY i GZ">Wykres żyroskopu GX, GY i GZ.</canvas>
       </div>
     </div>
-
+ 
     <div class="gesture-result">
       <div>
         <div class="summary-label">PRELIMINARY SHAPE SIMILARITY</div>
@@ -300,7 +301,7 @@
         Zarejestruj gest i zapisz ruch referencyjny, aby rozpocząć porównanie.
       </div>
     </div>
-
+ 
     <div class="gesture-history-wrap">
       <h3>RECORDED GESTURES</h3>
       <div id="gestureHistory" class="gesture-history">
@@ -312,7 +313,7 @@
       a nie oceną techniki ani naukowo zwalidowaną dokładnością ruchu.
     </p>
   </section>
-
+ 
   <!-- =====================================================
        BATTERY
        ===================================================== -->
@@ -576,6 +577,8 @@
     <div
       id="serialMonitor"
       class="serial-monitor"
+      role="log"
+      aria-label="Monitor komunikatów diagnostycznych"
     ></div>
   </section>
 </main>
@@ -587,4 +590,3 @@
 <script src="js/app.js"></script>
 </body>
 </html>
-
