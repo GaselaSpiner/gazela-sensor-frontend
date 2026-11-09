@@ -478,51 +478,29 @@
 
 </section><section class="card">
 
-<h2>Połączenie z sensorem</h2>
+<h2>Połączenie treningowe</h2>
 
 <div class="card-description">
 
-      Wybierz sposób połączenia
+      Połącz sensor przez Bluetooth LE, aby korzystać z transmisji LIVE
 
-      z sensorem Gazela Spiner.
+      i rejestrować pomiary treningowe.
 
     </div>
 
 <div class="controls">
 
-<!-- USB -->
-
-<button id="usbButton" type="button">USB</button>
-
-<!-- BLE -->
-
-<button id="bleButton" type="button">BLE</button>
-
-<!-- CONNECT -->
+<button class="active" id="bleButton" type="button">BLE</button>
 
 <button id="connectButton" type="button">Połącz</button>
 
-<!-- DISCONNECT -->
-
 <button class="secondary" disabled="" id="disconnectButton" type="button">Rozłącz</button>
 
-<!-- START -->
-
 <button class="start" disabled="" id="startButton" type="button">▶ ROZPOCZNIJ POMIAR</button>
-
-<!-- STOP -->
 
 <button class="stop" disabled="" id="stopButton" type="button">■ ZATRZYMAJ</button>
 
 </div>
-
-<!-- TRANSPORT STATUS -->
-
- 
-
-<!-- MEASUREMENT STATUS -->
-
- 
 
 </section><section class="card">
 
@@ -564,119 +542,149 @@
 
 </div>
 
-</section></section><details class="mode-disclosure service-mode" id="serviceMode"><summary class="mode-summary">SERVICE MODE</summary><p class="mode-intro">Narzędzia serwisowe i diagnostyczne. Rozwijaj niezależnie wybrane panele; otwarcie diagnostyki nie zatrzymuje strumienia LIVE.</p><details class="diagnostic-panel" id="transportDiagnostics"><summary>TRANSPORT DIAGNOSTICS</summary><p class="diagnostic-description">BLE / USB, stan połączenia i komunikaty transmisji.</p><div class="diagnostic-state">Oczekiwanie na źródło danych diagnostycznych.</div><div class="diagnostic-live-status"><div class="measurement-status" id="transportStatus">Transport: USB</div><div class="measurement-status" id="measurementStatus">Sensor is waiting.</div></div><section class="card">
+</section></section><section class="service-shell" id="serviceMode">
 
-<h2>Serial Monitor</h2>
+<button aria-controls="serviceModeContent" aria-expanded="false" class="module-toggle" id="serviceModeToggle" type="button">
 
-<div class="card-description">
+  <span class="module-toggle-copy">
 
-      Dane kontrolne i status komunikacji
+    <span class="module-toggle-title">SERVICE MODE</span>
 
-      pomiędzy przeglądarką a Gazela Sensor.
+    <span class="module-toggle-description">Otwórz diagnostykę urządzenia i połącz się przez USB Web Serial.</span>
 
-      Dane LIVE nie są tutaj wyświetlane.
+  </span>
+
+  <span aria-hidden="true" class="module-toggle-icon">+</span>
+
+</button>
+
+<div class="service-content" hidden id="serviceModeContent">
+
+  <div class="service-connection-status" aria-live="polite" id="serviceConnectionStatus">
+
+    Połączenie USB nieaktywne. Otwórz SERVICE MODE, aby wybrać port i rozpocząć odbiór danych.
+
+  </div>
+
+  <details class="diagnostic-panel" id="transportDiagnostics">
+
+    <summary class="module-summary">TRANSPORT DIAGNOSTICS</summary>
+
+    <div class="module-content">
+
+      <p class="diagnostic-description">Stan połączenia USB, transmisji i komunikaty diagnostyczne.</p>
+
+      <div class="diagnostic-live-status">
+
+        <div class="measurement-status" id="transportStatus">Transport: not connected</div>
+
+        <div class="measurement-status" id="measurementStatus">Sensor is waiting.</div>
+
+      </div>
+
+      <section class="card serial-card">
+
+        <h2>Serial Monitor</h2>
+
+        <div class="card-description">Komunikaty kontrolne pomiędzy przeglądarką a Gazela Sensor. Dane LIVE nie są tutaj wyświetlane.</div>
+
+        <div aria-label="Monitor komunikatów diagnostycznych" class="serial-monitor" id="serialMonitor" role="log"></div>
+
+      </section>
 
     </div>
 
-<div aria-label="Monitor komunikatów diagnostycznych" class="serial-monitor" id="serialMonitor" role="log"></div>
+  </details>
 
-</section></details><details class="diagnostic-panel" id="fifoDiagnostics"><summary>FIFO DIAGNOSTICS</summary><p class="diagnostic-description">Kontrola ciągłości próbek, sekwencji SEQ / FIFO_SEQ i diagnostyka przepełnień.</p><div class="diagnostic-state">Oczekiwanie na źródło danych diagnostycznych.</div></details><details class="diagnostic-panel" id="bmiDiagnostics"><summary>BMI270 DIAGNOSTICS</summary><p class="diagnostic-description">Diagnostyka akcelerometru i żyroskopu BMI270 oraz stanu inicjalizacji.</p><div class="diagnostic-state">Oczekiwanie na źródło danych diagnostycznych.</div></details><details class="diagnostic-panel" id="batteryDiagnostics"><summary>BATTERY DIAGNOSTICS</summary><p class="diagnostic-description">Surowe napięcia pakietu i ogniw oraz kontrola różnicy napięć.</p><div class="diagnostic-state">Oczekiwanie na źródło danych diagnostycznych.</div><div class="sensor-summary">
+  <details class="diagnostic-panel" id="fifoDiagnostics">
 
-<!-- PACK -->
+    <summary class="module-summary">FIFO DIAGNOSTICS</summary>
 
-<div class="summary-item">
+    <div class="module-content">
 
-<div class="summary-label">
+      <p class="diagnostic-description">Kontrola ciągłości próbek, sekwencji SEQ / FIFO_SEQ i diagnostyka przepełnień.</p>
 
-          PACK
+      <div class="diagnostic-state">Oczekiwanie na źródło danych diagnostycznych.</div>
 
-        </div>
+    </div>
 
-<div class="summary-value" id="batteryPack">
+  </details>
 
-          —
+  <details class="diagnostic-panel" id="bmiDiagnostics">
 
-        </div>
+    <summary class="module-summary">BMI270 DIAGNOSTICS</summary>
 
-</div>
+    <div class="module-content">
 
-<!-- CELL 1 -->
+      <p class="diagnostic-description">Diagnostyka akcelerometru i żyroskopu BMI270 oraz stanu inicjalizacji.</p>
 
-<div class="summary-item">
+      <div class="diagnostic-state">Oczekiwanie na źródło danych diagnostycznych.</div>
 
-<div class="summary-label">
+    </div>
 
-          CELL 1
+  </details>
 
-        </div>
+  <details class="diagnostic-panel" id="batteryDiagnostics">
 
-<div class="summary-value" id="batteryCell1">
+    <summary class="module-summary">BATTERY DIAGNOSTICS</summary>
 
-          —
+    <div class="module-content">
 
-        </div>
+      <p class="diagnostic-description">Surowe napięcia pakietu i ogniw oraz kontrola różnicy napięć.</p>
 
-</div>
+      <div class="diagnostic-state">Oczekiwanie na źródło danych diagnostycznych.</div>
 
-<!-- CELL 2 -->
+      <div class="sensor-summary">
 
-<div class="summary-item">
+        <div class="summary-item"><div class="summary-label">PACK</div><div class="summary-value" id="batteryPack">—</div></div>
 
-<div class="summary-label">
+        <div class="summary-item"><div class="summary-label">CELL 1</div><div class="summary-value" id="batteryCell1">—</div></div>
 
-          CELL 2
+        <div class="summary-item"><div class="summary-label">CELL 2</div><div class="summary-value" id="batteryCell2">—</div></div>
 
-        </div>
+        <div class="summary-item"><div class="summary-label">CELL DIFFERENCE</div><div class="summary-value" id="batteryDifference">—</div></div>
 
-<div class="summary-value" id="batteryCell2">
+        <div class="summary-item"><div class="summary-label">STATUS</div><div class="battery-status" id="batteryStatus">—</div></div>
 
-          —
+      </div>
 
-        </div>
+      <div class="measurement-status" id="batteryUpdated">Updated: —</div>
 
-</div>
+    </div>
 
-<!-- CELL DIFFERENCE -->
+  </details>
 
-<div class="summary-item">
+  <details class="diagnostic-panel" id="systemDiagnostics">
 
-<div class="summary-label">
+    <summary class="module-summary">FIRMWARE &amp; SYSTEM</summary>
 
-          CELL DIFFERENCE
+    <div class="module-content">
 
-        </div>
+      <p class="diagnostic-description">Wersja firmware, komunikaty startowe i stan systemu.</p>
 
-<div class="summary-value" id="batteryDifference">
+      <div class="diagnostic-state">Oczekiwanie na źródło danych diagnostycznych.</div>
 
-          —
+    </div>
 
-        </div>
-
-</div>
-
-<!-- STATUS -->
-
-<div class="summary-item">
-
-<div class="summary-label">
-
-          STATUS
-
-        </div>
-
-<div class="battery-status" id="batteryStatus">
-
-          —
-
-        </div>
+  </details>
 
 </div>
 
-</div><div class="measurement-status" id="batteryUpdated">
+</section>
 
-      Updated: —
+<details class="diagnostic-panel admin-mode" id="adminMode">
 
-    </div></details><details class="diagnostic-panel" id="systemDiagnostics"><summary>FIRMWARE &amp; SYSTEM</summary><p class="diagnostic-description">Wersja firmware, komunikaty startowe i stan systemu.</p><div class="diagnostic-state">Oczekiwanie na źródło danych diagnostycznych.</div></details></details><details class="mode-disclosure admin-mode" id="adminMode"><summary class="mode-summary">ADMIN</summary><p class="mode-intro">Strefa administracyjna przeznaczona na kontrolowane ustawienia urządzenia, kalibrację i zarządzanie konfiguracją. Funkcje wymagające autoryzacji nie są jeszcze aktywne w V48.</p><div class="diagnostic-state">ADMIN: moduł przygotowany jako część struktury interfejsu. Brak aktywnych operacji zapisu lub kalibracji.</div></details></main>
+  <summary class="module-summary">ADMIN</summary>
+
+  <div class="module-content">
+
+    <p class="diagnostic-description">Strefa administracyjna przeznaczona na kontrolowane ustawienia urządzenia, kalibrację i zarządzanie konfiguracją.</p>
+
+    <div class="diagnostic-state">ADMIN: moduł przygotowany jako część struktury interfejsu. Funkcje wymagające autoryzacji nie są jeszcze aktywne w V48.</div>
+
+  </div>
+
+</details></main>
 
 <footer>GAZELA SPINER SENSOR | SENSOR LAB V48</footer>
 
