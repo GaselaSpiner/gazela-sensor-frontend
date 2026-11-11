@@ -3599,7 +3599,7 @@ function contactRenderMarkers() {
     for (const marker of trial.markers) {
         const row=document.createElement("div");row.className="contact-marker-row";
         const label=document.createElement("span");
-        label.textContent=`#${trial.id} · ${marker.time_ms} ms · SEQ ${marker.sequence} · ${CONTACT_LABELS[marker.label]}`;
+        label.textContent=`#${trial.id} • ${marker.time_ms} ms • SEQ ${marker.sequence} • ${CONTACT_LABELS[marker.label]}`;
         const remove=document.createElement("button");remove.className="secondary";
         remove.type="button";remove.textContent="Usuń";
         remove.disabled=contactIsBusy();
