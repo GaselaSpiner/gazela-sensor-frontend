@@ -638,7 +638,6 @@
         <h2>CONTACT RECORDER</h2>
         <p class="card-description">Zbieranie rzeczywistych próbek ACC + GYRO, ręczne oznaczanie momentów kontaktu i raport sesji. Algorytm automatycznego wykrywania zostanie zaimplementowany później w firmware.</p>
       </div>
-
       <span id="contactSessionBadge" class="gesture-status-badge">Brak sesji</span>
     </div>
     <div class="contact-disclaimer" role="note">
@@ -674,18 +673,43 @@
       <div class="contact-review-head">
         <div>
           <h3>Oznacz zdarzenia na wykresie</h3>
-          <p>Wybierz próbę, kliknij moment w sygnale i przypisz swoją ocenę. Możesz dodać wiele kontaktów w jednej próbie.</p>
+          <p>Wybierz próbę i powiększ oś czasu. Możesz oznaczyć konkretny punkt lub jedynie potwierdzić, że kontakt wystąpił, bez zgadywania próbki.</p>
         </div>
         <label for="contactTrialSelect">Próba
           <select id="contactTrialSelect" disabled><option value="">Brak zarejestrowanych prób</option></select>
         </label>
-
+      </div>
+      <div class="contact-zoom-controls" aria-label="Powiększenie osi czasu">
+        <div class="contact-zoom-buttons">
+          <button id="contactZoomIn" class="secondary" type="button" disabled>＋ POWIĘKSZ 2×</button>
+          <button id="contactZoomOut" class="secondary" type="button" disabled>－ ODDAL 2×</button>
+          <button id="contactZoomReset" class="secondary" type="button" disabled>CAŁE 4 s</button>
+        </div>
+        <label for="contactZoomRange">Szerokość widocznego fragmentu (20–400 próbek)
+          <input id="contactZoomRange" type="range" min="20" max="400" step="1" value="400" disabled>
+        </label>
+        <label for="contactPanRange">Przesuwaj okno po osi czasu
+          <input id="contactPanRange" type="range" min="0" max="0" step="1" value="0" disabled>
+        </label>
+        <output id="contactZoomText" aria-live="polite">0.00–3.99 s · 400 próbek · przybliżenie 1.0×</output>
       </div>
       <div class="contact-charts">
         <div class="contact-chart-box"><h4>ACC — AX / AY / AZ [g]</h4><canvas id="contactAccChart" height="210" aria-label="Wykres przyspieszenia, wybór próbki" role="img"></canvas></div>
         <div class="contact-chart-box"><h4>GYRO — GX / GY / GZ [°/s]</h4><canvas id="contactGyroChart" height="210" aria-label="Wykres żyroskopu, wybór próbki" role="img"></canvas></div>
       </div>
-      <p id="contactCursorInfo" class="contact-cursor-info">Po pobraniu próby kliknij wykres, aby wskazać próbkę.</p>
+      <p id="contactCursorInfo" class="contact-cursor-info">Kliknij wykres, jeśli znasz moment kontaktu. W przeciwnym razie użyj oceny całej próby poniżej.</p>
+      <div class="contact-trial-truth">
+        <h4>Ocena CAŁEJ próby — bez wskazywania punktu</h4>
+        <p>Jeśli na pewno piłka dotknęła naciągu, ale nie znasz dokładnej chwili, wybierz pierwszą opcję. Nie przypiszemy sztucznie żadnej próbki.</p>
+        <div id="contactTrialTruth" class="contact-trial-truth-status" aria-live="polite">Najpierw nagraj próbę.</div>
+        <div class="contact-mark-controls">
+          <button id="contactTruthBall" class="start" type="button" disabled>✓ BYŁ KONTAKT — NIE ZNAM PRÓBKI</button>
+          <button id="contactTruthNoBall" class="secondary" type="button" disabled>✕ NIE BYŁO KONTAKTU</button>
+          <button id="contactTruthUncertain" class="secondary" type="button" disabled>? NIE JESTEM PEWIEN</button>
+          <button id="contactTruthClear" class="secondary" type="button" disabled>WYCZYŚĆ OCENĘ PRÓBY</button>
+        </div>
+      </div>
+      <h4 class="contact-point-heading">Opcjonalnie: dokładny punkt na wykresie</h4>
       <div class="contact-mark-controls">
         <button id="contactMarkTrue" class="start" type="button" disabled>✓ POTWIERDZAM KONTAKT PIŁKI</button>
         <button id="contactMarkNegative" class="secondary" type="button" disabled>✕ TO NIE BYŁ KONTAKT PIŁKI</button>
@@ -694,10 +718,11 @@
       <div id="contactMarkers" class="contact-marker-list" aria-live="polite">Brak oznaczeń.</div>
     </div>
     <div class="contact-report">
+
       <h3>RAPORT SESJI — lokalnie w Sensor Lab</h3>
       <div id="contactReport" class="contact-report-content">Brak danych. Raport powstaje automatycznie po każdej ukończonej próbie i zmianie oznaczeń.</div>
     </div>
-    <p class="contact-note">Transmisja: 20 B na pakiet, CRC16, numer próbki, kwantyzacja ACC 0,001 g i GYRO 0,1°/s. Oś czasu próbek pochodzi z firmware i jest nominalna. Oceny na wykresie są oznaczeniami referencyjnymi, a nie wynikiem detektora. ZIP zawiera CSV wszystkich prób, zdarzenia, metadane i raport. Dane są w pamięci przeglądarki — eksportuj je przed odświeżeniem strony.</p>
+    <p class="contact-note">Transmisja: 20 B na pakiet, CRC16, numer próbki, kwantyzacja ACC 0,001 g i GYRO 0,1°/s. Oś czasu próbek pochodzi z firmware i jest nominalna. Oceny całych prób i opcjonalne znaczniki na wykresie są ręcznymi danymi referencyjnymi, a nie wynikiem detektora. Powiększenie osi nie zwiększa częstotliwości 100 Hz. ZIP zawiera CSV wszystkich prób, zdarzenia, metadane i raport. Dane są w pamięci przeglądarki — eksportuj je przed odświeżeniem strony.</p>
   </section>
 
   <!-- =====================================================
@@ -1399,4 +1424,3 @@ USER MODE: połączenie treningowe z sensorem przez Bluetooth LE.
 </body>
 
 </html>
-
