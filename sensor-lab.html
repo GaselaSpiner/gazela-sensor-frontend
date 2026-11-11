@@ -468,6 +468,33 @@
 
     </div>
 
+    <!-- V55: LIVE CHARTS - visualization only, fed by existing LIVE frames -->
+    <div class="live-wave-panel" id="liveWavePanel">
+      <div class="live-wave-heading">
+        <div>
+          <h3>LIVE STREAM — ACC + GYRO</h3>
+          <p>Ruchome przebiegi tych samych próbek, które aktualizują wartości LIVE SENSOR.</p>
+        </div>
+        <div class="live-wave-buttons">
+          <span id="liveWaveState" class="live-wave-state" aria-live="polite">Oczekiwanie na LIVE</span>
+          <button id="liveWavePause" type="button" class="secondary">Wstrzymaj wykresy</button>
+          <button id="liveWaveClear" type="button" class="secondary">Wyczyść wykresy</button>
+        </div>
+      </div>
+      <div class="live-wave-grid">
+        <div class="live-wave-chart">
+          <div class="live-wave-chart-top"><strong>ACCELEROMETER</strong><span>AX / AY / AZ • g</span></div>
+          <canvas id="liveWaveAcc" height="235" aria-label="Przewijany wykres LIVE akcelerometru AX AY AZ" role="img"></canvas>
+          <div class="live-wave-legend"><span class="live-wave-x">AX</span><span class="live-wave-y">AY</span><span class="live-wave-z">AZ</span></div>
+        </div>
+        <div class="live-wave-chart">
+          <div class="live-wave-chart-top"><strong>GYROSCOPE</strong><span>GX / GY / GZ • °/s</span></div>
+          <canvas id="liveWaveGyro" height="235" aria-label="Przewijany wykres LIVE żyroskopu GX GY GZ" role="img"></canvas>
+          <div class="live-wave-legend"><span class="live-wave-x">GX</span><span class="live-wave-y">GY</span><span class="live-wave-z">GZ</span></div>
+        </div>
+      </div>
+      <p class="live-wave-note">Okno ostatnich 8 sekund. Wykresy pokazują ramki LIVE (~50 Hz), nie wszystkie 100 próbek/s z FIFO. Wstrzymanie zatrzymuje tylko wykresy, nie firmware ani Contact Recorder.</p>
+    </div>
   </section>
 
  
@@ -691,7 +718,7 @@
         <label for="contactPanRange">Przesuwaj okno po osi czasu
           <input id="contactPanRange" type="range" min="0" max="0" step="1" value="0" disabled>
         </label>
-        <output id="contactZoomText" aria-live="polite">0.00–3.99 s · 400 próbek · przybliżenie 1.0×</output>
+        <output id="contactZoomText" aria-live="polite">0.00–3.99 s • 400 próbek • przybliżenie 1.0×</output>
       </div>
       <div class="contact-charts">
         <div class="contact-chart-box"><h4>ACC — AX / AY / AZ [g]</h4><canvas id="contactAccChart" height="210" aria-label="Wykres przyspieszenia, wybór próbki" role="img"></canvas></div>
@@ -718,7 +745,6 @@
       <div id="contactMarkers" class="contact-marker-list" aria-live="polite">Brak oznaczeń.</div>
     </div>
     <div class="contact-report">
-
       <h3>RAPORT SESJI — lokalnie w Sensor Lab</h3>
       <div id="contactReport" class="contact-report-content">Brak danych. Raport powstaje automatycznie po każdej ukończonej próbie i zmianie oznaczeń.</div>
     </div>
