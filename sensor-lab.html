@@ -630,6 +630,76 @@
 
  
 
+  
+  <!-- STAGE 8.2 — CONTACT RECORDER V2 / SESSION & EVENT LABELING -->
+  <section class="card contact-card" id="contactRecorder">
+    <div class="contact-head">
+      <div>
+        <h2>CONTACT RECORDER</h2>
+        <p class="card-description">Zbieranie rzeczywistych próbek ACC + GYRO, ręczne oznaczanie momentów kontaktu i raport sesji. Algorytm automatycznego wykrywania zostanie zaimplementowany później w firmware.</p>
+      </div>
+
+      <span id="contactSessionBadge" class="gesture-status-badge">Brak sesji</span>
+    </div>
+    <div class="contact-disclaimer" role="note">
+      Każda próba to <strong>400 kolejnych próbek / około 4 sekundy</strong>. Transfer BLE odbywa się po nagraniu. Przerwy między próbami NIE są rejestrowane. Obecny firmware nie wykrywa jeszcze automatycznie kontaktu piłki.
+    </div>
+    <div class="contact-toolbar">
+      <button id="contactSessionStartButton" class="start" type="button">▶ ROZPOCZNIJ SESJĘ</button>
+      <button id="contactSessionEndButton" class="secondary" type="button" disabled>■ ZAKOŃCZ SESJĘ</button>
+      <button id="contactExportButton" type="button" disabled>EKSPORT RAPORTU ZIP</button>
+    </div>
+    <div class="contact-controls">
+      <label for="contactLabel">Rodzaj próby</label>
+      <select id="contactLabel">
+        <option value="ball">Uderzenia piłki</option>
+        <option value="air">Zamach bez kontaktu</option>
+        <option value="hand">Stuknięcie dłonią</option>
+        <option value="other">Inny sygnał / zakłócenie</option>
+      </select>
+      <button id="contactStartButton" class="start" type="button" disabled>● NAGRAJ PRÓBĘ — 4 s</button>
+      <button id="contactCancelButton" class="stop" type="button" disabled>ANULUJ PRÓBĘ</button>
+      <button id="contactDownloadButton" class="secondary" type="button" disabled>POBIERZ CSV PRÓBY</button>
+    </div>
+    <div id="contactStatus" class="measurement-status" role="status" aria-live="polite">Rozpocznij sesję, połącz BLE i nagraj pierwszą próbę.</div>
+    <div class="contact-stats">
+      <div class="summary-item"><div class="summary-label">PRÓBY / PASS</div><div id="contactSessionTrials" class="summary-value">0</div></div>
+      <div class="summary-item"><div class="summary-label">PRÓBKI W SESJI</div><div id="contactSessionSamples" class="summary-value">0</div></div>
+      <div class="summary-item"><div class="summary-label">OZNACZONE KONTAKTY</div><div id="contactSessionConfirmed" class="summary-value">0</div></div>
+      <div class="summary-item"><div class="summary-label">BIEŻĄCY TRANSFER</div><div id="contactSamples" class="summary-value">0 / 400</div></div>
+      <div class="summary-item"><div class="summary-label">KOMPLETNOŚĆ</div><div id="contactIntegrity" class="summary-value">—</div></div>
+      <div class="summary-item"><div class="summary-label">FAZA</div><div id="contactPhase" class="summary-value">IDLE</div></div>
+    </div>
+    <div class="contact-review">
+      <div class="contact-review-head">
+        <div>
+          <h3>Oznacz zdarzenia na wykresie</h3>
+          <p>Wybierz próbę, kliknij moment w sygnale i przypisz swoją ocenę. Możesz dodać wiele kontaktów w jednej próbie.</p>
+        </div>
+        <label for="contactTrialSelect">Próba
+          <select id="contactTrialSelect" disabled><option value="">Brak zarejestrowanych prób</option></select>
+        </label>
+
+      </div>
+      <div class="contact-charts">
+        <div class="contact-chart-box"><h4>ACC — AX / AY / AZ [g]</h4><canvas id="contactAccChart" height="210" aria-label="Wykres przyspieszenia, wybór próbki" role="img"></canvas></div>
+        <div class="contact-chart-box"><h4>GYRO — GX / GY / GZ [°/s]</h4><canvas id="contactGyroChart" height="210" aria-label="Wykres żyroskopu, wybór próbki" role="img"></canvas></div>
+      </div>
+      <p id="contactCursorInfo" class="contact-cursor-info">Po pobraniu próby kliknij wykres, aby wskazać próbkę.</p>
+      <div class="contact-mark-controls">
+        <button id="contactMarkTrue" class="start" type="button" disabled>✓ POTWIERDZAM KONTAKT PIŁKI</button>
+        <button id="contactMarkNegative" class="secondary" type="button" disabled>✕ TO NIE BYŁ KONTAKT PIŁKI</button>
+        <button id="contactMarkUncertain" class="secondary" type="button" disabled>? NIEPEWNE</button>
+      </div>
+      <div id="contactMarkers" class="contact-marker-list" aria-live="polite">Brak oznaczeń.</div>
+    </div>
+    <div class="contact-report">
+      <h3>RAPORT SESJI — lokalnie w Sensor Lab</h3>
+      <div id="contactReport" class="contact-report-content">Brak danych. Raport powstaje automatycznie po każdej ukończonej próbie i zmianie oznaczeń.</div>
+    </div>
+    <p class="contact-note">Transmisja: 20 B na pakiet, CRC16, numer próbki, kwantyzacja ACC 0,001 g i GYRO 0,1°/s. Oś czasu próbek pochodzi z firmware i jest nominalna. Oceny na wykresie są oznaczeniami referencyjnymi, a nie wynikiem detektora. ZIP zawiera CSV wszystkich prób, zdarzenia, metadane i raport. Dane są w pamięci przeglądarki — eksportuj je przed odświeżeniem strony.</p>
+  </section>
+
   <!-- =====================================================
 
        BATTERY
@@ -1329,3 +1399,4 @@ USER MODE: połączenie treningowe z sensorem przez Bluetooth LE.
 </body>
 
 </html>
+
