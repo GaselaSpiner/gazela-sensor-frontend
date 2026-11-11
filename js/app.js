@@ -88,7 +88,6 @@ let measuring = false;
 let currentMovement = 0;
 let sessionStartTime = null;
 let sessionEndTime = null;
-
 let sampleCount = 0;
 // ========================================================
 // LIVE SEQUENCE TRACKING (V48)
@@ -179,7 +178,6 @@ const serialMonitor =
 // BATTERY UI
 // ========================================================
 // Firmware format: BAT,cell1,pack,cell2
-
 // ========================================================
 const batteryPackValue =
     document.getElementById("batteryPack");
@@ -270,7 +268,6 @@ function appendServiceLog(element, line) {
     if (!element || !isServiceModeOpen()) return;
     if (element.textContent.startsWith("Brak odebranych") ||
         element.textContent.startsWith("Oczekiwanie na")) {
-
         element.textContent = "";
     }
     const rows = element.textContent ? element.textContent.split("\n") : [];
@@ -361,7 +358,6 @@ function formatTime(milliseconds) {
             totalMs % 1000
         );
     return (
-
         String(minutes).padStart(2, "0") +
         ":" +
         String(seconds).padStart(2, "0") +
@@ -452,7 +448,6 @@ class SensorTransport {
         }).catch(error => {
             console.error(
                 "V50: read task completion handler:",
-
                 error
             );
         });
@@ -543,7 +538,6 @@ class WebSerialTransport
                     value,
                     done
                 } =
-
                     await this.reader.read();
                 if (done) {
                     break;
@@ -634,7 +628,6 @@ class WebSerialTransport
                     error
                 );
             }
-
         }
         if (this.readTask) {
             try {
@@ -725,7 +718,6 @@ class WebUSBTransport
                     device.productId ===
                         USB_PRODUCT_ID
             );
-
         if (this.device) {
             addSerialLine(
                 "V46: WebUSB authorized device FOUND",
@@ -816,7 +808,6 @@ class WebUSBTransport
             }
             addSerialLine(
                 "V40 TEST: interfaces = " +
-
                 configuration.interfaces.length,
                 "serial-info"
             );
@@ -907,7 +898,6 @@ class WebUSBTransport
                             "class",
                         recipient:
                             "interface",
-
                         request:
                             0x20,
                         value:
@@ -998,7 +988,6 @@ class WebUSBTransport
                     new Uint8Array(
                         result.data.buffer,
                         result.data.byteOffset,
-
                         result.data.byteLength
                     );
                 this.v45RxChunkCount++;
@@ -1089,7 +1078,6 @@ class WebUSBTransport
             if (this.interface1Claimed) {
                 try {
                     await this.device
-
                         .releaseInterface(1);
                     addSerialLine(
                         "V40 TEST: interface 1 released",
@@ -1180,7 +1168,6 @@ class WebBluetoothTransport
         this.rxBuffer = "";
         this.decoder = new TextDecoder();
         if (!("bluetooth" in navigator)) {
-
             throw new Error(
                 "Web Bluetooth nie jest dostępny w tej przeglądarce."
             );
@@ -1271,7 +1258,6 @@ class WebBluetoothTransport
         addSerialLine(
             "BLE: command characteristic OK",
             "serial-info"
-
         );
         addSerialLine(
             "BLE: registering notification listener...",
@@ -1362,7 +1348,6 @@ class WebBluetoothTransport
                         "characteristicvaluechanged",
                         this.boundNotificationHandler
                     );
-
             }
             catch (error) {
                 console.warn(error);
@@ -1453,7 +1438,6 @@ function waitForSensorReady(
                         );
                     },
                     timeout
-
                 );
             window.__gazelaReadyWaiter =
                 () => {
@@ -1544,7 +1528,6 @@ function stopHeartbeatMonitor() {
         clearInterval(
             heartbeatMonitor
         );
-
         heartbeatMonitor = null;
     }
 }
@@ -1635,7 +1618,6 @@ function updateBatteryLevel(packVoltage) {
         }
     }
     percentage = Math.max(0, Math.min(100, percentage));
-
     // Kolor z histerezą, żeby wskazanie nie migotało przy granicach.
     // Wzrost: czerwony->pomarańczowy 25%, pomarańczowy->żółty 45%, żółty->zielony 65%.
     // Spadek: zielony->żółty 55%, żółty->pomarańczowy 35%, pomarańczowy->czerwony 15%.
@@ -1726,7 +1708,6 @@ function updateBatteryLevel(packVoltage) {
 function resetBatteryValues() {
     if (batteryPackValue) batteryPackValue.textContent = "--";
     if (batteryCell1Value) batteryCell1Value.textContent = "--";
-
     if (batteryCell2Value) batteryCell2Value.textContent = "--";
     if (batteryDifferenceValue) batteryDifferenceValue.textContent = "--";
     if (batteryStatusValue) {
@@ -1817,7 +1798,6 @@ async function handleSensorReady() {
             null;
         waiter();
     }
-
     // ----------------------------------------------------
     // AFTER MEASUREMENT
     // ----------------------------------------------------
@@ -1908,8 +1888,9 @@ function parseLiveData(line) {
     if (gxValue) gxValue.textContent = formatNumber(GX);
     if (gyValue) gyValue.textContent = formatNumber(GY);
     if (gzValue) gzValue.textContent = formatNumber(GZ);
-
     if (angleyValue) angleyValue.textContent = formatNumber(AngleY, 1);
+    // V55: read-only graphical preview, no change to FIFO/BLE protocol.
+    liveWaveReceiveSample({AX, AY, AZ, GX, GY, GZ});
     // Feed the manual gesture recorder from the existing LIVE stream.
     // This is local browser-side processing only; no Arduino command is sent.
     gestureReceiveSample({
@@ -1999,7 +1980,6 @@ function processSerialLine(line, source, messageType) {
             );
         }
         // V40:
-
         // HEARTBEAT is the current USB readiness signal.
         // V39 set sensorReady=true but did not enable START.
         if (startButton) {
@@ -2090,7 +2070,6 @@ function processSerialLine(line, source, messageType) {
                 true;
         }
         return;
-
     }
     // ====================================================
     // LIVE START
@@ -2181,7 +2160,6 @@ function processSerialLine(line, source, messageType) {
     // ====================================================
     // PREPARE
     // ====================================================
-
     if (
         line ===
         "INFO,PREPARE"
@@ -2272,7 +2250,6 @@ function processSerialLine(line, source, messageType) {
     // CSV HEADER
     // ====================================================
     if (
-
         line.startsWith(
             "MOVEMENT,TIME_ms"
         )
@@ -2363,7 +2340,6 @@ function processSerialLine(line, source, messageType) {
                     formatNumber(GY);
             }
             if (gzValue) {
-
                 gzValue.textContent =
                     formatNumber(GZ);
             }
@@ -2454,7 +2430,6 @@ async function startLiveMode() {
 }
 // ========================================================
 // V50 — UNEXPECTED TRANSPORT END RECOVERY
-
 // ========================================================
 async function handleUnexpectedTransportEnd(transport, reason, kind) {
     const actualKind = kind || (transport === bleTransport ? "ble" : transport === usbTransport ? "usb" : null);
@@ -2545,7 +2520,6 @@ async function startMeasurement() {
         setStatus(
             "Training requires BLE",
             "error"
-
         );
         if (measurementStatus) {
             measurementStatus.textContent =
@@ -2636,7 +2610,6 @@ async function startMeasurement() {
                 "Unable to start measurement.";
             measurementStatus.className =
                 "measurement-status";
-
         }
         if (startButton) {
             startButton.disabled =
@@ -2727,7 +2700,6 @@ async function stopMeasurement() {
             startButton.disabled =
                 true;
         }
-
         if (stopButton) {
             stopButton.disabled =
                 true;
@@ -2818,7 +2790,6 @@ if (serviceModeToggle && serviceModeContent) {
         if (description) description.textContent = "Moduły diagnostyczne są dostępne. Połącz USB, aby odczytać dane serwisowe.";
         if (serviceConnectionStatus) serviceConnectionStatus.textContent = bleTransport ? "BLE USER MODE działa. USB można podłączyć równolegle jako diagnostykę." : "SERVICE MODE aktywny. Naciśnij CONNECT USB.";
     });
-
 }
 if (connectButton) connectButton.addEventListener("click", async () => { selectBLETransport(); await connectSensor("ble"); });
 if (disconnectButton) disconnectButton.addEventListener("click", () => disconnectSensor("ble"));
@@ -2909,7 +2880,6 @@ function gestureLoadReference() {
     const raw = localStorage.getItem(GESTURE_REFERENCE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
-
     if (!parsed || !Array.isArray(parsed.samples) || parsed.samples.length < 2) {
       return null;
     }
@@ -3000,7 +2970,6 @@ function gestureStopRecording() {
       id: Date.now(),
       count: gestureCompletedRecording.length,
       duration,
-
       label: "Gesture " + (gestureHistoryItems.length + 1)
     });
     gestureHistoryItems = gestureHistoryItems.slice(0, 10);
@@ -3091,7 +3060,6 @@ function gestureCompare() {
 }
 function gestureClearCurrent() {
   if (gestureRecording) return;
-
   gestureCurrentBuffer = [];
   gestureCompletedRecording = null;
   if (gestureElements.score) gestureElements.score.textContent = "—";
@@ -3182,7 +3150,6 @@ function gestureDrawCharts(samples) {
 }
 if (gestureElements.record) gestureElements.record.addEventListener("click", gestureStartRecording);
 if (gestureElements.stop) gestureElements.stop.addEventListener("click", gestureStopRecording);
-
 if (gestureElements.save) gestureElements.save.addEventListener("click", gestureSaveReference);
 if (gestureElements.compare) gestureElements.compare.addEventListener("click", gestureCompare);
 if (gestureElements.clear) gestureElements.clear.addEventListener("click", gestureClearCurrent);
@@ -3273,7 +3240,6 @@ const CONTACT_TRIAL_TRUTH = {
 function contactViewBounds(trial) {
     const count = trial?.samples?.length || 400;
     const size = Math.max(20, Math.min(count, contactSession.zoomSize));
-
     const start = Math.max(0, Math.min(count-size, contactSession.viewStart));
     return {start, end:start+size-1, size, count};
 }
@@ -3287,7 +3253,7 @@ function contactSyncZoomUI() {
         contactUI.panRange.max=String(bounds.count-bounds.size);
         contactUI.panRange.value=String(bounds.start);
     }
-    if(contactUI.zoomText) contactUI.zoomText.textContent=`${(bounds.start/100).toFixed(2)}–${(bounds.end/100).toFixed(2)} s · ${bounds.size} próbek · przybliżenie ${(bounds.count/bounds.size).toFixed(1)}×`;
+    if(contactUI.zoomText) contactUI.zoomText.textContent=`${(bounds.start/100).toFixed(2)}–${(bounds.end/100).toFixed(2)} s • ${bounds.size} próbek • przybliżenie ${(bounds.count/bounds.size).toFixed(1)}×`;
 }
 function contactSetZoom(nextSize, newStart=null) {
     const trial=contactSelectedTrial();if(!trial)return;
@@ -3364,7 +3330,6 @@ function contactRefresh() {
     for (const button of [contactUI.markTrue, contactUI.markNegative, contactUI.markUncertain]) {
         if (button) button.disabled = !canMark;
     }
-
     contactSyncZoomUI();
     contactRenderTruth();
     contactRenderReport();
@@ -3455,7 +3420,6 @@ async function contactCancel() {
     contactRefresh();
     if (bleTransport) try { await bleTransport.send("X"); } catch(e) { console.warn("CAP cancel",e); }
 }
-
 function contactDisconnected() {
     if (contactIsBusy()) {
         // disconnectSensor() may still hold the stale transport object.
@@ -3546,7 +3510,6 @@ function contactReceiveDataPacket(event) {
     contactCapture.retries = 0;
     if (index%20 === 0 || contactCapture.expected === contactCapture.total) contactRefresh();
     if (contactCapture.expected === contactCapture.total) {
-
         contactFinishTrial();
         return;
     }
@@ -3637,7 +3600,6 @@ function contactCanvasPlot(canvas, samples, channels) {
         for(let index=start;index<=end;index++){
             const x=left+(right-left)*(index-start)/(size-1);
             const y=bottom-(samples[index][channels[k]]-min)/span*(bottom-top);
-
             if(index===start)ctx.moveTo(x,y);else ctx.lineTo(x,y);
         }
         ctx.stroke();ctx.fillStyle=colors[k];ctx.fillText(channels[k],left+k*51,top+11);
@@ -3711,7 +3673,7 @@ function contactRenderMarkers() {
     for (const marker of trial.markers) {
         const row=document.createElement("div");row.className="contact-marker-row";
         const label=document.createElement("span");
-        label.textContent=`#${trial.id} · ${marker.time_ms} ms · SEQ ${marker.sequence} · ${CONTACT_LABELS[marker.label]}`;
+        label.textContent=`#${trial.id} • ${marker.time_ms} ms • SEQ ${marker.sequence} • ${CONTACT_LABELS[marker.label]}`;
         const remove=document.createElement("button");remove.className="secondary";
         remove.type="button";remove.textContent="Usuń";
         remove.disabled=contactIsBusy();
@@ -3728,7 +3690,6 @@ function contactRenderReport() {
     const grid=document.createElement("div");grid.className="contact-report-grid";
     const metrics=[
         ["Prób ukończonych",st.trials],["Próbek zweryfikowanych",st.samples],
-
         ["Kontakty oznaczone w punktach",st.ball],["Próby: był kontakt (bez czasu)",st.confirmedTrials],
         ["Próby: brak kontaktu",st.excludedTrials],["Próby: niepewne",st.uncertainTrials],
         ["Próby: nieocenione",st.unreviewedTrials],["Nie kontakt piłki (punkty)",st.notBall],
@@ -3819,7 +3780,6 @@ function contactBuildZip(files) {
     return new Blob([...parts,...central,end],{type:"application/zip"});
 }
 function contactExport() {
-
     if(contactIsBusy() || !contactSession.trials.length)return;
     const stats=contactStats();
     const meta={
@@ -3903,3 +3863,136 @@ if(contactUI.markUncertain)contactUI.markUncertain.addEventListener("click",()=>
 window.addEventListener("resize",()=>contactRenderTrial());
 contactRenderTrial();
 contactRefresh();
+
+// ========================================================
+// V55 LIVE SENSOR CHARTS - UI ONLY
+// Uses existing validated LIVE frames. No sensor or transport changes.
+// ========================================================
+const liveWaveAccCanvas = document.getElementById("liveWaveAcc");
+const liveWaveGyroCanvas = document.getElementById("liveWaveGyro");
+const liveWavePauseButton = document.getElementById("liveWavePause");
+const liveWaveClearButton = document.getElementById("liveWaveClear");
+const liveWaveState = document.getElementById("liveWaveState");
+const LIVE_WAVE_WINDOW_MS = 8000;
+const LIVE_WAVE_MAX_POINTS = 650;
+const LIVE_WAVE_FRAME_INTERVAL_MS = 90;
+const liveWaveSamples = [];
+let liveWavePaused = false;
+let liveWaveLastRender = 0;
+let liveWavePendingFrame = false;
+let liveWaveLastSampleMs = null;
+
+function liveWaveReceiveSample(values) {
+    if (!liveWaveAccCanvas || !liveWaveGyroCanvas || liveWavePaused) return;
+    const now = performance.now();
+    liveWaveLastSampleMs = now;
+    liveWaveSamples.push({ t: now, ...values });
+    const cutoff = now - LIVE_WAVE_WINDOW_MS;
+    while (liveWaveSamples.length && liveWaveSamples[0].t < cutoff) liveWaveSamples.shift();
+    if (liveWaveSamples.length > LIVE_WAVE_MAX_POINTS) {
+        liveWaveSamples.splice(0, liveWaveSamples.length - LIVE_WAVE_MAX_POINTS);
+    }
+    if (liveWaveState) liveWaveState.textContent = "LIVE • " + liveWaveSamples.length + " ramek";
+    if (!liveWavePendingFrame && now - liveWaveLastRender >= LIVE_WAVE_FRAME_INTERVAL_MS) {
+        liveWavePendingFrame = true;
+        requestAnimationFrame(() => {
+            liveWavePendingFrame = false;
+            liveWaveLastRender = performance.now();
+            liveWaveDraw();
+        });
+    }
+}
+
+function liveWaveDrawCanvas(canvas, channels, endTime) {
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const width = Math.max(320, Math.round(rect.width || 600));
+    const height = 235;
+    const dpr = Math.min(2.5, window.devicePixelRatio || 1);
+    const pixelWidth = Math.round(width * dpr);
+    const pixelHeight = Math.round(height * dpr);
+    if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
+        canvas.width = pixelWidth;
+        canvas.height = pixelHeight;
+    }
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, width, height);
+    const l = 53, r = 16, top = 15, bottom = height - 27;
+    const plotWidth = Math.max(1, width - l - r);
+    const plotHeight = bottom - top;
+    const cutoff = endTime - LIVE_WAVE_WINDOW_MS;
+    const visible = liveWaveSamples.filter(s => s.t >= cutoff && s.t <= endTime);
+    let minVal = 0, maxVal = 0;
+    for (const sample of visible) for (const ch of channels) {
+        minVal = Math.min(minVal, sample[ch]);
+        maxVal = Math.max(maxVal, sample[ch]);
+    }
+    const padding = Math.max((maxVal-minVal)*0.12, channels[0].startsWith("A") ? 0.12 : 3);
+    minVal -= padding; maxVal += padding;
+    const yAt = v => bottom - (v-minVal)/(maxVal-minVal)*plotHeight;
+    const xAt = t => l + (t-cutoff)/LIVE_WAVE_WINDOW_MS*plotWidth;
+    ctx.font = "11px Arial, sans-serif";
+    ctx.textAlign = "right";
+    ctx.strokeStyle = "#e2e8f0";
+    ctx.fillStyle = "#64748b";
+    ctx.lineWidth = 1;
+    for(let j=0; j<=4; j++) {
+        const frac=j/4, y=top+frac*plotHeight;
+        ctx.beginPath(); ctx.moveTo(l,y); ctx.lineTo(width-r,y); ctx.stroke();
+        ctx.fillText((maxVal-frac*(maxVal-minVal)).toFixed(channels[0].startsWith("A") ? 1 : 0),l-7,y+4);
+    }
+    ctx.textAlign="center";
+    for(let i=0; i<=4; i++) {
+        const x=l+i*plotWidth/4;
+        ctx.strokeStyle="#f1f5f9";
+        ctx.beginPath(); ctx.moveTo(x,top); ctx.lineTo(x,bottom); ctx.stroke();
+        ctx.fillStyle="#64748b";
+        ctx.fillText((-8+i*2)+" s",x,height-8);
+    }
+    if (minVal<=0 && maxVal>=0) {
+        ctx.strokeStyle="#94a3b8";
+        ctx.setLineDash([4,4]);
+        ctx.beginPath(); ctx.moveTo(l,yAt(0)); ctx.lineTo(width-r,yAt(0)); ctx.stroke();
+        ctx.setLineDash([]);
+    }
+    const colors=["#2563eb","#16a34a","#dc2626"];
+    channels.forEach((channel,i)=> {
+        ctx.beginPath(); ctx.strokeStyle=colors[i]; ctx.lineWidth=1.8;
+        visible.forEach((s,j)=> { const x=xAt(s.t), y=yAt(s[channel]); if(j===0)ctx.moveTo(x,y); else ctx.lineTo(x,y); });
+        if (visible.length>1) ctx.stroke();
+        if (visible.length) {
+            const last=visible[visible.length-1];
+            ctx.beginPath();ctx.arc(xAt(last.t),yAt(last[channel]),3.4,0,Math.PI*2);
+            ctx.fillStyle=colors[i];ctx.fill();
+        }
+    });
+    if (!visible.length) {
+        ctx.textAlign="center";ctx.fillStyle="#94a3b8";ctx.font="13px Arial, sans-serif";
+        ctx.fillText("Oczekiwanie na ramki LIVE",l+plotWidth/2,top+plotHeight/2);
+    }
+}
+function liveWaveDraw() {
+    if (!liveWaveAccCanvas || !liveWaveGyroCanvas) return;
+    const endTime = liveWaveSamples.length ? liveWaveSamples[liveWaveSamples.length-1].t : performance.now();
+    liveWaveDrawCanvas(liveWaveAccCanvas,["AX","AY","AZ"],endTime);
+    liveWaveDrawCanvas(liveWaveGyroCanvas,["GX","GY","GZ"],endTime);
+}
+if (liveWavePauseButton) liveWavePauseButton.addEventListener("click",()=>{
+    liveWavePaused = !liveWavePaused;
+    liveWavePauseButton.textContent = liveWavePaused ? "Wznów wykresy" : "Wstrzymaj wykresy";
+    if (liveWaveState) liveWaveState.textContent = liveWavePaused ? "Podgląd wstrzymany" : "Oczekiwanie na LIVE";
+});
+if (liveWaveClearButton) liveWaveClearButton.addEventListener("click",()=>{
+    liveWaveSamples.length=0;
+    liveWaveLastSampleMs=null;
+    if (liveWaveState) liveWaveState.textContent="Oczekiwanie na LIVE";
+    liveWaveDraw();
+});
+window.addEventListener("resize",()=>liveWaveDraw());
+liveWaveDraw();
+// ========================================================
+// END V55 LIVE SENSOR CHARTS
+// ========================================================
+
