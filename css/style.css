@@ -3475,3 +3475,24 @@ footer {
 .contact-trial-truth button[aria-pressed="true"] {outline:3px solid #0f766e;outline-offset:2px}
 .contact-point-heading {font-size:14px;margin:18px 0 10px;color:#334155}
 @media(max-width:700px) {.contact-zoom-buttons button {flex:1 1 100%}}
+
+/* =====================================================
+   V55 LIVE SENSOR CHARTS - added visual elements only
+   ===================================================== */
+.live-wave-panel { margin-top: 26px; padding-top: 20px; border-top: 1px solid #e2e8f0; }
+.live-wave-heading { display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:14px; margin-bottom:16px; }
+.live-wave-heading h3 { margin:0 0 6px; font-size:17px; }
+.live-wave-heading p { margin:0; font-size:13px; line-height:1.5; color:#64748b; }
+.live-wave-buttons { display:flex; align-items:center; flex-wrap:wrap; gap:8px; }
+.live-wave-buttons button { padding:9px 12px; font-size:12px; }
+.live-wave-state { font-size:12px; font-weight:600; color:#475569; }
+.live-wave-grid { display:grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap:14px; }
+.live-wave-chart { min-width:0; background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:12px; }
+.live-wave-chart-top { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:8px; font-size:12px; margin-bottom:8px; }
+.live-wave-chart-top span { color:#64748b; }
+.live-wave-chart canvas { display:block; width:100%; height:235px; }
+.live-wave-legend { display:flex; gap:18px; justify-content:center; font-size:12px; font-weight:700; padding-top:7px; }
+.live-wave-x { color:#2563eb; } .live-wave-y { color:#16a34a; } .live-wave-z { color:#dc2626; }
+.live-wave-note { color:#64748b; font-size:12px; line-height:1.5; margin:12px 0 0; }
+@media(max-width:780px) { .live-wave-grid { grid-template-columns:1fr; } }
+
