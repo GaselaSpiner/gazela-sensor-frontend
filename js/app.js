@@ -1,4 +1,4 @@
-// app.js — GAZELA SENSOR V53 CONTACT RECORDER V2 SESSION + V51 BLE/USB
+// app.js — GAZELA SENSOR V54 CONTACT RECORDER V3 ZOOM + TRIAL TRUTH + V51 BLE/USB
 //
 // V48 ARCHITECTURE:
 // 1. One application file: app.js. No additional JavaScript modules.
@@ -88,6 +88,7 @@ let measuring = false;
 let currentMovement = 0;
 let sessionStartTime = null;
 let sessionEndTime = null;
+
 let sampleCount = 0;
 // ========================================================
 // LIVE SEQUENCE TRACKING (V48)
@@ -178,6 +179,7 @@ const serialMonitor =
 // BATTERY UI
 // ========================================================
 // Firmware format: BAT,cell1,pack,cell2
+
 // ========================================================
 const batteryPackValue =
     document.getElementById("batteryPack");
@@ -268,6 +270,7 @@ function appendServiceLog(element, line) {
     if (!element || !isServiceModeOpen()) return;
     if (element.textContent.startsWith("Brak odebranych") ||
         element.textContent.startsWith("Oczekiwanie na")) {
+
         element.textContent = "";
     }
     const rows = element.textContent ? element.textContent.split("\n") : [];
@@ -358,6 +361,7 @@ function formatTime(milliseconds) {
             totalMs % 1000
         );
     return (
+
         String(minutes).padStart(2, "0") +
         ":" +
         String(seconds).padStart(2, "0") +
@@ -448,6 +452,7 @@ class SensorTransport {
         }).catch(error => {
             console.error(
                 "V50: read task completion handler:",
+
                 error
             );
         });
@@ -538,6 +543,7 @@ class WebSerialTransport
                     value,
                     done
                 } =
+
                     await this.reader.read();
                 if (done) {
                     break;
@@ -628,6 +634,7 @@ class WebSerialTransport
                     error
                 );
             }
+
         }
         if (this.readTask) {
             try {
@@ -718,6 +725,7 @@ class WebUSBTransport
                     device.productId ===
                         USB_PRODUCT_ID
             );
+
         if (this.device) {
             addSerialLine(
                 "V46: WebUSB authorized device FOUND",
@@ -808,6 +816,7 @@ class WebUSBTransport
             }
             addSerialLine(
                 "V40 TEST: interfaces = " +
+
                 configuration.interfaces.length,
                 "serial-info"
             );
@@ -898,6 +907,7 @@ class WebUSBTransport
                             "class",
                         recipient:
                             "interface",
+
                         request:
                             0x20,
                         value:
@@ -988,6 +998,7 @@ class WebUSBTransport
                     new Uint8Array(
                         result.data.buffer,
                         result.data.byteOffset,
+
                         result.data.byteLength
                     );
                 this.v45RxChunkCount++;
@@ -1078,6 +1089,7 @@ class WebUSBTransport
             if (this.interface1Claimed) {
                 try {
                     await this.device
+
                         .releaseInterface(1);
                     addSerialLine(
                         "V40 TEST: interface 1 released",
@@ -1168,6 +1180,7 @@ class WebBluetoothTransport
         this.rxBuffer = "";
         this.decoder = new TextDecoder();
         if (!("bluetooth" in navigator)) {
+
             throw new Error(
                 "Web Bluetooth nie jest dostępny w tej przeglądarce."
             );
@@ -1258,6 +1271,7 @@ class WebBluetoothTransport
         addSerialLine(
             "BLE: command characteristic OK",
             "serial-info"
+
         );
         addSerialLine(
             "BLE: registering notification listener...",
@@ -1348,6 +1362,7 @@ class WebBluetoothTransport
                         "characteristicvaluechanged",
                         this.boundNotificationHandler
                     );
+
             }
             catch (error) {
                 console.warn(error);
@@ -1438,6 +1453,7 @@ function waitForSensorReady(
                         );
                     },
                     timeout
+
                 );
             window.__gazelaReadyWaiter =
                 () => {
@@ -1528,6 +1544,7 @@ function stopHeartbeatMonitor() {
         clearInterval(
             heartbeatMonitor
         );
+
         heartbeatMonitor = null;
     }
 }
@@ -1618,6 +1635,7 @@ function updateBatteryLevel(packVoltage) {
         }
     }
     percentage = Math.max(0, Math.min(100, percentage));
+
     // Kolor z histerezą, żeby wskazanie nie migotało przy granicach.
     // Wzrost: czerwony->pomarańczowy 25%, pomarańczowy->żółty 45%, żółty->zielony 65%.
     // Spadek: zielony->żółty 55%, żółty->pomarańczowy 35%, pomarańczowy->czerwony 15%.
@@ -1708,6 +1726,7 @@ function updateBatteryLevel(packVoltage) {
 function resetBatteryValues() {
     if (batteryPackValue) batteryPackValue.textContent = "--";
     if (batteryCell1Value) batteryCell1Value.textContent = "--";
+
     if (batteryCell2Value) batteryCell2Value.textContent = "--";
     if (batteryDifferenceValue) batteryDifferenceValue.textContent = "--";
     if (batteryStatusValue) {
@@ -1798,6 +1817,7 @@ async function handleSensorReady() {
             null;
         waiter();
     }
+
     // ----------------------------------------------------
     // AFTER MEASUREMENT
     // ----------------------------------------------------
@@ -1888,6 +1908,7 @@ function parseLiveData(line) {
     if (gxValue) gxValue.textContent = formatNumber(GX);
     if (gyValue) gyValue.textContent = formatNumber(GY);
     if (gzValue) gzValue.textContent = formatNumber(GZ);
+
     if (angleyValue) angleyValue.textContent = formatNumber(AngleY, 1);
     // Feed the manual gesture recorder from the existing LIVE stream.
     // This is local browser-side processing only; no Arduino command is sent.
@@ -1978,6 +1999,7 @@ function processSerialLine(line, source, messageType) {
             );
         }
         // V40:
+
         // HEARTBEAT is the current USB readiness signal.
         // V39 set sensorReady=true but did not enable START.
         if (startButton) {
@@ -2068,6 +2090,7 @@ function processSerialLine(line, source, messageType) {
                 true;
         }
         return;
+
     }
     // ====================================================
     // LIVE START
@@ -2158,6 +2181,7 @@ function processSerialLine(line, source, messageType) {
     // ====================================================
     // PREPARE
     // ====================================================
+
     if (
         line ===
         "INFO,PREPARE"
@@ -2248,6 +2272,7 @@ function processSerialLine(line, source, messageType) {
     // CSV HEADER
     // ====================================================
     if (
+
         line.startsWith(
             "MOVEMENT,TIME_ms"
         )
@@ -2338,6 +2363,7 @@ function processSerialLine(line, source, messageType) {
                     formatNumber(GY);
             }
             if (gzValue) {
+
                 gzValue.textContent =
                     formatNumber(GZ);
             }
@@ -2428,6 +2454,7 @@ async function startLiveMode() {
 }
 // ========================================================
 // V50 — UNEXPECTED TRANSPORT END RECOVERY
+
 // ========================================================
 async function handleUnexpectedTransportEnd(transport, reason, kind) {
     const actualKind = kind || (transport === bleTransport ? "ble" : transport === usbTransport ? "usb" : null);
@@ -2518,6 +2545,7 @@ async function startMeasurement() {
         setStatus(
             "Training requires BLE",
             "error"
+
         );
         if (measurementStatus) {
             measurementStatus.textContent =
@@ -2608,6 +2636,7 @@ async function startMeasurement() {
                 "Unable to start measurement.";
             measurementStatus.className =
                 "measurement-status";
+
         }
         if (startButton) {
             startButton.disabled =
@@ -2698,6 +2727,7 @@ async function stopMeasurement() {
             startButton.disabled =
                 true;
         }
+
         if (stopButton) {
             stopButton.disabled =
                 true;
@@ -2788,6 +2818,7 @@ if (serviceModeToggle && serviceModeContent) {
         if (description) description.textContent = "Moduły diagnostyczne są dostępne. Połącz USB, aby odczytać dane serwisowe.";
         if (serviceConnectionStatus) serviceConnectionStatus.textContent = bleTransport ? "BLE USER MODE działa. USB można podłączyć równolegle jako diagnostykę." : "SERVICE MODE aktywny. Naciśnij CONNECT USB.";
     });
+
 }
 if (connectButton) connectButton.addEventListener("click", async () => { selectBLETransport(); await connectSensor("ble"); });
 if (disconnectButton) disconnectButton.addEventListener("click", () => disconnectSensor("ble"));
@@ -2878,6 +2909,7 @@ function gestureLoadReference() {
     const raw = localStorage.getItem(GESTURE_REFERENCE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
+
     if (!parsed || !Array.isArray(parsed.samples) || parsed.samples.length < 2) {
       return null;
     }
@@ -2968,6 +3000,7 @@ function gestureStopRecording() {
       id: Date.now(),
       count: gestureCompletedRecording.length,
       duration,
+
       label: "Gesture " + (gestureHistoryItems.length + 1)
     });
     gestureHistoryItems = gestureHistoryItems.slice(0, 10);
@@ -3058,6 +3091,7 @@ function gestureCompare() {
 }
 function gestureClearCurrent() {
   if (gestureRecording) return;
+
   gestureCurrentBuffer = [];
   gestureCompletedRecording = null;
   if (gestureElements.score) gestureElements.score.textContent = "—";
@@ -3148,6 +3182,7 @@ function gestureDrawCharts(samples) {
 }
 if (gestureElements.record) gestureElements.record.addEventListener("click", gestureStartRecording);
 if (gestureElements.stop) gestureElements.stop.addEventListener("click", gestureStopRecording);
+
 if (gestureElements.save) gestureElements.save.addEventListener("click", gestureSaveReference);
 if (gestureElements.compare) gestureElements.compare.addEventListener("click", gestureCompare);
 if (gestureElements.clear) gestureElements.clear.addEventListener("click", gestureClearCurrent);
@@ -3201,6 +3236,17 @@ const contactUI = {
     markNegative: document.getElementById("contactMarkNegative"),
     markUncertain: document.getElementById("contactMarkUncertain"),
     markers: document.getElementById("contactMarkers"),
+    trialTruth: document.getElementById("contactTrialTruth"),
+    truthBall: document.getElementById("contactTruthBall"),
+    truthNoBall: document.getElementById("contactTruthNoBall"),
+    truthUncertain: document.getElementById("contactTruthUncertain"),
+    truthClear: document.getElementById("contactTruthClear"),
+    zoomRange: document.getElementById("contactZoomRange"),
+    zoomText: document.getElementById("contactZoomText"),
+    panRange: document.getElementById("contactPanRange"),
+    zoomIn: document.getElementById("contactZoomIn"),
+    zoomOut: document.getElementById("contactZoomOut"),
+    zoomReset: document.getElementById("contactZoomReset"),
     report: document.getElementById("contactReport")
 };
 const contactCapture = {
@@ -3213,11 +3259,60 @@ const contactCapture = {
 const contactSession = {
     active: false, startedAt: null, endedAt: null,
     id: null, trials: [], failures: [], selectedTrialId: null,
-    cursorIndex: null
+    cursorIndex: null, zoomSize: 400, viewStart: 0
 };
 const CONTACT_TYPES = {ball: "Uderzenia piłki", air: "Zamach bez kontaktu", hand: "Stuknięcie dłonią", other: "Inne / zakłócenie"};
 const CONTACT_LABELS = {ball: "Kontakt piłki", not_ball: "Nie kontakt piłki", uncertain: "Niepewne"};
 const CONTACT_MAX_TRIALS = 100;
+const CONTACT_TRIAL_TRUTH = {
+    unreviewed: "Nieoceniona",
+    ball_time_unknown: "Kontakt piłki był — chwila nieznana",
+    no_ball: "Nie było kontaktu piłki",
+    uncertain: "Nie jestem pewien/pewna"
+};
+function contactViewBounds(trial) {
+    const count = trial?.samples?.length || 400;
+    const size = Math.max(20, Math.min(count, contactSession.zoomSize));
+
+    const start = Math.max(0, Math.min(count-size, contactSession.viewStart));
+    return {start, end:start+size-1, size, count};
+}
+function contactSyncZoomUI() {
+    const trial=contactSelectedTrial(), bounds=contactViewBounds(trial);
+    const active=!!trial && !contactIsBusy();
+    for(const b of [contactUI.zoomIn,contactUI.zoomOut,contactUI.zoomReset]) if(b) b.disabled=!active;
+    if(contactUI.zoomRange){contactUI.zoomRange.disabled=!active;contactUI.zoomRange.value=String(bounds.size);}
+    if(contactUI.panRange){
+        contactUI.panRange.disabled=!active || bounds.size>=bounds.count;
+        contactUI.panRange.max=String(bounds.count-bounds.size);
+        contactUI.panRange.value=String(bounds.start);
+    }
+    if(contactUI.zoomText) contactUI.zoomText.textContent=`${(bounds.start/100).toFixed(2)}–${(bounds.end/100).toFixed(2)} s · ${bounds.size} próbek · przybliżenie ${(bounds.count/bounds.size).toFixed(1)}×`;
+}
+function contactSetZoom(nextSize, newStart=null) {
+    const trial=contactSelectedTrial();if(!trial)return;
+    const old=contactViewBounds(trial);
+    const size=Math.min(trial.samples.length,Math.max(20,Math.round(nextSize)));
+    const center=contactSession.cursorIndex!==null?contactSession.cursorIndex:old.start+(old.size-1)/2;
+    const start=newStart===null?Math.round(center-(size-1)/2):Math.round(newStart);
+    contactSession.zoomSize=size;
+    contactSession.viewStart=Math.max(0,Math.min(trial.samples.length-size,start));
+    contactRenderTrial();contactRefresh();
+}
+function contactSetTrialTruth(value) {
+    const trial=contactSelectedTrial();if(!trial || contactIsBusy())return;
+    trial.truth=value;trial.truthAt=new Date().toISOString();
+    // Important: does NOT insert a precise time marker or invent a sample index.
+    contactRenderTrial();contactRefresh();
+}
+function contactRenderTruth() {
+    const trial=contactSelectedTrial();
+    if(contactUI.trialTruth)contactUI.trialTruth.textContent=trial?`Ocena całej próby: ${CONTACT_TRIAL_TRUTH[trial.truth||"unreviewed"]}`:"Najpierw nagraj próbę.";
+    for(const [element,value] of [[contactUI.truthBall,"ball_time_unknown"],[contactUI.truthNoBall,"no_ball"],[contactUI.truthUncertain,"uncertain"],[contactUI.truthClear,"unreviewed"]]){
+        if(element){element.disabled=!trial || contactIsBusy();element.setAttribute("aria-pressed",String(!!trial && (trial.truth||"unreviewed")===value));}
+    }
+}
+
 
 function contactSetStatus(message) {
     if (contactUI.status) contactUI.status.textContent = message;
@@ -3235,6 +3330,10 @@ function contactStats() {
         trials: trials.length,
         samples: trials.reduce((n,t) => n + t.samples.length,0),
         ball: markers.filter(m => m.label === "ball").length,
+        confirmedTrials:trials.filter(t=>t.truth === "ball_time_unknown").length,
+        excludedTrials:trials.filter(t=>t.truth === "no_ball").length,
+        uncertainTrials:trials.filter(t=>t.truth === "uncertain").length,
+        unreviewedTrials:trials.filter(t=>!t.truth || t.truth === "unreviewed").length,
         notBall: markers.filter(m => m.label === "not_ball").length,
         uncertain: markers.filter(m => m.label === "uncertain").length,
         retries: trials.reduce((n,t) => n + t.retries,0),
@@ -3258,13 +3357,16 @@ function contactRefresh() {
     if (contactUI.integrity) contactUI.integrity.textContent = contactCapture.state === "done" ? "PASS" : contactCapture.state === "failed" ? "FAIL" : "—";
     if (contactUI.trialCount) contactUI.trialCount.textContent = `${st.trials} / ${st.trials}`;
     if (contactUI.sampleCount) contactUI.sampleCount.textContent = String(st.samples);
-    if (contactUI.confirmedCount) contactUI.confirmedCount.textContent = String(st.ball);
+    if (contactUI.confirmedCount) contactUI.confirmedCount.textContent = String(st.ball) + " punktów / " + String(st.confirmedTrials) + " prób";
     if (contactUI.sessionBadge) contactUI.sessionBadge.textContent = active ? "Sesja aktywna" : contactSession.startedAt ? "Sesja zakończona" : "Brak sesji";
     if (contactUI.trialSelect) contactUI.trialSelect.disabled = st.trials === 0 || busy;
     const canMark = !!trial && contactSession.cursorIndex !== null && !busy;
     for (const button of [contactUI.markTrue, contactUI.markNegative, contactUI.markUncertain]) {
         if (button) button.disabled = !canMark;
     }
+
+    contactSyncZoomUI();
+    contactRenderTruth();
     contactRenderReport();
 }
 function contactCRC16(bytes) {
@@ -3313,6 +3415,7 @@ function contactStartSession() {
     contactSession.failures = [];
     contactSession.selectedTrialId = null;
     contactSession.cursorIndex = null;
+    contactSession.zoomSize = 400;contactSession.viewStart = 0;
     contactCapture.state = "idle";
     contactCapture.data = [];
     contactSetStatus("Sesja rozpoczęta. Wybierz rodzaj próby, nagraj 4 sekundy i oznacz kontakty na wykresach.");
@@ -3352,6 +3455,7 @@ async function contactCancel() {
     contactRefresh();
     if (bleTransport) try { await bleTransport.send("X"); } catch(e) { console.warn("CAP cancel",e); }
 }
+
 function contactDisconnected() {
     if (contactIsBusy()) {
         // disconnectSensor() may still hold the stale transport object.
@@ -3442,6 +3546,7 @@ function contactReceiveDataPacket(event) {
     contactCapture.retries = 0;
     if (index%20 === 0 || contactCapture.expected === contactCapture.total) contactRefresh();
     if (contactCapture.expected === contactCapture.total) {
+
         contactFinishTrial();
         return;
     }
@@ -3462,11 +3567,11 @@ function contactFinishTrial() {
         firstSeq, lastSeq, firstTimeUs:contactCapture.firstTimeUs,
         samplePeriodUs:10000, count:samples.length, integrity:"PASS",
         retries:contactCapture.retryTotal, invalidPackets:contactCapture.invalidPacketCount,
-        samples, markers:[]
+        samples, markers:[], truth:"unreviewed", truthAt:null
     };
     contactSession.trials.push(trial);
     contactSession.selectedTrialId = trial.id;
-    contactSession.cursorIndex = null;
+    contactSession.cursorIndex = null;contactSession.zoomSize=400;contactSession.viewStart=0;
     contactCapture.state = "finalizing";
     contactSetStatus("Próba #"+trial.id+" zapisana: 400/400, CRC16 i sekwencje PASS. Potwierdzanie finalizacji BLE…");
     contactRenderTrialSelect();
@@ -3494,58 +3599,62 @@ function contactCanvasPlot(canvas, samples, channels) {
     if (!canvas) return;
     const rect=canvas.getBoundingClientRect();
     const width=Math.max(260,Math.floor(rect.width || 620));
-    const height=210;
+    const height=250;
     const pixelRatio=Math.min(2,window.devicePixelRatio||1);
     canvas.width=Math.round(width*pixelRatio);
     canvas.height=Math.round(height*pixelRatio);
-    const ctx=canvas.getContext("2d");
-    if (!ctx) return;
+    const ctx=canvas.getContext("2d");if(!ctx)return;
     ctx.setTransform(pixelRatio,0,0,pixelRatio,0,0);
     ctx.clearRect(0,0,width,height);
-    const left=43,right=width-12,top=19,bottom=height-28;
-    ctx.lineWidth=1;
-    ctx.strokeStyle="#e2e8f0";
-    for(let i=0;i<=4;i++) {
+    const left=49,right=width-13,top=18,bottom=height-36;
+    ctx.strokeStyle="#e2e8f0";ctx.lineWidth=1;
+    for(let i=0;i<=4;i++){
         const y=top+(bottom-top)*i/4;
         ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(right,y);ctx.stroke();
     }
-    ctx.fillStyle="#64748b";ctx.font="11px Arial";
-    if (!samples || samples.length<2) {
-        ctx.fillText("Brak pobranych próbek",left+12,height/2);return;
-    }
-    const values=channels.flatMap(ch=>samples.map(s=>s[ch]));
-    let min=Math.min(...values),max=Math.max(...values);
-    const extra=Math.max(0.01,(max-min)*0.08);
-    min-=extra;max+=extra;
-    const span=Math.max(0.01,max-min);
-    ctx.fillText(max.toFixed(1),3,top+4);
-    ctx.fillText(min.toFixed(1),3,bottom);
-    const colors=["#2563eb","#16a34a","#dc2626"];
-    for(let k=0;k<channels.length;k++) {
-        ctx.strokeStyle=colors[k];ctx.lineWidth=1.3;ctx.beginPath();
-        for(let i=0;i<samples.length;i++) {
-            const x=left+(right-left)*i/(samples.length-1);
-            const y=bottom-(samples[i][channels[k]]-min)/span*(bottom-top);
-            if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
-        }
-        ctx.stroke();
-        ctx.fillStyle=colors[k];ctx.fillText(channels[k],left+k*49,bottom+18);
-    }
+    ctx.font="11px Arial";ctx.fillStyle="#64748b";
+    if(!samples || samples.length<2){ctx.fillText("Brak pobranych próbek",left+12,height/2);return;}
     const trial=contactSelectedTrial();
-    if (trial) {
-        for(const m of trial.markers) {
-            const x=left+(right-left)*m.index/(samples.length-1);
+    const {start,end,size}=contactViewBounds(trial);
+    const visible=samples.slice(start,end+1);
+    const vals=channels.flatMap(ch=>visible.map(x=>x[ch]).filter(Number.isFinite));
+    let min=Math.min(...vals),max=Math.max(...vals);
+    const extra=Math.max(0.01,(max-min)*0.08);min-=extra;max+=extra;
+    const span=Math.max(0.01,max-min);
+    ctx.fillText(max.toFixed(2),2,top+4);ctx.fillText(min.toFixed(2),2,bottom);
+    // Draw axis and waveforms only for visible portion, maintaining full sample fidelity.
+    const tickCount=4;
+    for(let i=0;i<=tickCount;i++){
+        const index=start+(end-start)*i/tickCount;
+        const x=left+(right-left)*i/tickCount;
+        const label=(index/100).toFixed(2)+"s";
+        ctx.fillStyle="#64748b";
+        ctx.fillText(label,Math.max(0,Math.min(width-39,x-18)),bottom+30);
+    }
+    const colors=["#2563eb","#16a34a","#dc2626"];
+    for(let k=0;k<channels.length;k++){
+        ctx.strokeStyle=colors[k];ctx.lineWidth=1.45;ctx.beginPath();
+        for(let index=start;index<=end;index++){
+            const x=left+(right-left)*(index-start)/(size-1);
+            const y=bottom-(samples[index][channels[k]]-min)/span*(bottom-top);
+
+            if(index===start)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+        }
+        ctx.stroke();ctx.fillStyle=colors[k];ctx.fillText(channels[k],left+k*51,top+11);
+    }
+    if(trial){
+        for(const m of trial.markers){
+            if(m.index<start || m.index>end)continue;
+            const x=left+(right-left)*(m.index-start)/(size-1);
             ctx.strokeStyle=m.label==="ball"?"#059669":m.label==="not_ball"?"#e11d48":"#d97706";
             ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,top);ctx.lineTo(x,bottom);ctx.stroke();
         }
     }
-    if(contactSession.cursorIndex!==null) {
-        const x=left+(right-left)*contactSession.cursorIndex/(samples.length-1);
+    if(contactSession.cursorIndex!==null && contactSession.cursorIndex>=start && contactSession.cursorIndex<=end){
+        const x=left+(right-left)*(contactSession.cursorIndex-start)/(size-1);
         ctx.strokeStyle="#111827";ctx.lineWidth=1;ctx.setLineDash([4,3]);
         ctx.beginPath();ctx.moveTo(x,top);ctx.lineTo(x,bottom);ctx.stroke();ctx.setLineDash([]);
     }
-    ctx.fillStyle="#64748b";ctx.fillText("0 s",left,bottom+30);
-    ctx.fillText("3.99 s",right-40,bottom+30);
 }
 function contactRenderTrial() {
     const trial=contactSelectedTrial();
@@ -3560,6 +3669,8 @@ function contactRenderTrial() {
         }
     }
     contactRenderMarkers();
+    contactSyncZoomUI();
+    contactRenderTruth();
 }
 function contactChooseSample(event) {
     const trial=contactSelectedTrial();if (!trial || contactIsBusy()) return;
@@ -3568,7 +3679,8 @@ function contactChooseSample(event) {
     const width=Math.max(260,Math.floor(rect.width||620));
     const left=43,right=width-12;
     const px=event.clientX-rect.left;
-    const index=Math.round(Math.max(0,Math.min(1,(px-left)/(right-left)))*399);
+    const {start,size}=contactViewBounds(trial);
+    const index=start+Math.round(Math.max(0,Math.min(1,(px-left)/(right-left)))*(size-1));
     contactSession.cursorIndex=index;
     contactRenderTrial();contactRefresh();
 }
@@ -3599,7 +3711,7 @@ function contactRenderMarkers() {
     for (const marker of trial.markers) {
         const row=document.createElement("div");row.className="contact-marker-row";
         const label=document.createElement("span");
-        label.textContent=`#${trial.id} • ${marker.time_ms} ms • SEQ ${marker.sequence} • ${CONTACT_LABELS[marker.label]}`;
+        label.textContent=`#${trial.id} · ${marker.time_ms} ms · SEQ ${marker.sequence} · ${CONTACT_LABELS[marker.label]}`;
         const remove=document.createElement("button");remove.className="secondary";
         remove.type="button";remove.textContent="Usuń";
         remove.disabled=contactIsBusy();
@@ -3616,7 +3728,10 @@ function contactRenderReport() {
     const grid=document.createElement("div");grid.className="contact-report-grid";
     const metrics=[
         ["Prób ukończonych",st.trials],["Próbek zweryfikowanych",st.samples],
-        ["Kontakty oznaczone",st.ball],["Nie kontakt piłki",st.notBall],
+
+        ["Kontakty oznaczone w punktach",st.ball],["Próby: był kontakt (bez czasu)",st.confirmedTrials],
+        ["Próby: brak kontaktu",st.excludedTrials],["Próby: niepewne",st.uncertainTrials],
+        ["Próby: nieocenione",st.unreviewedTrials],["Nie kontakt piłki (punkty)",st.notBall],
         ["Niepewne znaczniki",st.uncertain],["Ponowienia pakietów BLE",st.retries],
         ["Nieudane próby",st.errors]
     ];
@@ -3638,11 +3753,11 @@ function contactCSVCell(value) {
 function contactCSV(rows) {return rows.map(r=>r.map(contactCSVCell).join(",")).join("\r\n")+"\r\n";}
 function contactTrialCSV(trial) {
     const marks=new Map(trial.markers.map(m=>[m.index,m.label]));
-    const rows=[["session_id","trial_id","trial_type","index","sequence","sensor_time_us_nominal","time_ms","AX_g","AY_g","AZ_g","G_g","GX_dps","GY_dps","GZ_dps","gyro_magnitude_dps","reference_label"]];
+    const rows=[["session_id","trial_id","trial_type","index","sequence","sensor_time_us_nominal","time_ms","AX_g","AY_g","AZ_g","G_g","GX_dps","GY_dps","GZ_dps","gyro_magnitude_dps","reference_label","trial_truth"]];
     for(const s of trial.samples) rows.push([
         contactSession.id,trial.id,trial.type,s.index,s.sequence,s.sensor_time_us_nominal,s.time_ms,
         s.AX,s.AY,s.AZ,Math.hypot(s.AX,s.AY,s.AZ).toFixed(5),
-        s.GX,s.GY,s.GZ,Math.hypot(s.GX,s.GY,s.GZ).toFixed(3),marks.get(s.index)||""
+        s.GX,s.GY,s.GZ,Math.hypot(s.GX,s.GY,s.GZ).toFixed(3),marks.get(s.index)||"",trial.truth||"unreviewed"
     ]);
     return contactCSV(rows);
 }
@@ -3704,33 +3819,36 @@ function contactBuildZip(files) {
     return new Blob([...parts,...central,end],{type:"application/zip"});
 }
 function contactExport() {
+
     if(contactIsBusy() || !contactSession.trials.length)return;
     const stats=contactStats();
     const meta={
-        schema:"gazela.contact.session.v2",sessionId:contactSession.id,
+        schema:"gazela.contact.session.v3",sessionId:contactSession.id,
         startedAt:contactSession.startedAt,endedAt:contactSession.endedAt,
         exportedAt:new Date().toISOString(),
-        firmware:"V28.1 (expected; not remotely attested)",frontend:"V53",
+        firmware:"V28.1 (expected; not remotely attested)",frontend:"V54",
         sensor:"BMI270 ACC+GYRO",sampleRateNominalHz:100,samplePeriodUsNominal:10000,
         captureMode:"independent 400-sample trials; gaps between trials are NOT recorded",
         quantization:{acc_g:0.001,gyro_dps:0.1},
         detector:{implemented:false,precision:null,recall:null,falsePositives:null,falseNegatives:null},
-        labels:{authority:"user_manual",timing:"selected on waveform, nominal 10ms grid"},
+        labels:{authority:"user_manual",timing:"point markers optional, trial-level truth may have no timestamp",trialTruthValues:Object.keys(CONTACT_TRIAL_TRUTH)},
         stats,trials:contactSession.trials.map(t=>({id:t.id,type:t.type,capturedAt:t.capturedAt,
             completedAt:t.completedAt,firstSeq:t.firstSeq,lastSeq:t.lastSeq,
             firstTimeUs:t.firstTimeUs,count:t.samples.length,integrity:t.integrity,
-            retries:t.retries,invalidPackets:t.invalidPackets,markers:t.markers})),
+            retries:t.retries,invalidPackets:t.invalidPackets,truth:t.truth||"unreviewed",truthAt:t.truthAt,markers:t.markers})),
         failures:contactSession.failures
     };
     const rows=[["session_id","trial_id","trial_type","index","sequence","time_ms","label","source","updated_at"]];
-    for(const t of contactSession.trials)for(const m of t.markers) rows.push([
-        contactSession.id,t.id,t.type,m.index,m.sequence,m.time_ms,m.label,m.source,m.updatedAt
-    ]);
+    for(const t of contactSession.trials) {
+        // Trial-level assessment has no point, sequence, or timestamp by design.
+        if(t.truth && t.truth!=="unreviewed") rows.push([contactSession.id,t.id,t.type,"","","",t.truth,"human_trial",t.truthAt||""]);
+        for(const m of t.markers) rows.push([contactSession.id,t.id,t.type,m.index,m.sequence,m.time_ms,m.label,m.source,m.updatedAt]);
+    }
     const report=[
-        "GAZELA SPINER SENSOR — CONTACT RECORDER V2",`Session: ${contactSession.id}`,
+        "GAZELA SPINER SENSOR — CONTACT RECORDER V3",`Session: ${contactSession.id}`,
         `Started: ${contactSession.startedAt}`,`Ended: ${contactSession.endedAt||"still active"}`,
         `Trials completed: ${stats.trials}`,`CRC/SEQ-verified samples: ${stats.samples}`,
-        `Manually labeled ball contacts: ${stats.ball}`,`Manually marked non-ball: ${stats.notBall}`,
+        `Manually labeled ball contacts at points: ${stats.ball}`,`Trials with confirmed ball contact but unknown exact time: ${stats.confirmedTrials}`,`Trials with no ball: ${stats.excludedTrials}`,`Trials uncertain: ${stats.uncertainTrials}`,`Trials unreviewed: ${stats.unreviewedTrials}`,`Manually marked non-ball: ${stats.notBall}`,
         `Uncertain labels: ${stats.uncertain}`,`BLE packet retries: ${stats.retries}`,
         `Failed trials: ${stats.errors}`,
         "No automatic contact detector in firmware V28.1. Precision/recall cannot be calculated.",
@@ -3738,7 +3856,7 @@ function contactExport() {
         "Sensor timestamps are reconstructed at nominal 100 Hz and not hardware BMI270 timestamps."
     ].join("\n")+"\n";
     const files=[
-        ["README.txt","GAZELA CONTACT RECORDER V2\nFiles: each trial_XXX.csv has all 400 samples; labels.csv has manual event labels; session.json and report.txt summarize the dataset.\nNo automatic impact detector in firmware. Four-second trials are discontinuous.\n"],
+        ["README.txt","GAZELA CONTACT RECORDER V3\nEach trial_XXX.csv contains 400 samples and a trial_truth field. labels.csv contains point and trial-level human labels. For trial-level truth, index/SEQ/time are deliberately blank. session.json and report.txt summarize the dataset.\nNo automatic impact detector in firmware. Four-second trials are discontinuous.\n"],
         ["report.txt",report],
         ["session.json",JSON.stringify(meta,null,2)+"\n"],
         ["labels.csv",contactCSV(rows)]
@@ -3764,12 +3882,21 @@ if(contactUI.download)contactUI.download.addEventListener("click",contactDownloa
 if(contactUI.trialSelect)contactUI.trialSelect.addEventListener("change",value=>{
     const id=Number(value.target.value);
     if(contactSession.trials.some(t=>t.id===id)) {
-        contactSession.selectedTrialId=id;contactSession.cursorIndex=null;
+        contactSession.selectedTrialId=id;contactSession.cursorIndex=null;contactSession.zoomSize=400;contactSession.viewStart=0;
         contactRenderTrial();contactRefresh();
     }
 });
 if(contactUI.accChart)contactUI.accChart.addEventListener("click",contactChooseSample);
 if(contactUI.gyroChart)contactUI.gyroChart.addEventListener("click",contactChooseSample);
+if(contactUI.truthBall)contactUI.truthBall.addEventListener("click",()=>contactSetTrialTruth("ball_time_unknown"));
+if(contactUI.truthNoBall)contactUI.truthNoBall.addEventListener("click",()=>contactSetTrialTruth("no_ball"));
+if(contactUI.truthUncertain)contactUI.truthUncertain.addEventListener("click",()=>contactSetTrialTruth("uncertain"));
+if(contactUI.truthClear)contactUI.truthClear.addEventListener("click",()=>contactSetTrialTruth("unreviewed"));
+if(contactUI.zoomRange)contactUI.zoomRange.addEventListener("input",value=>contactSetZoom(Number(value.target.value)));
+if(contactUI.panRange)contactUI.panRange.addEventListener("input",value=>contactSetZoom(contactSession.zoomSize,Number(value.target.value)));
+if(contactUI.zoomIn)contactUI.zoomIn.addEventListener("click",()=>contactSetZoom(contactSession.zoomSize/2));
+if(contactUI.zoomOut)contactUI.zoomOut.addEventListener("click",()=>contactSetZoom(contactSession.zoomSize*2));
+if(contactUI.zoomReset)contactUI.zoomReset.addEventListener("click",()=>contactSetZoom(400,0));
 if(contactUI.markTrue)contactUI.markTrue.addEventListener("click",()=>contactAddMarker("ball"));
 if(contactUI.markNegative)contactUI.markNegative.addEventListener("click",()=>contactAddMarker("not_ball"));
 if(contactUI.markUncertain)contactUI.markUncertain.addEventListener("click",()=>contactAddMarker("uncertain"));
