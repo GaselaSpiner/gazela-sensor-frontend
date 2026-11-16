@@ -1,4 +1,4 @@
-// app.js — GAZELA SENSOR V54 CONTACT RECORDER V3 ZOOM + TRIAL TRUTH + V51 BLE/USB
+// app.js — GAZELA SENSOR V55 / STAGE 8.3 HR400 CONTACT RECORDER (400 Hz; commit on CAP,DONE) + V51 BLE/USB
 //
 // V48 ARCHITECTURE:
 // 1. One application file: app.js. No additional JavaScript modules.
@@ -38,6 +38,7 @@
 // V47 CHANGES:
 // 1. Keeps the V46 USB RX byte diagnostic.
 // 2. A valid LIVE frame can satisfy initial CONNECT readiness.
+
 // 3. If LIVE is already active after USB reconnect, CONNECT does not send L again.
 // 4. No firmware, BLE or measurement protocol changes.
 //
@@ -78,6 +79,7 @@ const USB_PRODUCT_ID = 0x805A;
 // ========================================================
 let sensorTransport = null; // Compatibility alias: active LIVE transport (BLE preferred).
 let transportType = null;
+
 let selectedTransport = "ble"; // UI selection only; never determines transport ownership.
 let bleTransport = null;
 let usbTransport = null;
@@ -118,6 +120,7 @@ const HEARTBEAT_TIMEOUT = 3000;
 const statusDot =
     document.getElementById("statusDot");
 const statusText =
+
     document.getElementById("statusText");
 const movementValue =
     document.getElementById("movementValue");
@@ -158,6 +161,7 @@ const serviceModeContent =
 const serviceConnectionStatus =
     document.getElementById("serviceConnectionStatus");
 const serviceTransportLog = document.getElementById("serviceTransportLog");
+
 const serviceFifoLog = document.getElementById("serviceFifoLog");
 const serviceBmiLog = document.getElementById("serviceBmiLog");
 const serviceBatteryLog = document.getElementById("serviceBatteryLog");
@@ -198,6 +202,7 @@ const batteryUpdatedValue =
 if (startButton) {
     startButton.disabled = true;
 }
+
 if (stopButton) {
 
     stopButton.disabled = true;
@@ -238,6 +243,7 @@ const SERIAL_MONITOR_MAX_LINES = 500;
 function addSerialLine(
     text,
     className = ""
+
 ) {
     if (!serialMonitor) {
         return;
@@ -278,6 +284,7 @@ function appendServiceLog(element, line) {
     element.textContent = rows.join("\n");
     element.scrollTop = element.scrollHeight;
 }
+
 function classifySensorMessage(source, line) {
     if ((source !== "ble" && source !== "usb") || !line) {
         return "unknown";
@@ -318,6 +325,7 @@ function routeServiceDiagnosticLine(line, source, messageType) {
         appendServiceLog(serviceFifoLog, line);
     } else if (messageType === "bmi-diagnostic") {
         appendServiceLog(serviceBmiLog, line);
+
     } else if (messageType === "battery-diagnostic") {
         appendServiceLog(serviceBatteryLog, line);
     }
@@ -358,6 +366,7 @@ function formatTime(milliseconds) {
         );
     const ms =
         Math.floor(
+
             totalMs % 1000
         );
     return (
@@ -398,6 +407,7 @@ function v45BytesToAscii(bytes) {
     return Array.from(bytes)
         .map(byte => {
             if (byte >= 32 && byte <= 126) return String.fromCharCode(byte);
+
             if (byte === 10) return "\\n";
             if (byte === 13) return "\\r";
             return ".";
@@ -438,6 +448,7 @@ class SensorTransport {
             ) {
                 return;
             }
+
             this.running = false;
             addSerialLine(
                 "V50: transport read loop ended unexpectedly.",
@@ -478,6 +489,7 @@ class SensorTransport {
         return "Unknown";
     }
 }
+
 // ========================================================
 // WEB SERIAL TRANSPORT
 // ========================================================
@@ -518,6 +530,7 @@ class WebSerialTransport
         });
         addSerialLine(
             "V46: Web Serial port.open(115200) OK",
+
             "serial-info"
         );
         this.running = true;
@@ -558,6 +571,7 @@ class WebSerialTransport
                 );
                 buffer +=
                     decoder.decode(
+
                         value,
                         {
                             stream: true
@@ -598,6 +612,7 @@ class WebSerialTransport
                     "Web Serial read error:",
                     error
                 );
+
                 addSerialLine(
                     "Web Serial read error: " +
                     error.message,
@@ -638,6 +653,7 @@ class WebSerialTransport
         if (this.readTask) {
             try {
                 await Promise.race([
+
                     this.readTask,
                     new Promise(
                         resolve =>
@@ -678,6 +694,7 @@ class WebSerialTransport
 class WebUSBTransport
     extends SensorTransport {
     constructor(onLine, onEnd = null) {
+
         super(onLine, onEnd);
         this.device = null;
         this.interface0Claimed = false;
@@ -718,6 +735,7 @@ class WebUSBTransport
             );
         });
         this.device =
+
             devices.find(
                 device =>
                     device.vendorId ===
@@ -758,6 +776,7 @@ class WebUSBTransport
         }
         try {
             addSerialLine(
+
                 "V40 TEST: device.open() START",
                 "serial-info"
             );
@@ -798,6 +817,7 @@ class WebUSBTransport
                 addSerialLine(
                     "V40 TEST: selectConfiguration(1) OK",
                     "serial-info"
+
                 );
             }
             else {
@@ -838,6 +858,7 @@ class WebUSBTransport
                         alternate.interfaceSubclass +
                         " protocol=" +
                         alternate.interfaceProtocol +
+
                         " endpoints=" +
                         alternate.endpoints.length,
                         "serial-info"
@@ -878,6 +899,7 @@ class WebUSBTransport
             );
             await this.device
                 .claimInterface(0);
+
             this.interface0Claimed = true;
             addSerialLine(
                 "V40 TEST: claimInterface(0) OK",
@@ -918,6 +940,7 @@ class WebUSBTransport
                 );
             addSerialLine(
                 "V40 TEST: CDC SET_LINE_CODING OK",
+
                 "serial-info"
             );
             // CDC SET_CONTROL_LINE_STATE
@@ -958,6 +981,7 @@ class WebUSBTransport
             );
             this.running = true;
             this.intentionalDisconnect = false;
+
             this.v45RxChunkCount = 0;
             addSerialLine(
                 "V46: WebUSB readLoop START",
@@ -998,6 +1022,7 @@ class WebUSBTransport
                         result.data.buffer,
                         result.data.byteOffset,
                         result.data.byteLength
+
                     );
                 this.v45RxChunkCount++;
                 v45LogRawUSB(
@@ -1038,6 +1063,7 @@ class WebUSBTransport
                         );
                     }
                 }
+
             }
         }
         catch (error) {
@@ -1078,6 +1104,7 @@ class WebUSBTransport
                 ]);
             }
             catch (error) {
+
                 console.warn(
                     "V39 WebUSB read task:",
                     error
@@ -1118,6 +1145,7 @@ class WebUSBTransport
                     addSerialLine(
                         "V40 TEST: interface 0 release ERROR: " +
                         error.message,
+
                         "serial-error"
                     );
                 }
@@ -1158,6 +1186,7 @@ class WebBluetoothTransport
         this.liveCharacteristic = null;
         this.contactCaptureCharacteristic = null;
         this.controlService = null;
+
         this.commandCharacteristic = null;
         this.decoder =
             new TextDecoder();
@@ -1198,6 +1227,7 @@ class WebBluetoothTransport
                 optionalServices: [
                     BLE_SENSOR_SERVICE_UUID,
                     BLE_CONTROL_SERVICE_UUID
+
                 ]
             });
         addSerialLine(
@@ -1238,6 +1268,7 @@ class WebBluetoothTransport
         );
         this.liveCharacteristic =
             await this.sensorService
+
                 .getCharacteristic(
                     BLE_LIVE_CHARACTERISTIC_UUID
                 );
@@ -1278,6 +1309,7 @@ class WebBluetoothTransport
         this.liveCharacteristic.addEventListener(
             "characteristicvaluechanged",
             this.boundNotificationHandler
+
         );
         addSerialLine(
             "BLE: start notifications...",
@@ -1318,6 +1350,7 @@ class WebBluetoothTransport
             addSerialLine("BLE notification error: " + error.message, "serial-error");
         }
     }
+
     async send(command) {
         if (
             !this.commandCharacteristic
@@ -1358,6 +1391,7 @@ class WebBluetoothTransport
             try {
                 this.liveCharacteristic
                     .removeEventListener(
+
                         "characteristicvaluechanged",
                         this.boundNotificationHandler
                     );
@@ -1398,6 +1432,7 @@ class WebBluetoothTransport
         this.liveCharacteristic = null;
         this.contactCaptureCharacteristic = null;
         this.controlService = null;
+
         this.commandCharacteristic = null;
     }
     handleDisconnected() {
@@ -1438,6 +1473,7 @@ function waitForSensorReady(
             let finished = false;
             const timeoutId =
                 setTimeout(
+
                     () => {
                         if (finished) {
                             return;
@@ -1478,6 +1514,7 @@ function isAndroidDevice() {
     }
     return /Android/i.test(navigator.userAgent || "");
 }
+
 async function createSensorTransport(kind) {
     if (kind === "usb") {
         const android = isAndroidDevice();
@@ -1518,6 +1555,7 @@ function startHeartbeatMonitor() {
                     return;
                 }
                 const elapsed =
+
                     Date.now() -
                     lastHeartbeatTime;
                 if (
@@ -1558,6 +1596,7 @@ function resetLiveValues() {
         timeValue.textContent =
             "--";
     }
+
     if (samplesValue) {
         samplesValue.textContent =
             "0";
@@ -1598,6 +1637,7 @@ function resetLiveValues() {
         angleyValue.textContent =
             "--";
     }
+
 }
 // ========================================================
 // BATTERY DATA
@@ -1638,6 +1678,7 @@ function updateBatteryLevel(packVoltage) {
     // Wzrost: czerwony->pomarańczowy 25%, pomarańczowy->żółty 45%, żółty->zielony 65%.
     // Spadek: zielony->żółty 55%, żółty->pomarańczowy 35%, pomarańczowy->czerwony 15%.
     if (typeof window.gazelaBatteryColorBand !== "string") {
+
         // Inicjalizacja pierwszego odczytu: czerwony do 20%, pomarańczowy do 40%,
         // żółty do 60%, a zielony dopiero powyżej 60%.
         window.gazelaBatteryColorBand = percentage <= 20 ? "red"
@@ -1678,6 +1719,7 @@ function updateBatteryLevel(packVoltage) {
         red: 1,
         orange: 2,
         yellow: 3,
+
         green: 6
     };
     const activeSegments = Math.min(
@@ -1718,6 +1760,7 @@ function updateBatteryLevel(packVoltage) {
     if (batteryVisual) {
         batteryVisual.setAttribute(
             "aria-label",
+
             "Szacowany poziom naładowania baterii: " + percentage + " procent"
         );
     }
@@ -1758,6 +1801,7 @@ function parseBatteryData(line) {
     if (
         !Number.isFinite(cell1) ||
         !Number.isFinite(pack) ||
+
         !Number.isFinite(cell2)
     ) {
         return;
@@ -1798,6 +1842,7 @@ function parseBatteryData(line) {
     }
 }
 // ========================================================
+
 // HANDLE SENSOR READY
 // ========================================================
 async function handleSensorReady() {
@@ -1838,6 +1883,7 @@ async function handleSensorReady() {
             console.error(
                 "Automatic return to LIVE failed:",
                 error
+
             );
         }
     }
@@ -1878,6 +1924,7 @@ function parseLiveData(line) {
         if (lastLiveFrameSequence !== null) {
             const delta =
                 (frameSequence - lastLiveFrameSequence) >>> 0;
+
             if (delta > 1 && delta < 0x80000000) {
                 liveSequenceGapCount += delta - 1;
             }
@@ -1888,11 +1935,13 @@ function parseLiveData(line) {
         if (lastLiveFifoSequence !== null) {
             const delta =
                 (fifoSequence - lastLiveFifoSequence) >>> 0;
-            // FIFO runs at 100 Hz while LIVE is sent at about 50 Hz.
-            // A FIFO_SEQ delta of 2 is therefore the expected cadence,
-            // not a lost LIVE packet. Count only excess jumps.
-            if (delta > 2 && delta < 0x80000000) {
-                fifoSequenceGapCount += delta - 2;
+            // HR400 FIFO runs at nominal 400 Hz, while LIVE is ~50 Hz.
+            // ~8 FIFO samples between LIVE frames is nominal, not a gap.
+            // This excess-jump counter is only a scheduling heuristic:
+            // BLE jitter and skipped LIVE updates do NOT prove FIFO loss.
+            const nominalFifoPerLive = 8;
+            if (delta > nominalFifoPerLive && delta < 0x80000000) {
+                fifoSequenceGapCount += delta - nominalFifoPerLive;
             }
         }
         lastLiveFifoSequence = fifoSequence >>> 0;
@@ -1916,6 +1965,7 @@ function parseLiveData(line) {
         SEQ: frameSequence,
         FIFO_SEQ: fifoSequence
     });
+
 
 }
 // ========================================================
@@ -1956,6 +2006,7 @@ function processSerialLine(line, source, messageType) {
     }
     // ====================================================
     // HEARTBEAT
+
     // ====================================================
     if (
         line ===
@@ -1996,6 +2047,7 @@ function processSerialLine(line, source, messageType) {
             setStatus(
                 "Sensor ready",
                 "connected"
+
             );
         }
         // V40:
@@ -2036,6 +2088,7 @@ function processSerialLine(line, source, messageType) {
         }
         if (stopButton) {
             stopButton.disabled =
+
                 true;
         }
         return;
@@ -2076,6 +2129,7 @@ function processSerialLine(line, source, messageType) {
             "connected"
         );
         if (measurementStatus) {
+
             measurementStatus.textContent =
                 "Live sensor mode active.";
             measurementStatus.className =
@@ -2116,6 +2170,7 @@ function processSerialLine(line, source, messageType) {
         if (stopButton) {
             stopButton.disabled =
                 true;
+
         }
         return;
 
@@ -2156,6 +2211,7 @@ function processSerialLine(line, source, messageType) {
         currentMovement = 0;
         if (sessionBadge) {
             sessionBadge.textContent =
+
                 "Measurement";
         }
         setStatus(
@@ -2196,6 +2252,7 @@ function processSerialLine(line, source, messageType) {
     // ====================================================
     // COUNTDOWN
     // ====================================================
+
     if (
         line.startsWith(
             "COUNTDOWN,"
@@ -2236,6 +2293,7 @@ function processSerialLine(line, source, messageType) {
         }
         return;
     }
+
     // ====================================================
     // WAIT
     // ====================================================
@@ -2276,6 +2334,7 @@ function processSerialLine(line, source, messageType) {
             "MOVEMENT,TIME_ms"
         )
     ) {
+
         return;
     }
     // ====================================================
@@ -2316,6 +2375,7 @@ function processSerialLine(line, source, messageType) {
                 parseFloat(parts[6]);
             const GX =
                 parseFloat(parts[7]);
+
             const GY =
                 parseFloat(parts[8]);
             const GZ =
@@ -2356,6 +2416,7 @@ function processSerialLine(line, source, messageType) {
             }
             if (gxValue) {
                 gxValue.textContent =
+
                     formatNumber(GX);
             }
             if (gyValue) {
@@ -2396,6 +2457,7 @@ function processSerialLine(line, source, messageType) {
 // ====================================================
     // LIVE DATA
     // ====================================================
+
     if (
         line.startsWith(
             "LIVE,"
@@ -2436,6 +2498,7 @@ async function sendCommand(command) {
 // ========================================================
 async function startLiveMode() {
     if (!bleTransport) return;
+
     try {
         await sendCommand("L");
         measuring = false;
@@ -2476,6 +2539,7 @@ function syncTransportState(reason = "state-change") {
     const nextSource = bleTransport ? "ble" : usbTransport ? "usb" : null;
     if (nextSource !== activeDataSource) {
         activeDataSource = nextSource;
+
         resetLiveSequenceTracking();
         addSerialLine("V51: LIVE source = " + (activeDataSource || "none") + " (" + reason + ")", "serial-info");
     }
@@ -2516,6 +2580,7 @@ async function connectSensor(kind = selectedTransport) {
             returnToLiveAfterReady = false;
             measurementCommandSent = false;
             startHeartbeatMonitor();
+
             await startLiveMode();
         } else {
             routeServiceDiagnosticLine("USB CONNECTED: " + candidate.name + " (115200 baud, READ ONLY)", "usb");
@@ -2556,6 +2621,7 @@ async function startMeasurement() {
             "V51: measurement blocked — BLE is not connected.",
             "serial-info"
         );
+
         return;
     }
         // ----------------------------------------------------
@@ -2596,6 +2662,7 @@ async function startMeasurement() {
             sessionBadge.textContent =
                 "Measurement";
         }
+
         setStatus(
             "Measurement starting",
             "connected"
@@ -2636,6 +2703,7 @@ async function startMeasurement() {
                 "Unable to start measurement.";
             measurementStatus.className =
                 "measurement-status";
+
         }
         if (startButton) {
             startButton.disabled =
@@ -2676,6 +2744,7 @@ function finishSession() {
         startButton.disabled =
             true;
     }
+
     if (stopButton) {
         stopButton.disabled =
             true;
@@ -2716,6 +2785,7 @@ async function stopMeasurement() {
             measurementStatus.textContent =
                 "Stopping... Waiting for sensor READY...";
             measurementStatus.className =
+
                 "measurement-status active";
         }
         setStatus(
@@ -2756,6 +2826,7 @@ async function stopMeasurement() {
 async function disconnectSensor(kind = "ble", unexpected = false) {
     if (kind === "ble" || kind === "all") contactDisconnected();
     const targets = kind === "all" ? ["ble", "usb"] : [kind];
+
     for (const target of targets) {
         const transport = target === "ble" ? bleTransport : usbTransport;
         if (!transport) continue;
@@ -2796,6 +2867,7 @@ if (usbButton) {
         selectUSBTransport();
         if (usbTransport) { if (serviceConnectionStatus) serviceConnectionStatus.textContent = "USB jest już połączone — diagnostyka aktywna."; return; }
         if (serviceConnectionStatus) serviceConnectionStatus.textContent = "Otwieranie wyboru portu USB…";
+
         await connectSensor("usb");
         if (serviceConnectionStatus) serviceConnectionStatus.textContent = usbTransport ? "USB aktywne — kanał read-only; LIVE działa jako fallback bez BLE." : "Nie udało się połączyć USB. Spróbuj ponownie.";
     });
@@ -2836,6 +2908,7 @@ setStatus(
 );
 setTransportStatus(
     "Transport: BLE selected"
+
 );
 resetLiveValues();
 resetBatteryValues();
@@ -2876,6 +2949,7 @@ const gestureElements = {
   badge: document.getElementById("gestureStatusBadge"),
   buffer: document.getElementById("gestureBufferCount"),
   duration: document.getElementById("gestureDuration"),
+
   samples: document.getElementById("gestureSampleCount"),
   reference: document.getElementById("gestureReferenceStatus"),
   record: document.getElementById("gestureRecordButton"),
@@ -2916,6 +2990,7 @@ function gestureLoadReference() {
     console.warn("Gesture reference could not be loaded:", error);
     return null;
   }
+
 }
 function gestureUpdateUI() {
   const count = gestureCurrentBuffer.length;
@@ -2956,6 +3031,7 @@ function gestureReceiveSample(sample) {
   gestureCurrentBuffer.push({
     t: now - gestureRecordingStartedAt,
     ...values
+
   });
   if (gestureCurrentBuffer.length > GESTURE_MAX_SAMPLES) {
     gestureCurrentBuffer.shift();
@@ -2996,6 +3072,7 @@ function gestureStopRecording() {
     gestureCompletedRecording = gestureCurrentBuffer.map(point => ({ ...point }));
     const duration = (gestureCompletedRecording.at(-1).t - gestureCompletedRecording[0].t) / 1000;
     gestureHistoryItems.unshift({
+
       id: Date.now(),
       count: gestureCompletedRecording.length,
       duration,
@@ -3036,6 +3113,7 @@ function gestureResample(samples, targetCount) {
   if (!Array.isArray(samples) || samples.length < 2) return [];
   const firstT = samples[0].t;
   const lastT = samples[samples.length - 1].t;
+
   const duration = Math.max(1, lastT - firstT);
   const output = [];
   for (let i = 0; i < targetCount; i++) {
@@ -3076,6 +3154,7 @@ function gestureCompare() {
       totalError += (normalizedRef - normalizedCur) ** 2;
       totalReferenceEnergy += normalizedRef ** 2;
     }
+
     channelCount++;
   }
   const rmse = Math.sqrt(totalError / (channelCount * GESTURE_COMPARE_POINTS));
@@ -3116,6 +3195,7 @@ function gestureRenderHistory() {
     const label = document.createElement("span");
     label.textContent = item.label + " — " + item.count + " próbek, " + item.duration.toFixed(2) + " s";
     const status = document.createElement("span");
+
     status.textContent = "Saved in current page session";
     row.append(label, status);
     gestureElements.history.appendChild(row);
@@ -3156,6 +3236,7 @@ function gestureDrawSingleChart(canvas, samples, channels) {
   const values = channels.flatMap(channel => samples.map(point => point[channel]).filter(Number.isFinite));
   if (!values.length) return;
   const min = Math.min(...values);
+
   const max = Math.max(...values);
   const range = Math.max(0.0001, max - min);
   const plotTop = 22;
@@ -3196,6 +3277,7 @@ setTransportStatus = function(text) {
 };
 window.addEventListener("resize", () => {
   gestureDrawCharts(gestureRecording ? gestureCurrentBuffer : (gestureCompletedRecording || []));
+
 });
 // ========================================================
 // END GESTURE RECORDER / COMPARATOR
@@ -3205,11 +3287,24 @@ selectBLETransport();
 // ========================================================
 // V53 — CONTACT RECORDER V2: SESSION + MANUAL EVENT LABELS
 // ========================================================
-// Stage 8.2: human-provided ground truth; NOT a contact detector.
-// Every trial is a separate 400-sample FIFO capture followed by BLE transfer.
-// These trials do not form one gapless 100 Hz session. All completed trials
-// stay in browser RAM and can be exported as an offline, uncompressed ZIP.
-// Firmware V28.1 uses the unchanged 'C', 'N<index>', 'F', 'X' protocol.
+// Stage 8.3: 400-sample FIFO capture at nominal 400 Hz (~1 second),
+// manual ground truth and ACK-gated commit. NOT a ball contact detector.
+// Trials are separate; gaps between trials are not recorded.
+// Firmware V28.1 protocol remains 'C', 'N<index>', 'F', 'X'.
+const CONTACT_SAMPLE_COUNT = 400;
+const CONTACT_NOMINAL_HZ = 400;
+const CONTACT_SAMPLE_PERIOD_US = 1000000 / CONTACT_NOMINAL_HZ; // 2500 us
+function contactRelativeTimeMs(index, periodUs = CONTACT_SAMPLE_PERIOD_US) {
+    return index * periodUs / 1000;
+}
+function contactRelativeTimeSeconds(index, trial = null) {
+    const periodUs = trial?.samplePeriodUs || CONTACT_SAMPLE_PERIOD_US;
+    return index * periodUs / 1000000;
+}
+function contactTransportReady() {
+    return !!(bleTransport && bleTransport.running &&
+        bleTransport.commandCharacteristic && bleTransport.contactCaptureCharacteristic);
+}
 const contactUI = {
     label: document.getElementById("contactLabel"),
     start: document.getElementById("contactStartButton"),
@@ -3223,6 +3318,7 @@ const contactUI = {
     sessionEnd: document.getElementById("contactSessionEndButton"),
     sessionExport: document.getElementById("contactExportButton"),
     sessionBadge: document.getElementById("contactSessionBadge"),
+
     trialCount: document.getElementById("contactSessionTrials"),
     sampleCount: document.getElementById("contactSessionSamples"),
     confirmedCount: document.getElementById("contactSessionConfirmed"),
@@ -3249,11 +3345,11 @@ const contactUI = {
     report: document.getElementById("contactReport")
 };
 const contactCapture = {
-    state: "idle", data: [], total: 400, firstSeq: null,
+    state: "idle", data: [], total: CONTACT_SAMPLE_COUNT, firstSeq: null,
     firstTimeUs: null, expected: 0, retries: 0,
     packetTimer: null, phaseTimer: null, attemptId: 0,
     retryTotal: 0, lastLabel: "ball", capturedAt: null,
-    invalidPacketCount: 0
+    invalidPacketCount: 0, pendingTrial: null
 };
 const contactSession = {
     active: false, startedAt: null, endedAt: null,
@@ -3263,6 +3359,7 @@ const contactSession = {
 const CONTACT_TYPES = {ball: "Uderzenia piłki", air: "Zamach bez kontaktu", hand: "Stuknięcie dłonią", other: "Inne / zakłócenie"};
 const CONTACT_LABELS = {ball: "Kontakt piłki", not_ball: "Nie kontakt piłki", uncertain: "Niepewne"};
 const CONTACT_MAX_TRIALS = 100;
+
 const CONTACT_TRIAL_TRUTH = {
     unreviewed: "Nieoceniona",
     ball_time_unknown: "Kontakt piłki był — chwila nieznana",
@@ -3285,7 +3382,7 @@ function contactSyncZoomUI() {
         contactUI.panRange.max=String(bounds.count-bounds.size);
         contactUI.panRange.value=String(bounds.start);
     }
-    if(contactUI.zoomText) contactUI.zoomText.textContent=`${(bounds.start/100).toFixed(2)}–${(bounds.end/100).toFixed(2)} s · ${bounds.size} próbek · przybliżenie ${(bounds.count/bounds.size).toFixed(1)}×`;
+    if(contactUI.zoomText) contactUI.zoomText.textContent=`${contactRelativeTimeSeconds(bounds.start, trial).toFixed(3)}–${contactRelativeTimeSeconds(bounds.end, trial).toFixed(3)} s · ${bounds.size} próbek · przybliżenie ${(bounds.count/bounds.size).toFixed(1)}×`;
 }
 function contactSetZoom(nextSize, newStart=null) {
     const trial=contactSelectedTrial();if(!trial)return;
@@ -3303,6 +3400,7 @@ function contactSetTrialTruth(value) {
     // Important: does NOT insert a precise time marker or invent a sample index.
     contactRenderTrial();contactRefresh();
 }
+
 function contactRenderTruth() {
     const trial=contactSelectedTrial();
     if(contactUI.trialTruth)contactUI.trialTruth.textContent=trial?`Ocena całej próby: ${CONTACT_TRIAL_TRUTH[trial.truth||"unreviewed"]}`:"Najpierw nagraj próbę.";
@@ -3343,10 +3441,11 @@ function contactRefresh() {
     const busy = contactIsBusy();
     const active = contactSession.active;
     const trial = contactSelectedTrial();
+
     const st = contactStats();
-    if (contactUI.start) contactUI.start.disabled = !active || !bleTransport || measuring || busy || st.trials >= CONTACT_MAX_TRIALS;
+    if (contactUI.start) contactUI.start.disabled = !active || !contactTransportReady() || measuring || busy || st.trials >= CONTACT_MAX_TRIALS;
     if (contactUI.cancel) contactUI.cancel.disabled = !busy || contactCapture.state === "finalizing";
-    if (contactUI.download) contactUI.download.disabled = !trial;
+    if (contactUI.download) contactUI.download.disabled = !trial || busy;
     if (contactUI.label) contactUI.label.disabled = !active || busy;
     if (contactUI.sessionStart) contactUI.sessionStart.disabled = active || busy;
     if (contactUI.sessionEnd) contactUI.sessionEnd.disabled = !active || busy;
@@ -3383,6 +3482,7 @@ function contactClearTimers() {
 }
 function contactPhaseTimeout(milliseconds, message, validStates) {
     const generation = contactCapture.attemptId;
+
     if (contactCapture.phaseTimer) clearTimeout(contactCapture.phaseTimer);
     contactCapture.phaseTimer = setTimeout(() => {
         if (contactCapture.attemptId === generation && validStates.includes(contactCapture.state)) contactFail(message);
@@ -3391,9 +3491,11 @@ function contactPhaseTimeout(milliseconds, message, validStates) {
 function contactFail(message) {
     const oldState = contactCapture.state;
     if (!contactIsBusy()) return;
-    const validConnection = !!bleTransport;
+    const validConnection = contactTransportReady();
     contactClearTimers();
     contactCapture.attemptId++;
+    // A transfer that failed before CAP,DONE must NEVER enter the dataset.
+    contactCapture.pendingTrial = null;
     contactCapture.state = "failed";
     contactSession.failures.push({at:new Date().toISOString(),phase:oldState,error:message});
     contactSetStatus("Nieudana próba: " + message + ". Poprzednie udane próby pozostają w sesji.");
@@ -3416,10 +3518,12 @@ function contactStartSession() {
     contactSession.zoomSize = 400;contactSession.viewStart = 0;
     contactCapture.state = "idle";
     contactCapture.data = [];
-    contactSetStatus("Sesja rozpoczęta. Wybierz rodzaj próby, nagraj 4 sekundy i oznacz kontakty na wykresach.");
+    contactCapture.pendingTrial = null;
+    contactSetStatus("Sesja rozpoczęta. Wybierz rodzaj próby, nagraj ok. 1 sekundę (400 próbek @ 400 Hz) i oznacz kontakty na wykresach.");
     contactRenderTrialSelect();
     contactRenderTrial();
     contactRefresh();
+
 }
 function contactEndSession() {
     if (!contactSession.active || contactIsBusy()) return;
@@ -3429,16 +3533,16 @@ function contactEndSession() {
     contactRefresh();
 }
 async function contactStart() {
-    if (!contactSession.active || !bleTransport || measuring || contactIsBusy()) return;
+    if (!contactSession.active || !contactTransportReady() || measuring || contactIsBusy()) return;
     contactClearTimers();
 
     Object.assign(contactCapture, {
-        state:"starting",data:[],total:400,firstSeq:null,firstTimeUs:null,
-        expected:0,retries:0,retryTotal:0,invalidPacketCount:0,
+        state:"starting",data:[],total:CONTACT_SAMPLE_COUNT,firstSeq:null,firstTimeUs:null,
+        expected:0,retries:0,retryTotal:0,invalidPacketCount:0,pendingTrial:null,
         lastLabel:contactUI.label?.value || "ball",capturedAt:new Date().toISOString()
     });
     contactCapture.attemptId++;
-    contactSetStatus("Oczekiwanie na uruchomienie czterosekundowego zapisu w Arduino…");
+    contactSetStatus("Oczekiwanie na start rejestracji ~1 s / 400 próbek / 400 Hz w Arduino. Próbę wykonaj tuż po starcie.");
     contactRefresh();
     contactPhaseTimeout(10000,"brak potwierdzenia CAP,STARTED przez BLE",["starting"]);
     try { await bleTransport.send("C"); }
@@ -3450,7 +3554,8 @@ async function contactCancel() {
     contactClearTimers();
     contactCapture.state = "idle";
     contactCapture.data = [];
-    contactSetStatus("Próba anulowana. Dotychczasowe ukończone próby są zachowane.");
+    contactCapture.pendingTrial = null;
+    contactSetStatus("Próba anulowana. Dotychczasowe ukończone i potwierdzone próby są zachowane.");
     contactRefresh();
     if (bleTransport) try { await bleTransport.send("X"); } catch(e) { console.warn("CAP cancel",e); }
 }
@@ -3459,6 +3564,7 @@ function contactDisconnected() {
         // disconnectSensor() may still hold the stale transport object.
         contactFail("przerwano połączenie BLE");
     }
+
     contactRefresh();
 }
 function contactReceiveStatus(line) {
@@ -3467,34 +3573,54 @@ function contactReceiveStatus(line) {
     const type = fields[1];
     if (type === "STARTED" && contactCapture.state === "starting") {
         contactCapture.state = "recording";
-        contactSetStatus("Rejestracja trwa — wykonaj teraz uderzenie lub próbę kontrolną przez 4 sekundy.");
+        contactSetStatus("Rejestracja trwa — okno ok. 1 s (400 próbek @ 400 Hz). Uderz piłkę lub wykonaj próbę kontrolną teraz.");
         contactRefresh();
         contactPhaseTimeout(11000,"brak CAP,READY po nagrywaniu",["recording"]);
         return;
     }
     if (type === "PROGRESS" && contactCapture.state === "recording") {
-        contactSetStatus("Rejestrowanie w pamięci Arduino: " + fields[2] + " / 400 próbek…");
+        contactSetStatus("Rejestrowanie w pamięci Arduino: " + fields[2] + " / " + CONTACT_SAMPLE_COUNT + " próbek…");
         return;
     }
     if (type === "READY" && contactCapture.state === "recording") {
         const total = Number(fields[2]);
         const seq = Number(fields[3]);
         const time = Number(fields[4]);
-        if (total !== 400 || !Number.isSafeInteger(seq) || seq < 1 || !Number.isSafeInteger(time) || time < 0) {
+        if (total !== CONTACT_SAMPLE_COUNT || !Number.isSafeInteger(seq) || seq < 1 || !Number.isSafeInteger(time) || time < 0 || time > 0xFFFFFFFF) {
             contactFail("nieprawidłowe metadane CAP,READY"); return;
         }
         if (contactCapture.phaseTimer) clearTimeout(contactCapture.phaseTimer);
         contactCapture.phaseTimer = null;
         Object.assign(contactCapture,{total,firstSeq:seq,firstTimeUs:time,state:"downloading",expected:0,retries:0});
-        contactSetStatus("Zebrano 400 próbek w Arduino. Teraz pobieranie i kontrola CRC przez BLE…");
+        contactSetStatus("Zebrano 400 próbek (~1 s @ 400 Hz). Pobieranie ramek i weryfikacja CRC16 oraz SEQ przez BLE…");
         contactRefresh();
         contactRequest(0);
         return;
     }
     if (type === "DONE" && contactCapture.state === "finalizing") {
+        // Commit to the session ONLY after the firmware confirms CAP,DONE.
+        // No partially downloaded or unacknowledged trial enters the export.
+        const trial = contactCapture.pendingTrial;
+        if (!trial || trial.samples.length !== CONTACT_SAMPLE_COUNT ||
+            trial.lastSeq !== ((trial.firstSeq + CONTACT_SAMPLE_COUNT - 1) >>> 0)) {
+            contactFail("CAP,DONE bez poprawnej, oczekującej próby");
+            return;
+
+        }
         contactClearTimers();
+        trial.id = contactSession.trials.length + 1;
+        trial.completedAt = new Date().toISOString();
+        trial.transportFinalized = true;
+        contactSession.trials.push(trial);
+        contactSession.selectedTrialId = trial.id;
+        contactSession.cursorIndex = null;
+        contactSession.zoomSize = CONTACT_SAMPLE_COUNT;
+        contactSession.viewStart = 0;
+        contactCapture.pendingTrial = null;
         contactCapture.state = "done";
-        contactSetStatus("Próba zakończona i zamknięta: 400/400 PASS. Kliknij wykres w miejscu kontaktu i nadaj etykietę. Możesz nagrać kolejną próbę.");
+        contactSetStatus("Próba #" + trial.id + " potwierdzona CAP,DONE: 400/400 CRC16 + SEQ PASS. Zapisana w sesji. Oznacz kontakt na wykresach.");
+        contactRenderTrialSelect();
+        contactRenderTrial();
         contactRefresh();
         return;
     }
@@ -3520,6 +3646,7 @@ async function contactRequest(index) {
     catch(e) {
         if (generation === contactCapture.attemptId && contactCapture.state === "downloading") contactFail(e.message);
     }
+
 }
 function contactReceiveDataPacket(event) {
     if (contactCapture.state !== "downloading") return;
@@ -3536,8 +3663,8 @@ function contactReceiveDataPacket(event) {
     if (contactCapture.packetTimer) clearTimeout(contactCapture.packetTimer);
     contactCapture.packetTimer = null;
     contactCapture.data.push({
-        index, sequence, time_ms:index*10,
-        sensor_time_us_nominal: ((contactCapture.firstTimeUs + index*10000) >>> 0),
+        index, sequence, time_ms:contactRelativeTimeMs(index),
+        sensor_time_us_nominal: ((contactCapture.firstTimeUs + index*CONTACT_SAMPLE_PERIOD_US) >>> 0),
         AX:view.getInt16(6,true)/1000, AY:view.getInt16(8,true)/1000, AZ:view.getInt16(10,true)/1000,
         GX:view.getInt16(12,true)/10, GY:view.getInt16(14,true)/10, GZ:view.getInt16(16,true)/10
     });
@@ -3552,31 +3679,35 @@ function contactReceiveDataPacket(event) {
     Promise.resolve().then(() => contactRequest(contactCapture.expected));
 }
 function contactFinishTrial() {
+    if (contactCapture.state !== "downloading") return;
     contactClearTimers();
     const samples = contactCapture.data.map(s=>({...s}));
     const firstSeq = contactCapture.firstSeq;
     const lastSeq = samples.at(-1)?.sequence;
-    if (samples.length !== 400 || lastSeq !== ((firstSeq+399)>>>0)) {
-        contactFail("niekompletny zapis 400 próbek");return;
+    if (samples.length !== CONTACT_SAMPLE_COUNT ||
+        lastSeq !== ((firstSeq + CONTACT_SAMPLE_COUNT - 1) >>> 0)) {
+        contactFail("niekompletny zapis 400 próbek");
+
+        return;
     }
-    const trial = {
-        id:contactSession.trials.length+1, type:contactCapture.lastLabel,
-        capturedAt:contactCapture.capturedAt, completedAt:new Date().toISOString(),
+    // Stage 8.3 two-phase commit: a complete and verified transfer is not yet
+    // a completed trial. The trial is provisional until CAP,DONE arrives.
+    contactCapture.pendingTrial = {
+        id:null, type:contactCapture.lastLabel,
+        capturedAt:contactCapture.capturedAt, completedAt:null,
         firstSeq, lastSeq, firstTimeUs:contactCapture.firstTimeUs,
-        samplePeriodUs:10000, count:samples.length, integrity:"PASS",
-        retries:contactCapture.retryTotal, invalidPackets:contactCapture.invalidPacketCount,
+        samplePeriodUs:CONTACT_SAMPLE_PERIOD_US, count:samples.length,
+        integrity:"PASS", transportFinalized:false,
+        retries:contactCapture.retryTotal,
+        invalidPackets:contactCapture.invalidPacketCount,
         samples, markers:[], truth:"unreviewed", truthAt:null
     };
-    contactSession.trials.push(trial);
-    contactSession.selectedTrialId = trial.id;
-    contactSession.cursorIndex = null;contactSession.zoomSize=400;contactSession.viewStart=0;
     contactCapture.state = "finalizing";
-    contactSetStatus("Próba #"+trial.id+" zapisana: 400/400, CRC16 i sekwencje PASS. Potwierdzanie finalizacji BLE…");
-    contactRenderTrialSelect();
-    contactRenderTrial();
+    contactSetStatus("Pobrano 400/400 próbek — CRC16 i SEQ PASS. Oczekiwanie na CAP,DONE; próba NIE jest jeszcze zapisana w sesji.");
     contactRefresh();
-    contactPhaseTimeout(9000,"brak potwierdzenia CAP,DONE po zapisaniu danych",["finalizing"]);
-    if (bleTransport) bleTransport.send("F").catch(e=>contactFail("finalizacja BLE: "+e.message));
+    contactPhaseTimeout(9000,"brak potwierdzenia CAP,DONE — próba NIE została dodana do sesji",["finalizing"]);
+    if (contactTransportReady()) bleTransport.send("F").catch(e=>contactFail("finalizacja BLE: "+e.message));
+    else contactFail("BLE rozłączone przed CAP,DONE");
 }
 function contactRenderTrialSelect() {
     if (!contactUI.trialSelect) return;
@@ -3597,6 +3728,7 @@ function contactRenderTrialSelect() {
 const GAZELA_AXIS_COLORS = ["#dc2626", "#2563eb", "#16a34a"]; // X red, Y blue, Z green
 function contactCanvasPlot(canvas, samples, channels) {
     if (!canvas) return;
+
     const rect=canvas.getBoundingClientRect();
     const width=Math.max(260,Math.floor(rect.width || 620));
     const height=250;
@@ -3627,7 +3759,7 @@ function contactCanvasPlot(canvas, samples, channels) {
     for(let i=0;i<=tickCount;i++){
         const index=start+(end-start)*i/tickCount;
         const x=left+(right-left)*i/tickCount;
-        const label=(index/100).toFixed(2)+"s";
+        const label=contactRelativeTimeSeconds(index, trial).toFixed(3)+"s";
         ctx.fillStyle="#64748b";
         ctx.fillText(label,Math.max(0,Math.min(width-39,x-18)),bottom+30);
     }
@@ -3637,6 +3769,7 @@ function contactCanvasPlot(canvas, samples, channels) {
         ctx.strokeStyle=colors[k];ctx.lineWidth=1.45;ctx.beginPath();
         for(let index=start;index<=end;index++){
             const x=left+(right-left)*(index-start)/(size-1);
+
             const y=bottom-(samples[index][channels[k]]-min)/span*(bottom-top);
             if(index===start)ctx.moveTo(x,y);else ctx.lineTo(x,y);
         }
@@ -3677,7 +3810,8 @@ function contactChooseSample(event) {
     const canvas=event.currentTarget;
     const rect=canvas.getBoundingClientRect();
     const width=Math.max(260,Math.floor(rect.width||620));
-    const left=43,right=width-12;
+
+    const left=49,right=width-13; // identical margins to contactCanvasPlot()
     const px=event.clientX-rect.left;
     const {start,size}=contactViewBounds(trial);
     const index=start+Math.round(Math.max(0,Math.min(1,(px-left)/(right-left)))*(size-1));
@@ -3690,7 +3824,7 @@ function contactAddMarker(label) {
     if(!trial || index===null || contactIsBusy()) return;
     let marker=trial.markers.find(m=>m.index===index);
     if(marker) { marker.label=label;marker.updatedAt=new Date().toISOString(); }
-    else trial.markers.push({index,sequence:trial.samples[index].sequence,time_ms:index*10,label,updatedAt:new Date().toISOString(),source:"human"});
+    else trial.markers.push({index,sequence:trial.samples[index].sequence,time_ms:trial.samples[index].time_ms,label,updatedAt:new Date().toISOString(),source:"human"});
     trial.markers.sort((a,b)=>a.index-b.index);
     contactRenderTrial();contactRefresh();
 }
@@ -3717,6 +3851,7 @@ function contactRenderMarkers() {
         remove.disabled=contactIsBusy();
         remove.addEventListener("click",()=>contactRemoveMarker(marker.index));
         row.append(label,remove);el.appendChild(row);
+
     }
 }
 function contactRenderReport() {
@@ -3743,7 +3878,7 @@ function contactRenderReport() {
     }
     el.appendChild(grid);
     const p=document.createElement("p");
-    p.textContent="Kompletność: "+(st.trials?"400/400 próbek w każdej ukończonej próbie (CRC16 + SEQ PASS)":"brak prób")+". Dane obejmują tylko zapisane okna 4 s. Precyzja i czułość detektora nie są obliczane: firmware V28.1 nie wykrywa jeszcze kontaktów. Oznaczenia są ręczne.";
+    p.textContent="Kompletność: "+(st.trials?"400/400 próbek na próbę, CRC16 + SEQ PASS i potwierdzenie CAP,DONE":"brak prób")+". Każde okno to nominalnie 1,000 s przy 400 Hz (próbki od 0,000 do 0,9975 s). Przerwy między próbami NIE są rejestrowane. Detektor kontaktów nie jest jeszcze zaimplementowany. Oznaczenia są ręczne.";
     el.appendChild(p);
 }
 function contactCSVCell(value) {
@@ -3757,6 +3892,7 @@ function contactTrialCSV(trial) {
     for(const s of trial.samples) rows.push([
         contactSession.id,trial.id,trial.type,s.index,s.sequence,s.sensor_time_us_nominal,s.time_ms,
         s.AX,s.AY,s.AZ,Math.hypot(s.AX,s.AY,s.AZ).toFixed(5),
+
         s.GX,s.GY,s.GZ,Math.hypot(s.GX,s.GY,s.GZ).toFixed(3),marks.get(s.index)||"",trial.truth||"unreviewed"
     ]);
     return contactCSV(rows);
@@ -3797,6 +3933,7 @@ function contactBuildZip(files) {
         const local=new Uint8Array([
             ...contactU32(0x04034b50),...contactU16(20),...contactU16(flags),...contactU16(0),...contactU16(0),...contactU16(0),
             ...contactU32(crc),...contactU32(bytes.length),...contactU32(bytes.length),...contactU16(name.length),...contactU16(0)
+
         ]);
         parts.push(local,name,bytes);
         const header=new Uint8Array([
@@ -3825,15 +3962,20 @@ function contactExport() {
         schema:"gazela.contact.session.v3",sessionId:contactSession.id,
         startedAt:contactSession.startedAt,endedAt:contactSession.endedAt,
         exportedAt:new Date().toISOString(),
-        firmware:"V28.1 (expected; not remotely attested)",frontend:"V54",
-        sensor:"BMI270 ACC+GYRO",sampleRateNominalHz:100,samplePeriodUsNominal:10000,
-        captureMode:"independent 400-sample trials; gaps between trials are NOT recorded",
+        firmware:"V28.1 HR400 (expected; not remotely attested)",frontend:"V55 / Stage 8.3",
+        sensor:"BMI270 ACC+GYRO",sampleRateNominalHz:CONTACT_NOMINAL_HZ,
+        samplePeriodUsNominal:CONTACT_SAMPLE_PERIOD_US, samplesPerTrial:CONTACT_SAMPLE_COUNT,
+        nominalCaptureDurationMs:CONTACT_SAMPLE_COUNT * CONTACT_SAMPLE_PERIOD_US / 1000,
+        captureMode:"independent 400-sample (~1 second) trials; gaps between trials are NOT recorded; commit requires CAP,DONE",
         quantization:{acc_g:0.001,gyro_dps:0.1},
         detector:{implemented:false,precision:null,recall:null,falsePositives:null,falseNegatives:null},
         labels:{authority:"user_manual",timing:"point markers optional, trial-level truth may have no timestamp",trialTruthValues:Object.keys(CONTACT_TRIAL_TRUTH)},
         stats,trials:contactSession.trials.map(t=>({id:t.id,type:t.type,capturedAt:t.capturedAt,
             completedAt:t.completedAt,firstSeq:t.firstSeq,lastSeq:t.lastSeq,
             firstTimeUs:t.firstTimeUs,count:t.samples.length,integrity:t.integrity,
+            samplePeriodUs:t.samplePeriodUs,nominalCaptureDurationMs:t.samples.length*t.samplePeriodUs/1000,
+
+            finalizedByFirmwareAck:t.transportFinalized === true,
             retries:t.retries,invalidPackets:t.invalidPackets,truth:t.truth||"unreviewed",truthAt:t.truthAt,markers:t.markers})),
 
         failures:contactSession.failures
@@ -3845,18 +3987,21 @@ function contactExport() {
         for(const m of t.markers) rows.push([contactSession.id,t.id,t.type,m.index,m.sequence,m.time_ms,m.label,m.source,m.updatedAt]);
     }
     const report=[
-        "GAZELA SPINER SENSOR — CONTACT RECORDER V3",`Session: ${contactSession.id}`,
+        "GAZELA SPINER SENSOR — CONTACT RECORDER V3 / STAGE 8.3 HR400",`Session: ${contactSession.id}`,
         `Started: ${contactSession.startedAt}`,`Ended: ${contactSession.endedAt||"still active"}`,
         `Trials completed: ${stats.trials}`,`CRC/SEQ-verified samples: ${stats.samples}`,
         `Manually labeled ball contacts at points: ${stats.ball}`,`Trials with confirmed ball contact but unknown exact time: ${stats.confirmedTrials}`,`Trials with no ball: ${stats.excludedTrials}`,`Trials uncertain: ${stats.uncertainTrials}`,`Trials unreviewed: ${stats.unreviewedTrials}`,`Manually marked non-ball: ${stats.notBall}`,
         `Uncertain labels: ${stats.uncertain}`,`BLE packet retries: ${stats.retries}`,
         `Failed trials: ${stats.errors}`,
         "No automatic contact detector in firmware V28.1. Precision/recall cannot be calculated.",
-        "Gaps between 4-second trials are NOT recorded. No BLE packet timing is used as sensor time.",
-        "Sensor timestamps are reconstructed at nominal 100 Hz and not hardware BMI270 timestamps."
+        "Each trial contains 400 samples, nominal 400 Hz / 2.5 ms steps (~1.000 s).",
+        "Last sample is indexed 399 at relative 997.5 ms (400 sample intervals represent 1000 ms).",
+        "Only CAP,DONE-acknowledged trials are committed. Failed or cancelled attempts are not exported as trials.",
+        "Gaps between 1-second trials are NOT recorded. No BLE packet timing is used as sensor time.",
+        "Sensor timestamps are reconstructed at nominal 400 Hz and are NOT hardware BMI270 timestamps."
     ].join("\n")+"\n";
     const files=[
-        ["README.txt","GAZELA CONTACT RECORDER V3\nEach trial_XXX.csv contains 400 samples and a trial_truth field. labels.csv contains point and trial-level human labels. For trial-level truth, index/SEQ/time are deliberately blank. session.json and report.txt summarize the dataset.\nNo automatic impact detector in firmware. Four-second trials are discontinuous.\n"],
+        ["README.txt","GAZELA CONTACT RECORDER V3 / STAGE 8.3 HR400\nEach trial_XXX.csv contains 400 samples at nominal 400 Hz (2.5 ms / sample; window ~1 s). Timestamps are firmware-reconstructed, not hardware BMI270 SensorTime.\nOnly trials with confirmed CAP,DONE are committed. Failed trials are described in session.json failures.\ntrial_truth is a manual label and does not imply an exact impact timestamp. labels.csv contains point labels and trial-level human labels; for trial-level truth, index/SEQ/time are deliberately blank.\nGaps between independent trials are not recorded. No automatic ball-impact detector is implemented yet.\n"],
         ["report.txt",report],
         ["session.json",JSON.stringify(meta,null,2)+"\n"],
         ["labels.csv",contactCSV(rows)]
@@ -3870,6 +4015,7 @@ function contactExport() {
         contactSetStatus("Zapisano archiwum ZIP: "+stats.trials+" prób, "+stats.samples+" próbek, "+stats.ball+" ręcznie oznaczonych kontaktów.");
     }catch(e) {
         contactSetStatus("Błąd eksportu ZIP: "+e.message);
+
         console.error(e);
     }
 }
@@ -3910,6 +4056,7 @@ contactRefresh();
 // ========================================================
 const liveWaveAccCanvas = document.getElementById("liveWaveAcc");
 const liveWaveGyroCanvas = document.getElementById("liveWaveGyro");
+
 const liveWavePauseButton = document.getElementById("liveWavePause");
 const liveWaveClearButton = document.getElementById("liveWaveClear");
 const liveWaveState = document.getElementById("liveWaveState");
@@ -3950,6 +4097,7 @@ function liveWaveDrawCanvas(canvas, channels, endTime) {
     const width = Math.max(320, Math.round(rect.width || 600));
     const height = 235;
     const dpr = Math.min(2.5, window.devicePixelRatio || 1);
+
     const pixelWidth = Math.round(width * dpr);
     const pixelHeight = Math.round(height * dpr);
     if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
@@ -3990,6 +4138,7 @@ function liveWaveDrawCanvas(canvas, channels, endTime) {
     for(let j=0; j<=4; j++) {
         const frac=j/4, y=top+frac*plotHeight;
         ctx.beginPath(); ctx.moveTo(l,y); ctx.lineTo(width-r,y); ctx.stroke();
+
         ctx.fillText((maxVal-frac*(maxVal-minVal)).toFixed(channels[0].startsWith("A") ? 1 : 0),l-7,y+4);
     }
     ctx.textAlign="center";
@@ -4030,6 +4179,7 @@ function liveWaveDraw() {
 }
 if (liveWavePauseButton) liveWavePauseButton.addEventListener("click",()=>{
     liveWavePaused = !liveWavePaused;
+
     liveWavePauseButton.textContent = liveWavePaused ? "Wznów wykresy" : "Wstrzymaj wykresy";
     if (liveWaveState) liveWaveState.textContent = liveWavePaused ? "Podgląd wstrzymany" : "Oczekiwanie na LIVE";
 });
