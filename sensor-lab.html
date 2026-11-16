@@ -1182,17 +1182,17 @@
 
        ===================================================== -->
 
-  <!-- STAGE 8.5 — CONTACT FEEDBACK AUDIO V1: local audio test only -->
+  <!-- STAGE 8.6 — CONTACT FEEDBACK AUDIO V2: toggle + offline detector after CAP,DONE -->
 
   <section class="card" id="contactFeedbackPanel" aria-labelledby="contactFeedbackTitle">
 
     <h2 id="contactFeedbackTitle">CONTACT FEEDBACK — AUDIO</h2>
 
-    <p class="card-description">Sygnał dźwiękowy po wykryciu kandydata kontaktu. W tej wersji dostępny jest test dźwięku; automatyczny detektor nie jest jeszcze podłączony.</p>
+    <p class="card-description">Sygnał dźwiękowy po wykryciu kandydata kontaktu. Po potwierdzonym CAP,DONE detektor OFFLINE V1 analizuje 1600 próbek i może odtworzyć sygnał. AUDIO można włączać i wyłączać.</p>
 
     <div class="controls" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
 
-      <button id="contactAudioEnable" type="button">ENABLE AUDIO</button>
+      <button id="contactAudioEnable" type="button" aria-pressed="false">ENABLE AUDIO</button>
 
       <button id="contactAudioTest" type="button" class="secondary" disabled>TEST SOUND</button>
 
@@ -1212,7 +1212,7 @@
 
     <div id="contactAudioStatus" class="measurement-status" role="status" aria-live="polite">AUDIO LOCKED — kliknij ENABLE AUDIO, aby zezwolić na odtwarzanie.</div>
 
-    <div id="contactAudioLast" class="measurement-status">LAST EVENT: — | DETECTOR: NOT CONNECTED</div>
+    <div id="contactAudioLast" class="measurement-status">LAST EVENT: — | DETECTOR: OFFLINE V1 AFTER CAP,DONE</div>
 
     <p class="card-description">TEST SOUND nie jest wykryciem kontaktu i nie zmienia licznika. Dźwięk działa tylko wtedy, gdy przeglądarka pozwala na odtwarzanie. Nie jest gwarantowany przy zablokowanym ekranie telefonu.</p>
 
