@@ -4241,7 +4241,7 @@ liveWaveDraw();
 // STAGE 8.5 — CONTACT FEEDBACK AUDIO V1
 // Browser audio ONLY. Does not intercept LIVE/CAP/BLE or change firmware.
 // Future detector bridge: window.GazelaContactFeedback.emitCandidate({eventId, seq})
-// No auto-trigger is connected in this release.
+// Stage 8.6 offline detector calls emitCandidate after verified CAP,DONE.
 // ========================================================
 (function initGazelaContactAudioV1() {
     "use strict";
@@ -4267,7 +4267,9 @@ liveWaveDraw();
     function setEnabled(enabled) {
         audioEnabled = enabled;
         testButton.disabled = !enabled;
-        enableButton.textContent = enabled ? "AUDIO ENABLED" : "ENABLE AUDIO";
+        enableButton.textContent = enabled ? "DISABLE AUDIO" : "ENABLE AUDIO";
+        enableButton.setAttribute("aria-pressed", enabled ? "true" : "false");
+        enableButton.title = enabled ? "Wyłącz powiadomienia dźwiękowe" : "Włącz powiadomienia dźwiękowe";
     }
     async function unlockAudio() {
         if (!AudioContextClass) {
@@ -4280,7 +4282,7 @@ liveWaveDraw();
             await context.resume();
             if (context.state !== "running") throw new Error("AudioContext is not running");
             setEnabled(true);
-            setStatus("AUDIO READY — TEST SOUND aktywny. DETECTOR: NOT CONNECTED.");
+            setStatus("AUDIO READY — automatyczne powiadomienia włączone po analizie CAP,DONE.");
         } catch (error) {
             setEnabled(false);
             setStatus("AUDIO BLOCKED — odblokuj dźwięk w przeglądarce i spróbuj ponownie.");
@@ -4288,7 +4290,9 @@ liveWaveDraw();
         }
     }
     function beep() {
-        if (!audioEnabled || !context || context.state !== "running") {
+        // DISABLE AUDIO is a deliberate mute, not an audio failure.
+        if (!audioEnabled) return false;
+        if (!context || context.state !== "running") {
             setEnabled(false);
             setStatus("AUDIO BLOCKED / SUSPENDED — kliknij ENABLE AUDIO.");
             return false;
@@ -4315,13 +4319,20 @@ liveWaveDraw();
             return false;
         }
     }
-    enableButton.addEventListener("click", unlockAudio);
+    enableButton.addEventListener("click", function () {
+        if (audioEnabled) {
+            setEnabled(false);
+            setStatus("AUDIO DISABLED — detektor nadal analizuje próby, powiadomienia są wyciszone.");
+        } else {
+            unlockAudio();
+        }
+    });
     testButton.addEventListener("click", function () {
         if (beep()) setStatus("TEST SOUND OK — test nie jest wykryciem kontaktu.");
     });
 
-    // Integration bridge: reserved for a validated, independent detector.
-    // This function is NOT called by LIVE, Contact Recorder, or any present firmware event.
+    // Stage 8.6 integration: Contact Recorder calls this after CAP,DONE.
+    // The detection is experimental and never overrides user BALL/NO BALL labels.
     function emitCandidate(event) {
         if (!event || (typeof event.eventId !== "string" && typeof event.eventId !== "number") ||
             !Number.isSafeInteger(Number(event.seq)) || Number(event.seq) < 0) return false;
@@ -4334,8 +4345,10 @@ liveWaveDraw();
         countElement.textContent = String(detectionCount);
         last.textContent = "LAST CANDIDATE: SEQ " + Number(event.seq) + " | EVENT_ID " + id +
             " | RECEIVED " + new Date().toLocaleTimeString("pl-PL");
+        const muted = !audioEnabled;
         const played = beep();
         if (played) setStatus("CONTACT CANDIDATE — sygnał odtworzony (nie potwierdza fizycznego kontaktu).");
+        else if (muted) setStatus("CONTACT CANDIDATE — wykryto, AUDIO DISABLED (bez dźwięku).");
         return true;
     }
     Object.defineProperty(window, "GazelaContactFeedback", {
@@ -4348,4 +4361,3 @@ liveWaveDraw();
     setEnabled(false);
 })();
 // END STAGE 8.5 CONTACT FEEDBACK AUDIO V1
-
