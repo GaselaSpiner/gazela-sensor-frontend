@@ -38,6 +38,7 @@ header h1 {
 
 header p {
 
+
   margin: 5px 0 0;
 
   color: #777;
@@ -77,6 +78,7 @@ main {
   color: #666;
 
   font-size: 17px;
+
 
 }
 
@@ -118,6 +120,7 @@ main {
 
   background: #2563eb;
 
+
 }
 
 .status-dot.error {
@@ -157,6 +160,7 @@ main {
   border-radius: 16px;
 
   background: #ffffff;
+
 
   color: #202124;
 
@@ -198,6 +202,7 @@ main {
 
 }
 
+
 .module-button.active {
 
   background: #eff6ff;
@@ -237,6 +242,7 @@ main {
 }
 
 .module-button:hover h3 {
+
 
   color: #111827;
 
@@ -278,6 +284,7 @@ main {
 
   padding: 25px;
 
+
   margin-bottom: 20px;
 
 }
@@ -317,6 +324,7 @@ main {
   flex-shrink: 0;
 
   color: #2563eb;
+
 
   filter: drop-shadow(0 1px 1px rgba(37, 99, 235, 0.12));
 
@@ -358,6 +366,7 @@ main {
 
 }
 
+
 /* =====================================================
 
    SENSOR SUMMARY
@@ -397,6 +406,7 @@ main {
 }
 
 .summary-value {
+
 
   font-size: 18px;
 
@@ -438,6 +448,7 @@ main {
 
 /* Cała ikona baterii */
 
+
 .battery-visual {
 
   position: relative;
@@ -477,6 +488,7 @@ main {
 /* Obudowa baterii */
 
 .battery-shell {
+
 
   position: relative;
 
@@ -518,6 +530,7 @@ main {
 
   box-sizing: border-box;
 
+
   background: transparent;
 
   transition: none;
@@ -557,6 +570,7 @@ main {
 .battery-level-details {
 
   display: flex;
+
 
   flex-direction: column;
 
@@ -598,6 +612,7 @@ main {
 
   font-size: 12px;
 
+
   line-height: 1.5;
 
 }
@@ -637,6 +652,7 @@ main {
 }
 
 /* =====================================================
+
 
    SENSOR VALUES
 
@@ -678,6 +694,7 @@ main {
 
   font-size: 22px;
 
+
   font-weight: bold;
 
 }
@@ -717,6 +734,7 @@ button {
   border-radius: 7px;
 
   padding: 12px 20px;
+
 
   font-size: 14px;
 
@@ -758,6 +776,7 @@ button.secondary:hover {
 
 button.start {
 
+
   background: #16a34a;
 
 }
@@ -797,6 +816,7 @@ button.stop:hover {
   gap: 15px;
 
   flex-wrap: wrap;
+
 
 }
 
@@ -838,6 +858,7 @@ button.stop:hover {
 
 }
 
+
 .movement-card.active {
 
   border-color: #2563eb;
@@ -877,6 +898,7 @@ button.stop:hover {
 }
 
 .movement-status {
+
 
   font-size: 12px;
 
@@ -918,6 +940,7 @@ button.stop:hover {
 
 .movement-data-value {
 
+
   font-size: 14px;
 
   font-weight: bold;
@@ -957,6 +980,7 @@ button.stop:hover {
 .serial-line {
 
   min-height: 18px;
+
 
 }
 
@@ -998,6 +1022,7 @@ button.stop:hover {
 
 }
 
+
 .measurement-status.active {
 
   background: #eaf2ff;
@@ -1037,6 +1062,7 @@ footer {
 /* =====================================================
 
    TABLET
+
 
    ===================================================== */
 
@@ -1078,6 +1104,7 @@ footer {
 
   main {
 
+
     width: 92%;
 
     margin-top: 30px;
@@ -1117,6 +1144,7 @@ footer {
     grid-template-columns: repeat(2, 1fr);
 
   }
+
 
   .hero h2 {
 
@@ -1158,6 +1186,7 @@ footer {
 
     font-size: 11px;
 
+
   }
 
 }
@@ -1197,6 +1226,7 @@ footer {
   color: #475569;
 
   font-size: 12px;
+
 
   font-weight: 700;
 
@@ -1238,6 +1268,7 @@ footer {
 
   gap: 10px;
 
+
   margin: 18px 0;
 
 }
@@ -1277,6 +1308,7 @@ footer {
   margin: 0 0 12px;
 
   font-size: 14px;
+
 
 }
 
@@ -1318,6 +1350,7 @@ footer {
 
   line-height: 1.1;
 
+
   font-weight: 800;
 
   color: #1d4ed8;
@@ -1357,6 +1390,7 @@ footer {
   gap: 12px;
 
   flex-wrap: wrap;
+
 
   padding: 10px 12px;
 
@@ -1398,6 +1432,7 @@ footer {
 
   .gesture-chart-grid { grid-template-columns: 1fr; }
 
+
   .gesture-controls button { flex: 1 1 100%; }
 
 }
@@ -1437,6 +1472,7 @@ footer {
   margin: 12px 0 0;
 
   padding: 12px;
+
 
   border: 1px solid #e5e7eb;
 
@@ -1478,6 +1514,7 @@ footer {
 
   min-height: 92px;
 
+
   padding: 22px 28px;
 
 }
@@ -1517,6 +1554,7 @@ footer {
   line-height: 1.45;
 
 }
+
 
 .service-toggle-icon {
 
@@ -1558,6 +1596,7 @@ footer {
 
 .service-content[hidden] { display: none !important; }
 
+
 .service-connection-status {
 
   padding: 14px 18px;
@@ -1597,6 +1636,7 @@ footer {
   background: #fff;
 
   box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
+
 
   overflow: hidden;
 
@@ -1638,6 +1678,7 @@ footer {
 
   color: #667085;
 
+
   font-size: 22px;
 
   font-weight: 400;
@@ -1677,6 +1718,7 @@ footer {
 @media (max-width: 700px) {
 
   .service-module-grid { grid-template-columns: 1fr; }
+
 
   .service-toggle { padding: 20px; }
 
@@ -1718,6 +1760,7 @@ footer {
 
 .contact-review,.contact-report {margin-top:20px;padding:18px;border:1px solid #dfe5ec;border-radius:12px;background:#fff}
 
+
 .contact-review h3,.contact-report h3 {margin:0 0 7px;font-size:17px}
 
 .contact-review p {margin:0;font-size:13px;color:#667085;line-height:1.5}
@@ -1758,6 +1801,7 @@ footer {
 
 @media(max-width:700px){.contact-report-grid,.contact-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.contact-toolbar button{flex:1 1 100%}}
 
+
 /* V54 CONTACT RECORDER V3 — synchronized plot zoom, trial-level labels */
 
 .contact-zoom-controls {display:grid;gap:12px;margin:18px 0;padding:14px;border:1px solid #dce5ef;border-radius:10px;background:#f8fafc}
@@ -1797,6 +1841,7 @@ footer {
 .live-wave-heading { display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:14px; margin-bottom:16px; }
 
 .live-wave-heading h3 { margin:0 0 6px; font-size:17px; }
+
 
 .live-wave-heading p { margin:0; font-size:13px; line-height:1.5; color:#64748b; }
 
