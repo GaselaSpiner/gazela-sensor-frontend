@@ -38,6 +38,7 @@
 
 </header>
 
+
 <main>
 
   <!-- =====================================================
@@ -77,6 +78,7 @@
       </span>
 
     </div>
+
 
   </section>
 
@@ -118,6 +120,7 @@
 
       type="button"
 
+
     >
 
       <h3>LIVE CHARTS</h3>
@@ -157,6 +160,7 @@
     <button
 
       class="module module-button"
+
 
       id="sessionModule"
 
@@ -198,6 +202,7 @@
 
     <div class="sensor-summary">
 
+
       <div class="summary-item">
 
         <div class="summary-label">
@@ -237,6 +242,7 @@
         >
 
           —
+
 
         </div>
 
@@ -278,6 +284,7 @@
 
           id="ax"
 
+
           class="value-number"
 
         >
@@ -317,6 +324,7 @@
       <div class="value-card">
 
         <div class="value-name">AZ</div>
+
 
         <div
 
@@ -358,6 +366,7 @@
 
       <!-- ANGLE -->
 
+
       <div class="value-card">
 
         <div class="value-name">ANGLE</div>
@@ -397,6 +406,7 @@
         </div>
 
         <div class="value-unit">°/s</div>
+
 
       </div>
 
@@ -438,6 +448,7 @@
 
           —
 
+
         </div>
 
         <div class="value-unit">°/s</div>
@@ -478,6 +489,7 @@
         <div class="live-wave-buttons">
           <span id="liveWaveState" class="live-wave-state" aria-live="polite">Oczekiwanie na LIVE</span>
           <button id="liveWavePause" type="button" class="secondary">Wstrzymaj wykresy</button>
+
           <button id="liveWaveClear" type="button" class="secondary">Wyczyść wykresy</button>
         </div>
       </div>
@@ -493,7 +505,7 @@
           <div class="live-wave-legend"><span class="live-wave-x">GX</span><span class="live-wave-y">GY</span><span class="live-wave-z">GZ</span></div>
         </div>
       </div>
-      <p class="live-wave-note">Okno ostatnich 8 sekund. Wykresy pokazują ramki LIVE (~50 Hz), nie wszystkie 100 próbek/s z FIFO. Wstrzymanie zatrzymuje tylko wykresy, nie firmware ani Contact Recorder.</p>
+      <p class="live-wave-note">Okno ostatnich 8 sekund. Wykresy pokazują ramki LIVE (~50 Hz), nie wszystkie 400 próbek/s z FIFO. Wstrzymanie zatrzymuje tylko wykresy, nie firmware ani Contact Recorder.</p>
     </div>
   </section>
 
@@ -518,6 +530,7 @@
           Ręczna rejestracja gestu z danych LIVE oraz porównanie
 
           przebiegu z zapisanym ruchem referencyjnym.
+
 
         </div>
 
@@ -559,6 +572,7 @@
 
         <div class="summary-label">REFERENCE</div>
 
+
         <div id="gestureReferenceStatus" class="summary-value">Not saved</div>
 
       </div>
@@ -598,6 +612,7 @@
         <h3>ACCELEROMETER — AX / AY / AZ</h3>
 
         <canvas id="gestureAccelerationChart" height="190" role="img" aria-label="Wykres przyspieszenia: AX, AY i AZ">Wykres przyspieszenia AX, AY i AZ.</canvas>
+
 
       </div>
 
@@ -639,6 +654,7 @@
 
       <div id="gestureHistory" class="gesture-history">
 
+
         <div class="gesture-history-empty">Brak zakończonych nagrań.</div>
 
       </div>
@@ -668,7 +684,7 @@
       <span id="contactSessionBadge" class="gesture-status-badge">Brak sesji</span>
     </div>
     <div class="contact-disclaimer" role="note">
-      Każda próba to <strong>400 kolejnych próbek / około 4 sekundy</strong>. Transfer BLE odbywa się po nagraniu. Przerwy między próbami NIE są rejestrowane. Obecny firmware nie wykrywa jeszcze automatycznie kontaktu piłki.
+      Każda próba to <strong>400 kolejnych próbek przy nominalnych 400 Hz — około 1 sekunda</strong> (krok 2,5 ms). Zapis rozpoczyna się po poleceniu C, więc wykonaj ruch bezpośrednio po uruchomieniu próby. Transfer BLE odbywa się po nagraniu, a próba trafia do sesji dopiero po potwierdzeniu CAP,DONE. Przerwy między próbami NIE są rejestrowane. Firmware nie wykrywa jeszcze automatycznie kontaktu piłki.
     </div>
     <div class="contact-toolbar">
       <button id="contactSessionStartButton" class="start" type="button">▶ ROZPOCZNIJ SESJĘ</button>
@@ -678,12 +694,13 @@
     <div class="contact-controls">
       <label for="contactLabel">Rodzaj próby</label>
       <select id="contactLabel">
+
         <option value="ball">Uderzenia piłki</option>
         <option value="air">Zamach bez kontaktu</option>
         <option value="hand">Stuknięcie dłonią</option>
         <option value="other">Inny sygnał / zakłócenie</option>
       </select>
-      <button id="contactStartButton" class="start" type="button" disabled>● NAGRAJ PRÓBĘ — 4 s</button>
+      <button id="contactStartButton" class="start" type="button" disabled>● NAGRAJ PRÓBĘ — ~1 s</button>
       <button id="contactCancelButton" class="stop" type="button" disabled>ANULUJ PRÓBĘ</button>
       <button id="contactDownloadButton" class="secondary" type="button" disabled>POBIERZ CSV PRÓBY</button>
     </div>
@@ -710,7 +727,7 @@
         <div class="contact-zoom-buttons">
           <button id="contactZoomIn" class="secondary" type="button" disabled>＋ POWIĘKSZ 2×</button>
           <button id="contactZoomOut" class="secondary" type="button" disabled>－ ODDAL 2×</button>
-          <button id="contactZoomReset" class="secondary" type="button" disabled>CAŁE 4 s</button>
+          <button id="contactZoomReset" class="secondary" type="button" disabled>CAŁĄ PRÓBĘ (~1 s)</button>
         </div>
         <label for="contactZoomRange">Szerokość widocznego fragmentu (20–400 próbek)
           <input id="contactZoomRange" type="range" min="20" max="400" step="1" value="400" disabled>
@@ -718,7 +735,8 @@
         <label for="contactPanRange">Przesuwaj okno po osi czasu
           <input id="contactPanRange" type="range" min="0" max="0" step="1" value="0" disabled>
         </label>
-        <output id="contactZoomText" aria-live="polite">0.00–3.99 s • 400 próbek • przybliżenie 1.0×</output>
+
+        <output id="contactZoomText" aria-live="polite">0.000–0.998 s • 400 próbek • przybliżenie 1.0×</output>
       </div>
       <div class="contact-charts">
         <div class="contact-chart-box"><h4>ACC — AX / AY / AZ [g]</h4><canvas id="contactAccChart" height="210" aria-label="Wykres przyspieszenia, wybór próbki" role="img"></canvas></div>
@@ -748,7 +766,7 @@
       <h3>RAPORT SESJI — lokalnie w Sensor Lab</h3>
       <div id="contactReport" class="contact-report-content">Brak danych. Raport powstaje automatycznie po każdej ukończonej próbie i zmianie oznaczeń.</div>
     </div>
-    <p class="contact-note">Transmisja: 20 B na pakiet, CRC16, numer próbki, kwantyzacja ACC 0,001 g i GYRO 0,1°/s. Oś czasu próbek pochodzi z firmware i jest nominalna. Oceny całych prób i opcjonalne znaczniki na wykresie są ręcznymi danymi referencyjnymi, a nie wynikiem detektora. Powiększenie osi nie zwiększa częstotliwości 100 Hz. ZIP zawiera CSV wszystkich prób, zdarzenia, metadane i raport. Dane są w pamięci przeglądarki — eksportuj je przed odświeżeniem strony.</p>
+    <p class="contact-note">Transmisja: 20 B na pakiet, CRC16, numer próbki, kwantyzacja ACC 0,001 g i GYRO 0,1°/s. Oś czasu jest rekonstruowana nominalnie co 2,5 ms; nie jest to sprzętowy znacznik czasu BMI270. Oceny całych prób i opcjonalne znaczniki na wykresie są ręcznymi danymi referencyjnymi, a nie wynikiem detektora. Powiększenie osi nie zwiększa częstotliwości próbkowania 400 Hz. ZIP zawiera CSV wszystkich prób, zdarzenia, metadane i raport. Dane są w pamięci przeglądarki — eksportuj je przed odświeżeniem strony.</p>
   </section>
 
   <!-- =====================================================
@@ -758,6 +776,7 @@
        ===================================================== -->
 
   <section class="card">
+
 
     <h2 class="battery-heading">
 
@@ -799,6 +818,7 @@
 
       rx="3"
 
+
       fill="none"
 
       stroke="currentColor"
@@ -838,6 +858,7 @@
       aria-live="polite"
 
     >
+
 
       <div
 
@@ -879,6 +900,7 @@
 
           —%
 
+
         </div>
 
         <div
@@ -918,6 +940,7 @@
         <div
 
           id="batteryPack"
+
 
           class="summary-value"
 
@@ -959,6 +982,7 @@
 
         <div class="summary-label">
 
+
           CELL 2
 
         </div>
@@ -998,6 +1022,7 @@
           —
 
         </div>
+
 
       </div>
 
@@ -1039,6 +1064,7 @@
 
       Updated: —
 
+
     </div>
 
   </section>
@@ -1078,6 +1104,7 @@ USER MODE: połączenie treningowe z sensorem przez Bluetooth LE.
       </button>
 
       <!-- CONNECT -->
+
 
       <button
 
@@ -1119,6 +1146,7 @@ USER MODE: połączenie treningowe z sensorem przez Bluetooth LE.
 
         type="button"
 
+
         disabled
 
       >
@@ -1158,6 +1186,7 @@ USER MODE: połączenie treningowe z sensorem przez Bluetooth LE.
     >
 
       Transport: BLE (USER MODE)
+
 
     </div>
 
@@ -1199,6 +1228,7 @@ USER MODE: połączenie treningowe z sensorem przez Bluetooth LE.
 
         </div>
 
+
       </div>
 
       <div
@@ -1238,6 +1268,7 @@ USER MODE: połączenie treningowe z sensorem przez Bluetooth LE.
   </section>
 
   <!-- =====================================================
+
 
        SERVICE MODE — additional diagnostics and USB transport
 
@@ -1279,6 +1310,7 @@ USER MODE: połączenie treningowe z sensorem przez Bluetooth LE.
 
     <div class="service-content" id="serviceModeContent" hidden>
 
+
       <div class="service-connection-status" id="serviceConnectionStatus" role="status" aria-live="polite">
 
         SERVICE MODE aktywny. Połącz USB, aby rozpocząć odbiór diagnostyki.
@@ -1318,6 +1350,7 @@ USER MODE: połączenie treningowe z sensorem przez Bluetooth LE.
             <pre id="serviceTransportLog" class="service-data-log" aria-live="polite">Oczekiwanie na połączenie USB…</pre>
 
           </div>
+
 
         </details>
 
@@ -1359,6 +1392,7 @@ USER MODE: połączenie treningowe z sensorem przez Bluetooth LE.
 
           <summary>BATTERY DIAGNOSTICS</summary>
 
+
           <div class="service-module-body">
 
             <p>Komunikaty BAT, napięcia ogniw, pakietu i ADC odebrane z USB — bez możliwości edycji.</p>
@@ -1398,6 +1432,7 @@ USER MODE: połączenie treningowe z sensorem przez Bluetooth LE.
       id="serialMonitor"
 
       class="serial-monitor"
+
 
       role="log"
 
@@ -1439,6 +1474,7 @@ USER MODE: połączenie treningowe z sensorem przez Bluetooth LE.
 
   GAZELA SPINER SENSOR
 
+
   &nbsp; | &nbsp;
 
   Sensor Lab
@@ -1450,3 +1486,4 @@ USER MODE: połączenie treningowe z sensorem przez Bluetooth LE.
 </body>
 
 </html>
+
