@@ -1,1621 +1,2494 @@
 <!DOCTYPE html>
 
+
 <html lang="pl">
+
 
 <head>
 
+
   <meta charset="UTF-8">
+
 
   <meta
 
+
     name="viewport"
+
 
     content="width=device-width, initial-scale=1.0"
 
+
   >
+
 
   <meta name="description" content="Gazela Spiner Sensor Lab — podgląd danych sensora, rejestracja gestów i diagnostyka połączenia.">
 
+
   <title>Gazela Spiner Sensor Lab</title>
+
 
   <link
 
+
     rel="stylesheet"
+
 
     href="css/style.css"
 
+
   >
+
 
 </head>
 
+
 <body>
+
 
 <header>
 
+
   <h1>GAZELA SPINER SENSOR</h1>
+
 
   <p>Sensor Lab</p>
 
+
 </header>
+
 
 <main>
 
+
   <!-- =====================================================
+
 
        HERO
 
+
        ===================================================== -->
+
 
   <section class="hero">
 
+
     <h2>Sensor Lab</h2>
+
 
     <p>
 
+
       Środowisko do rejestracji, obserwacji i analizy ruchu
+
 
       rakiety z wykorzystaniem sensora Gazela Spiner.
 
+
     </p>
+
 
     <!-- SENSOR CONNECTION STATUS -->
 
+
     <div class="status" role="status" aria-live="polite">
+
 
       <span
 
+
         id="statusDot"
+
 
         class="status-dot">
 
+
       </span>
+
 
       <span id="statusText">
 
+
         Sensor not connected
+
 
       </span>
 
+
     </div>
+
 
   </section>
 
+
   <!-- =====================================================
+
 
        MODULE NAVIGATION
 
+
        ===================================================== -->
+
 
   <section class="modules" aria-label="Nawigacja modułów Sensor Lab">
 
+
     <button
+
 
       class="module module-button active"
 
+
       id="liveSensorModule"
+
 
       type="button"
 
+
     >
+
 
       <h3>LIVE SENSOR</h3>
 
+
       <p>
+
 
         Dane z sensora w czasie rzeczywistym:
 
+
         przyspieszenie, żyroskop, G oraz kąty.
+
 
       </p>
 
+
     </button>
+
 
     <button
 
+
       class="module module-button"
+
 
       id="liveChartsModule"
 
+
       type="button"
 
+
     >
+
 
       <h3>LIVE CHARTS</h3>
 
+
       <p>
+
 
         Wizualizacja danych z czujnika
 
+
         i parametrów ruchu.
+
 
       </p>
 
+
     </button>
+
 
     <button
 
+
       class="module module-button"
+
 
       id="movementPlayerModule"
 
+
       type="button"
 
+
     >
+
 
       <h3>MOVEMENT PLAYER</h3>
 
+
       <p>
+
 
         Odtwarzanie zapisanych ruchów
 
+
         i obserwacja ich przebiegu w czasie.
+
 
       </p>
 
+
     </button>
 
+
     <button
+
 
       class="module module-button"
 
+
       id="sessionModule"
+
 
       type="button"
 
+
     >
+
 
       <h3>SESSION</h3>
 
+
       <p>
+
 
         Rejestracja i organizacja danych
 
+
         z kolejnych sesji pomiarowych.
+
 
       </p>
 
+
     </button>
+
 
   </section>
 
+
   <!-- =====================================================
+
 
        LIVE SENSOR
 
+
        ===================================================== -->
 
+
   <section class="card">
+
 
     <h2>LIVE SENSOR</h2>
 
+
     <div class="card-description">
+
 
       Dane odbierane bezpośrednio
 
+
       z sensora Gazela Spiner.
+
 
     </div>
 
+
     <div class="sensor-summary">
+
 
       <div class="summary-item">
 
+
         <div class="summary-label">
+
 
           MOVEMENT
 
+
         </div>
 
+
         <div
+
 
           id="movementValue"
 
+
           class="summary-value"
+
 
         >
 
+
           —
+
 
         </div>
 
+
       </div>
+
 
       <div class="summary-item">
 
+
         <div class="summary-label">
+
 
           TIME
 
+
         </div>
 
+
         <div
+
 
           id="timeValue"
 
+
           class="summary-value"
+
 
         >
 
+
           —
+
 
         </div>
 
+
       </div>
+
 
       <div class="summary-item">
 
+
         <div class="summary-label">
+
 
           SAMPLES RECEIVED
 
+
         </div>
 
+
         <div
+
 
           id="samplesValue"
 
+
           class="summary-value"
 
+
         >
+
 
           0
 
+
         </div>
+
 
       </div>
 
+
     </div>
+
 
     <div class="values">
 
+
       <!-- AX -->
 
+
       <div class="value-card">
+
 
         <div class="value-name">AX</div>
 
+
         <div
+
 
           id="ax"
 
+
           class="value-number"
+
 
         >
 
+
           —
+
 
         </div>
 
+
         <div class="value-unit">g</div>
 
+
       </div>
+
 
       <!-- AY -->
 
+
       <div class="value-card">
+
 
         <div class="value-name">AY</div>
 
+
         <div
+
 
           id="ay"
 
+
           class="value-number"
+
 
         >
 
+
           —
+
 
         </div>
 
+
         <div class="value-unit">g</div>
 
+
       </div>
+
 
       <!-- AZ -->
 
+
       <div class="value-card">
+
 
         <div class="value-name">AZ</div>
 
+
         <div
+
 
           id="az"
 
+
           class="value-number"
+
 
         >
 
+
           —
+
 
         </div>
 
+
         <div class="value-unit">g</div>
 
+
       </div>
+
 
       <!-- G -->
 
+
       <div class="value-card">
+
 
         <div class="value-name">G</div>
 
+
         <div
+
 
           id="g"
 
+
           class="value-number"
+
 
         >
 
+
           —
 
+
         </div>
+
 
         <div class="value-unit">g</div>
 
+
       </div>
+
 
       <!-- ANGLE -->
 
+
       <div class="value-card">
+
 
         <div class="value-name">ANGLE</div>
 
+
         <div
+
 
           id="angle"
 
+
           class="value-number"
+
 
         >
 
+
           —
+
 
         </div>
 
+
         <div class="value-unit">°</div>
 
+
       </div>
+
 
       <!-- GX -->
 
+
       <div class="value-card">
+
 
         <div class="value-name">GX</div>
 
+
         <div
+
 
           id="gx"
 
+
           class="value-number"
+
 
         >
 
+
           —
+
 
         </div>
 
+
         <div class="value-unit">°/s</div>
 
+
       </div>
+
 
       <!-- GY -->
 
+
       <div class="value-card">
+
 
         <div class="value-name">GY</div>
 
+
         <div
+
 
           id="gy"
 
+
           class="value-number"
+
 
         >
 
+
           —
+
 
         </div>
 
+
         <div class="value-unit">°/s</div>
 
+
       </div>
+
 
       <!-- GZ -->
 
+
       <div class="value-card">
+
 
         <div class="value-name">GZ</div>
 
+
         <div
+
 
           id="gz"
 
+
           class="value-number"
+
 
         >
 
+
           —
 
+
         </div>
+
 
         <div class="value-unit">°/s</div>
 
+
       </div>
+
 
       <!-- ANGLEY -->
 
+
       <div class="value-card">
+
 
         <div class="value-name">ANGLEY</div>
 
+
         <div
+
 
           id="angley"
 
+
           class="value-number"
+
 
         >
 
+
           —
 
+
         </div>
+
 
         <div class="value-unit">°</div>
 
+
       </div>
 
+
     </div>
+
 
     <!-- V55: LIVE CHARTS - visualization only, fed by existing LIVE frames -->
 
+
     <div class="live-wave-panel" id="liveWavePanel">
+
 
       <div class="live-wave-heading">
 
+
         <div>
+
 
           <h3>LIVE STREAM — ACC + GYRO</h3>
 
+
           <p>Ruchome przebiegi tych samych próbek, które aktualizują wartości LIVE SENSOR.</p>
 
+
         </div>
+
 
         <div class="live-wave-buttons">
 
+
           <span id="liveWaveState" class="live-wave-state" aria-live="polite">Oczekiwanie na LIVE</span>
+
 
           <button id="liveWavePause" type="button" class="secondary">Wstrzymaj wykresy</button>
 
+
           <button id="liveWaveClear" type="button" class="secondary">Wyczyść wykresy</button>
+
 
         </div>
 
+
       </div>
+
 
       <div class="live-wave-grid">
 
+
         <div class="live-wave-chart">
+
 
           <div class="live-wave-chart-top"><strong>ACCELEROMETER</strong><span>AX / AY / AZ • g</span></div>
 
+
           <canvas id="liveWaveAcc" height="235" aria-label="Przewijany wykres LIVE akcelerometru AX AY AZ" role="img"></canvas>
+
 
           <div class="live-wave-legend"><span class="live-wave-x">AX</span><span class="live-wave-y">AY</span><span class="live-wave-z">AZ</span></div>
 
+
         </div>
+
 
         <div class="live-wave-chart">
 
+
           <div class="live-wave-chart-top"><strong>GYROSCOPE</strong><span>GX / GY / GZ • °/s</span></div>
+
 
           <canvas id="liveWaveGyro" height="235" aria-label="Przewijany wykres LIVE żyroskopu GX GY GZ" role="img"></canvas>
 
+
           <div class="live-wave-legend"><span class="live-wave-x">GX</span><span class="live-wave-y">GY</span><span class="live-wave-z">GZ</span></div>
+
 
         </div>
 
+
       </div>
+
 
       <p class="live-wave-note">Okno ostatnich 8 sekund. Wykresy pokazują ramki LIVE (~50 Hz), nie wszystkie 400 próbek/s z FIFO. Wstrzymanie zatrzymuje tylko wykresy, nie firmware ani Contact Recorder.</p>
 
+
     </div>
+
 
   </section>
 
+
  
 
+
   <!-- =====================================================
+
 
        GESTURE RECORDER / COMPARATOR
 
+
        ===================================================== -->
+
 
   <section class="card gesture-card" id="gestureRecorder">
 
+
     <div class="gesture-header">
 
+
       <div>
+
 
         <h2>GESTURE RECORDER</h2>
 
+
         <div class="card-description">
+
 
           Ręczna rejestracja gestu z danych LIVE oraz porównanie
 
+
           przebiegu z zapisanym ruchem referencyjnym.
+
 
         </div>
 
+
       </div>
+
 
       <span id="gestureStatusBadge" class="gesture-status-badge" role="status" aria-live="polite">Waiting for LIVE</span>
 
+
     </div>
 
+
  
+
 
     <div class="gesture-stats">
 
+
       <div class="summary-item">
+
 
         <div class="summary-label">LIVE BUFFER</div>
 
+
         <div id="gestureBufferCount" class="summary-value">0</div>
+
 
       </div>
 
+
       <div class="summary-item">
+
 
         <div class="summary-label">DURATION</div>
 
+
         <div id="gestureDuration" class="summary-value">0.00 s</div>
+
 
       </div>
 
+
       <div class="summary-item">
+
 
         <div class="summary-label">SAMPLES</div>
 
+
         <div id="gestureSampleCount" class="summary-value">0</div>
+
 
       </div>
 
+
       <div class="summary-item">
+
 
         <div class="summary-label">REFERENCE</div>
 
+
         <div id="gestureReferenceStatus" class="summary-value">Not saved</div>
+
 
       </div>
 
+
     </div>
 
+
  
+
 
     <div class="gesture-controls">
 
+
       <button id="gestureRecordButton" class="start" type="button">● RECORD GESTURE</button>
+
 
       <button id="gestureStopButton" class="stop" type="button" disabled>■ STOP RECORDING</button>
 
+
       <button id="gestureReferenceButton" class="secondary" type="button" disabled>Save as reference</button>
+
 
       <button id="gestureCompareButton" type="button" disabled>Compare with reference</button>
 
+
       <button id="gestureClearButton" class="secondary" type="button">Clear current</button>
+
 
     </div>
 
+
  
+
 
     <div id="gestureMessage" class="measurement-status" role="status" aria-live="polite">
 
+
       Połącz sensor i uruchom LIVE. Rejestrator nie wysyła komend do Arduino.
+
 
     </div>
 
+
  
+
 
     <div class="gesture-chart-grid">
 
+
       <div class="gesture-chart-panel">
+
 
         <h3>ACCELEROMETER — AX / AY / AZ</h3>
 
+
         <canvas id="gestureAccelerationChart" height="190" role="img" aria-label="Wykres przyspieszenia: AX, AY i AZ">Wykres przyspieszenia AX, AY i AZ.</canvas>
 
+
       </div>
+
 
       <div class="gesture-chart-panel">
 
+
         <h3>GYROSCOPE — GX / GY / GZ</h3>
+
 
         <canvas id="gestureGyroscopeChart" height="190" role="img" aria-label="Wykres żyroskopu: GX, GY i GZ">Wykres żyroskopu GX, GY i GZ.</canvas>
 
+
       </div>
+
 
     </div>
 
+
  
+
 
     <div class="gesture-result">
 
+
       <div>
+
 
         <div class="summary-label">PRELIMINARY SHAPE SIMILARITY</div>
 
+
         <div id="gestureMatchScore" class="gesture-match-score">—</div>
 
+
       </div>
+
 
       <div id="gestureMatchDescription" class="gesture-match-description">
 
+
         Zarejestruj gest i zapisz ruch referencyjny, aby rozpocząć porównanie.
+
 
       </div>
 
+
     </div>
 
+
  
+
 
     <div class="gesture-history-wrap">
 
+
       <h3>RECORDED GESTURES</h3>
+
 
       <div id="gestureHistory" class="gesture-history">
 
+
         <div class="gesture-history-empty">Brak zakończonych nagrań.</div>
+
 
       </div>
 
+
     </div>
+
 
     <p class="gesture-disclaimer">
 
+
       Wynik jest eksperymentalną miarą podobieństwa kształtu sygnałów,
+
 
       a nie oceną techniki ani naukowo zwalidowaną dokładnością ruchu.
 
+
     </p>
+
 
   </section>
 
+
  
+
 
   
 
+
   <!-- STAGE 8.2 — CONTACT RECORDER V2 / SESSION & EVENT LABELING -->
+
 
   <section class="card contact-card" id="contactRecorder">
 
+
     <div class="contact-head">
 
+
       <div>
+
 
         <h2>CONTACT RECORDER</h2>
 
+
         <p class="card-description">Zbieranie rzeczywistych próbek ACC + GYRO, ręczne oznaczanie momentów kontaktu i raport sesji. Algorytm automatycznego wykrywania zostanie zaimplementowany później w firmware.</p>
 
+
       </div>
+
 
       <span id="contactSessionBadge" class="gesture-status-badge">Brak sesji</span>
 
+
     </div>
+
 
     <div class="contact-disclaimer" role="note">
 
+
       Każda próba to <strong>1600 kolejnych próbek przy nominalnych 400 Hz — około 4 sekundy</strong> (krok 2,5 ms). Zapis rozpoczyna się po poleceniu C, więc wykonaj ruch bezpośrednio po uruchomieniu próby. Transfer BLE odbywa się po nagraniu, a próba trafia do sesji dopiero po potwierdzeniu CAP,DONE. Przerwy między próbami NIE są rejestrowane. Firmware nie wykrywa jeszcze automatycznie kontaktu piłki.
 
+
     </div>
+
 
     <div class="contact-toolbar">
 
+
       <button id="contactSessionStartButton" class="start" type="button">▶ ROZPOCZNIJ SESJĘ</button>
+
 
       <button id="contactSessionEndButton" class="secondary" type="button" disabled>■ ZAKOŃCZ SESJĘ</button>
 
+
       <button id="contactExportButton" type="button" disabled>EKSPORT RAPORTU ZIP</button>
 
+
     </div>
+
 
     <div class="contact-controls">
 
+
       <label for="contactLabel">Rodzaj próby</label>
+
 
       <select id="contactLabel">
 
+
         <option value="ball">Uderzenia piłki</option>
+
 
         <option value="air">Zamach bez kontaktu</option>
 
+
         <option value="hand">Stuknięcie dłonią</option>
+
 
         <option value="other">Inny sygnał / zakłócenie</option>
 
+
       </select>
+
 
       <button id="contactStartButton" class="start" type="button" disabled>● NAGRAJ PRÓBĘ — ~4 s</button>
 
+
       <button id="contactCancelButton" class="stop" type="button" disabled>ANULUJ PRÓBĘ</button>
+
 
       <button id="contactDownloadButton" class="secondary" type="button" disabled>POBIERZ CSV PRÓBY</button>
 
+
     </div>
+
 
     <div id="contactStatus" class="measurement-status" role="status" aria-live="polite">Rozpocznij sesję, połącz BLE i nagraj pierwszą próbę.</div>
 
+
     <div class="contact-stats">
+
 
       <div class="summary-item"><div class="summary-label">PRÓBY / PASS</div><div id="contactSessionTrials" class="summary-value">0</div></div>
 
+
       <div class="summary-item"><div class="summary-label">PRÓBKI W SESJI</div><div id="contactSessionSamples" class="summary-value">0</div></div>
+
 
       <div class="summary-item"><div class="summary-label">OZNACZONE KONTAKTY</div><div id="contactSessionConfirmed" class="summary-value">0</div></div>
 
+
       <div class="summary-item"><div class="summary-label">BIEŻĄCY TRANSFER</div><div id="contactSamples" class="summary-value">0 / 1600</div></div>
+
 
       <div class="summary-item"><div class="summary-label">KOMPLETNOŚĆ</div><div id="contactIntegrity" class="summary-value">—</div></div>
 
+
       <div class="summary-item"><div class="summary-label">FAZA</div><div id="contactPhase" class="summary-value">IDLE</div></div>
 
+
     </div>
+
 
     <div class="contact-review">
 
+
       <div class="contact-review-head">
+
 
         <div>
 
+
           <h3>Oznacz zdarzenia na wykresie</h3>
+
 
           <p>Wybierz próbę i powiększ oś czasu. Możesz oznaczyć konkretny punkt lub jedynie potwierdzić, że kontakt wystąpił, bez zgadywania próbki.</p>
 
+
         </div>
+
 
         <label for="contactTrialSelect">Próba
 
+
           <select id="contactTrialSelect" disabled><option value="">Brak zarejestrowanych prób</option></select>
+
 
         </label>
 
+
       </div>
+
 
       <section class="contact-detector-offline-panel" aria-label="Wynik eksperymentalnego detektora offline" style="border:1px solid #a78bfa;border-radius:12px;padding:14px;margin:14px 0;">
 
+
         <h3 style="margin:0 0 6px;">BALL CONTACT DETECTOR — OFFLINE V1 <small style="font-weight:normal;">(eksperymentalny)</small></h3>
+
 
         <div id="contactDetectorResult" role="status" aria-live="polite">Nagraj próbę, aby uruchomić analizę offline.</div>
 
+
         <p id="contactDetectorExplain">—</p>
+
 
         <p id="contactDetectorComparison" style="font-weight:600;">—</p>
 
+
         <p style="font-size:.88em;opacity:.8;">Fioletowa przerywana linia AI? na wykresie oznacza szacowany początek sygnatury, nie potwierdzony moment kontaktu. Wynik nie zmienia ręcznego oznaczenia. Dźwięk następuje dopiero po odebraniu 1600 próbek i CAP,DONE (ok. 2–3 min po nagraniu).</p>
+
 
       </section>
 
+
+      <!-- STAGE 8.8: Gesture Recognizer V1; analysis only, no firmware/transport commands -->
+
+      <section class="gesture-replay-panel" id="gestureReplayPanel" aria-label="Gesture Recognizer Offline Stream Replay">
+
+        <div class="gesture-replay-heading">
+
+          <div>
+
+            <h3>GESTURE RECOGNIZER — V1 OFFLINE STREAM REPLAY</h3>
+
+            <p>Przetwarza kolejne próbki 400 Hz w kolejności SEQ. Kandydatów dostarcza istniejący Contact Detector po analizie ukończonej próby. ACCEPT jest <strong>symulacją</strong> — nie zapisuje uderzenia w Arduino.</p>
+
+          </div>
+
+          <span class="gesture-replay-tag">STAGE 8.8 · EXPERIMENTAL</span>
+
+        </div>
+
+        <div class="gesture-replay-toolbar">
+
+          <label for="gestureReplaySource">Źródło danych
+
+            <select id="gestureReplaySource"><option value="current">Bieżąca próba Contact Recorder</option></select>
+
+          </label>
+
+          <label for="gestureReplayImport">Import wcześniejszych prób CSV (400 Hz)
+
+            <input id="gestureReplayImport" type="file" accept=".csv,text/csv" multiple>
+
+          </label>
+
+          <button id="gestureReplayRun" type="button">ANALYZE REPLAY</button>
+
+          <button id="gestureReplayAll" type="button" class="secondary">ANALYZE ALL IMPORTED</button>
+
+          <button id="gestureReplayDownload" type="button" class="secondary" disabled>EXPORT JSON</button>
+
+        </div>
+
+        <div id="gestureReplayStatus" class="measurement-status" role="status" aria-live="polite">Wybierz zakończoną próbę albo zaimportuj pliki CSV z Contact Recorder.</div>
+
+        <div id="gestureReplayMetrics" class="gesture-replay-metrics">Brak analizy.</div>
+
+        <div class="gesture-replay-table-wrap">
+
+          <table class="gesture-replay-table">
+
+            <thead><tr><th>Zdarzenie</th><th>t [ms]</th><th>SEQ</th><th>GYRO PRE [°/s]</th><th>Interpretacja</th></tr></thead>
+
+            <tbody id="gestureReplayEvents"><tr><td colspan="5">Brak wyników.</td></tr></tbody>
+
+          </table>
+
+        </div>
+
+        <div id="gestureReplayGestures" class="gesture-replay-results">Podwójne stuknięcia i powiązania PENDING pojawią się tutaj.</div>
+
+        <p class="gesture-replay-note">Offline Replay ≠ detektor LIVE. Analiza detektora korzysta z ukończonych 1600 próbek. Gesture Recognizer otrzymuje próbki kolejno i uzyskuje kandydatów z opóźnieniem 100 ms. Nie łączymy niezarejestrowanych przerw między próbami. Etykiety BALL / NO BALL nie wpływają na rozpoznawanie.</p>
+
+      </section>
+
+
       <div class="contact-zoom-controls" aria-label="Powiększenie osi czasu">
+
 
         <div class="contact-zoom-buttons">
 
+
           <button id="contactZoomIn" class="secondary" type="button" disabled>＋ POWIĘKSZ 2×</button>
+
 
           <button id="contactZoomOut" class="secondary" type="button" disabled>－ ODDAL 2×</button>
 
+
           <button id="contactZoomReset" class="secondary" type="button" disabled>CAŁĄ PRÓBĘ (~4 s)</button>
 
+
         </div>
+
 
         <label for="contactZoomRange">Szerokość widocznego fragmentu (20–1600 próbek)
 
+
           <input id="contactZoomRange" type="range" min="20" max="1600" step="1" value="1600" disabled>
 
+
         </label>
+
 
         <label for="contactPanRange">Przesuwaj okno po osi czasu
 
+
           <input id="contactPanRange" type="range" min="0" max="0" step="1" value="0" disabled>
+
 
         </label>
 
+
         <output id="contactZoomText" aria-live="polite">0.000–3.998 s • 1600 próbek • przybliżenie 1.0×</output>
 
+
       </div>
+
 
       <div class="contact-charts">
 
+
         <div class="contact-chart-box"><h4>ACC — AX / AY / AZ [g]</h4><canvas id="contactAccChart" height="210" aria-label="Wykres przyspieszenia, wybór próbki" role="img"></canvas></div>
+
 
         <div class="contact-chart-box"><h4>GYRO — GX / GY / GZ [°/s]</h4><canvas id="contactGyroChart" height="210" aria-label="Wykres żyroskopu, wybór próbki" role="img"></canvas></div>
 
+
       </div>
+
 
       <p id="contactCursorInfo" class="contact-cursor-info">Kliknij wykres, jeśli znasz moment kontaktu. W przeciwnym razie użyj oceny całej próby poniżej.</p>
 
+
       <div class="contact-trial-truth">
+
 
         <h4>Ocena CAŁEJ próby — bez wskazywania punktu</h4>
 
+
         <p>Jeśli na pewno piłka dotknęła naciągu, ale nie znasz dokładnej chwili, wybierz pierwszą opcję. Nie przypiszemy sztucznie żadnej próbki.</p>
+
 
         <div id="contactTrialTruth" class="contact-trial-truth-status" aria-live="polite">Najpierw nagraj próbę.</div>
 
+
         <div class="contact-mark-controls">
+
 
           <button id="contactTruthBall" class="start" type="button" disabled>✓ BYŁ KONTAKT — NIE ZNAM PRÓBKI</button>
 
+
           <button id="contactTruthNoBall" class="secondary" type="button" disabled>✕ NIE BYŁO KONTAKTU</button>
+
 
           <button id="contactTruthUncertain" class="secondary" type="button" disabled>? NIE JESTEM PEWIEN</button>
 
+
           <button id="contactTruthClear" class="secondary" type="button" disabled>WYCZYŚĆ OCENĘ PRÓBY</button>
+
 
         </div>
 
+
       </div>
+
 
       <h4 class="contact-point-heading">Opcjonalnie: dokładny punkt na wykresie</h4>
 
+
       <div class="contact-mark-controls">
+
 
         <button id="contactMarkTrue" class="start" type="button" disabled>✓ POTWIERDZAM KONTAKT PIŁKI</button>
 
+
         <button id="contactMarkNegative" class="secondary" type="button" disabled>✕ TO NIE BYŁ KONTAKT PIŁKI</button>
+
 
         <button id="contactMarkUncertain" class="secondary" type="button" disabled>? NIEPEWNE</button>
 
+
       </div>
+
 
       <div id="contactMarkers" class="contact-marker-list" aria-live="polite">Brak oznaczeń.</div>
 
+
     </div>
+
 
     <div class="contact-report">
 
+
       <h3>RAPORT SESJI — lokalnie w Sensor Lab</h3>
+
 
       <div id="contactReport" class="contact-report-content">Brak danych. Raport powstaje automatycznie po każdej ukończonej próbie i zmianie oznaczeń.</div>
 
+
     </div>
+
 
     <p class="contact-note">Transmisja: 20 B na pakiet, CRC16, numer próbki, kwantyzacja ACC 0,001 g i GYRO 0,1°/s. Oś czasu jest rekonstruowana nominalnie co 2,5 ms; nie jest to sprzętowy znacznik czasu BMI270. Oceny całych prób i opcjonalne znaczniki na wykresie są ręcznymi danymi referencyjnymi, a nie wynikiem detektora. Powiększenie osi nie zwiększa częstotliwości próbkowania 400 Hz. ZIP zawiera CSV wszystkich prób, zdarzenia, metadane i raport. Dane są w pamięci przeglądarki — eksportuj je przed odświeżeniem strony.</p>
 
+
   </section>
 
+
   <!-- =====================================================
+
 
        BATTERY
 
+
        ===================================================== -->
 
+
   <section class="card">
+
 
     <h2 class="battery-heading">
 
+
   <svg
+
 
     class="battery-heading-icon"
 
+
     viewBox="0 0 24 32"
+
 
     aria-hidden="true"
 
+
   >
 
+
     <rect
+
 
       x="8"
 
+
       y="1"
+
 
       width="8"
 
+
       height="3"
+
 
       rx="1.5"
 
+
       fill="currentColor"
 
+
     />
+
 
     <rect
 
+
       x="3"
+
 
       y="5"
 
+
       width="18"
+
 
       height="25"
 
+
       rx="3"
+
 
       fill="none"
 
+
       stroke="currentColor"
+
 
       stroke-width="2"
 
+
     />
+
 
     <path
 
+
       d="M7 24h10v3H7z"
+
 
       fill="currentColor"
 
+
     />
+
 
   </svg>
 
+
   <span>BATTERY</span>
+
 
 </h2>
 
+
     <div class="card-description">
+
 
       Aktualny stan pakietu baterii
 
+
       oraz poszczególnych ogniw.
 
+
     </div>
+
 
     <!-- BATTERY LEVEL VISUALIZATION -->
 
+
     <div
+
 
       class="battery-visual-panel"
 
+
       aria-live="polite"
+
 
     >
 
+
       <div
+
 
         class="battery-visual"
 
+
         role="img"
+
 
         aria-label="Poziom naładowania baterii: nieznany"
 
+
       >
+
 
         <div class="battery-cap"></div>
 
+
         <div class="battery-shell">
+
 
           <div
 
+
             id="batteryLevelFill"
+
 
             class="battery-level-fill"
 
+
             style="height: 0%"
+
 
           ></div>
 
+
         </div>
 
+
       </div>
+
 
       <div class="battery-level-details">
 
+
         <div
+
 
           id="batteryPercent"
 
+
           class="battery-percent"
 
+
         >
+
 
           —%
 
+
         </div>
 
+
         <div
+
 
           id="batteryLevelLabel"
 
+
           class="battery-level-label"
 
+
         >
+
 
           Poziom naładowania
 
+
         </div>
+
 
         <div class="battery-level-note">
 
+
           Szacunek na podstawie napięcia pakietu
+
 
         </div>
 
+
       </div>
 
+
     </div>
+
 
     <div class="sensor-summary">
 
+
       <!-- PACK -->
+
 
       <div class="summary-item">
 
+
         <div class="summary-label">
+
 
           PACK
 
+
         </div>
 
+
         <div
+
 
           id="batteryPack"
 
+
           class="summary-value"
+
 
         >
 
+
           —
+
 
         </div>
 
+
       </div>
+
 
       <!-- CELL 1 -->
 
+
       <div class="summary-item">
 
+
         <div class="summary-label">
+
 
           CELL 1
 
+
         </div>
 
+
         <div
+
 
           id="batteryCell1"
 
+
           class="summary-value"
+
 
         >
 
+
           —
+
 
         </div>
 
+
       </div>
+
 
       <!-- CELL 2 -->
 
+
       <div class="summary-item">
 
+
         <div class="summary-label">
+
 
           CELL 2
 
+
         </div>
 
+
         <div
+
 
           id="batteryCell2"
 
+
           class="summary-value"
+
 
         >
 
+
           —
+
 
         </div>
 
+
       </div>
+
 
       <!-- CELL DIFFERENCE -->
 
+
       <div class="summary-item">
 
+
         <div class="summary-label">
+
 
           CELL DIFFERENCE
 
+
         </div>
 
+
         <div
+
 
           id="batteryDifference"
 
+
           class="summary-value"
+
 
         >
 
+
           —
+
 
         </div>
 
+
       </div>
+
 
       <!-- STATUS -->
 
+
       <div class="summary-item">
+
 
         <div class="summary-label">
 
+
           STATUS
 
+
         </div>
+
 
         <div
 
+
           id="batteryStatus"
+
 
           class="battery-status"
 
+
         >
+
 
           —
 
+
         </div>
+
 
       </div>
 
+
     </div>
+
 
     <!-- UPDATED -->
 
+
     <div
+
 
       id="batteryUpdated"
 
+
       class="measurement-status"
 
+
     >
+
 
       Updated: —
 
+
     </div>
+
 
   </section>
 
+
   <!-- =====================================================
+
 
        CONNECT SENSOR
 
+
        ===================================================== -->
+
 
   <!-- STAGE 8.6 — CONTACT FEEDBACK AUDIO V2: toggle + offline detector after CAP,DONE -->
 
+
   <section class="card" id="contactFeedbackPanel" aria-labelledby="contactFeedbackTitle">
+
 
     <h2 id="contactFeedbackTitle">CONTACT FEEDBACK — AUDIO</h2>
 
+
     <p class="card-description">Sygnał dźwiękowy po wykryciu kandydata kontaktu. Po potwierdzonym CAP,DONE detektor OFFLINE V1 analizuje 1600 próbek i może odtworzyć sygnał. AUDIO można włączać i wyłączać.</p>
+
 
     <div class="controls" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
 
+
       <button id="contactAudioEnable" type="button" aria-pressed="false">ENABLE AUDIO</button>
+
 
       <button id="contactAudioTest" type="button" class="secondary" disabled>TEST SOUND</button>
 
+
     </div>
+
 
     <div class="summary-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:12px;margin-top:12px;">
 
+
       <div class="summary-item"><div class="summary-label">SIGNAL</div><div class="summary-value">SHORT / 100 ms</div></div>
+
 
       <div class="summary-item"><div class="summary-label">TONE</div><div class="summary-value">880 Hz</div></div>
 
+
       <div class="summary-item"><div class="summary-label">APP VOLUME</div><div class="summary-value">75%</div></div>
+
 
       <div class="summary-item"><div class="summary-label">DETECTED</div><div id="contactAudioCount" class="summary-value">0</div></div>
 
+
     </div>
+
 
     <div id="contactAudioStatus" class="measurement-status" role="status" aria-live="polite">AUDIO LOCKED — kliknij ENABLE AUDIO, aby zezwolić na odtwarzanie.</div>
 
+
     <div id="contactAudioLast" class="measurement-status">LAST EVENT: — | DETECTOR: OFFLINE V1 AFTER CAP,DONE</div>
+
 
     <p class="card-description">TEST SOUND nie jest wykryciem kontaktu i nie zmienia licznika. Dźwięk działa tylko wtedy, gdy przeglądarka pozwala na odtwarzanie. Nie jest gwarantowany przy zablokowanym ekranie telefonu.</p>
 
+
   </section>
 
+
   <section class="card">
+
 
     <h2>Connect Sensor</h2>
 
+
     <div class="card-description">
+
 
 USER MODE: połączenie treningowe z sensorem przez Bluetooth LE.
 
+
     </div>
+
 
     <div class="controls">
 
+
       <!-- USER MODE: BLE is the only available transport -->
+
 
       <!-- BLE -->
 
+
       <button
+
 
         id="bleButton"
 
+
         type="button"
 
+
       >
+
 
         BLE
 
+
       </button>
+
 
       <!-- CONNECT -->
 
+
       <button
+
 
         id="connectButton"
 
+
         type="button"
 
+
       >
+
 
         Connect Sensor
 
+
       </button>
+
 
       <!-- DISCONNECT -->
 
+
       <button
+
 
         id="disconnectButton"
 
+
         class="secondary"
+
 
         type="button"
 
+
         disabled
 
+
       >
+
 
         Disconnect
 
+
       </button>
+
 
       <!-- START -->
 
+
       <button
+
 
         id="startButton"
 
+
         class="start"
+
 
         type="button"
 
+
         disabled
 
+
       >
+
 
         ▶ START MEASUREMENT
 
+
       </button>
+
 
       <!-- STOP -->
 
+
       <button
+
 
         id="stopButton"
 
+
         class="stop"
+
 
         type="button"
 
+
         disabled
 
+
       >
+
 
         ■ STOP
 
+
       </button>
 
+
     </div>
+
 
     <!-- TRANSPORT STATUS -->
 
+
     <div
+
 
       id="transportStatus"
 
+
       class="measurement-status"
 
+
     >
+
 
       Transport: BLE (USER MODE)
 
+
     </div>
+
 
     <!-- MEASUREMENT STATUS -->
 
+
     <div
+
 
       id="measurementStatus"
 
+
       class="measurement-status"
 
+
     >
+
 
       Sensor is waiting.
 
+
     </div>
+
 
   </section>
 
+
   <!-- =====================================================
+
 
        SESSION
 
+
        ===================================================== -->
+
 
   <section class="card">
 
+
     <div class="session-header">
+
 
       <div>
 
+
         <h2>SESSION</h2>
 
+
         <div class="card-description">
+
 
           Aktualna sesja pomiarowa
 
+
           i jej ruchy.
+
 
         </div>
 
+
       </div>
+
 
       <div
 
+
         id="sessionBadge"
+
 
         class="session-badge"
 
+
       >
+
 
         No session
 
+
       </div>
+
 
     </div>
 
+
     <div
+
 
       id="movementList"
 
+
       class="movement-list"
 
+
     >
+
 
       <div class="movement-card">
 
+
         <div class="movement-status">
+
 
           Brak aktywnej sesji.
 
+
         </div>
+
 
       </div>
 
+
     </div>
 
+
   </section>
+
 
   <!-- =====================================================
 
+
        SERVICE MODE — additional diagnostics and USB transport
+
 
        ===================================================== -->
 
+
   <section class="service-shell" id="serviceMode">
+
 
     <button
 
+
       class="module module-button service-toggle"
+
 
       id="serviceModeToggle"
 
+
       type="button"
+
 
       aria-expanded="false"
 
+
       aria-controls="serviceModeContent"
+
 
     >
 
+
       <span class="service-toggle-copy">
+
 
         <span class="service-toggle-title">SERVICE MODE</span>
 
+
         <span class="service-toggle-description">
+
 
           Otwórz moduły diagnostyczne i uruchom połączenie USB.
 
+
         </span>
+
 
       </span>
 
+
       <span class="service-toggle-icon" aria-hidden="true">+</span>
+
 
     </button>
 
+
  
+
 
     <div class="service-content" id="serviceModeContent" hidden>
 
+
       <div class="service-connection-status" id="serviceConnectionStatus" role="status" aria-live="polite">
+
 
         SERVICE MODE aktywny. Połącz USB, aby rozpocząć odbiór diagnostyki.
 
+
       </div>
 
+
  
+
 
       <div class="service-usb-controls">
 
+
         <div class="card-description">
+
 
           Połączenie USB jest dostępne wyłącznie w SERVICE MODE: Web Serial na komputerze, WebUSB na Androidzie. Kanał jest tylko do odczytu — aplikacja nie wysyła poleceń konfigurujących sensor.
 
+
         </div>
+
 
         <button id="usbButton" type="button" class="service-usb-button">
 
+
           CONNECT USB — DIAGNOSTICS
+
 
         </button>
 
+
       </div>
 
+
  
+
 
       <div class="service-module-grid">
 
+
         <details class="service-module">
+
 
           <summary>TRANSPORT DIAGNOSTICS</summary>
 
+
           <div class="service-module-body">
+
 
             <p>Stan połączenia USB, typ transportu i aktywność odbioru.</p>
 
+
             <pre id="serviceTransportLog" class="service-data-log" aria-live="polite">Oczekiwanie na połączenie USB…</pre>
+
 
           </div>
 
+
         </details>
+
 
  
 
+
         <details class="service-module">
+
 
           <summary>FIFO DIAGNOSTICS</summary>
 
+
           <div class="service-module-body">
+
 
             <p>Wyłącznie komunikaty FIFO, kolejki, próbek i liczników sekwencji faktycznie odebrane z USB.</p>
 
+
             <pre id="serviceFifoLog" class="service-data-log">Brak odebranych danych FIFO.</pre>
+
 
           </div>
 
+
         </details>
+
 
  
 
+
         <details class="service-module">
+
 
           <summary>BMI270 DIAGNOSTICS</summary>
 
+
           <div class="service-module-body">
+
 
             <p>Wyłącznie komunikaty inicjalizacji, statusu i błędów BMI270/IMU odebrane z USB. Brak komunikatu oznacza, że firmware go nie wysłał.</p>
 
+
             <pre id="serviceBmiLog" class="service-data-log">Brak odebranych danych BMI270.</pre>
+
 
           </div>
 
+
         </details>
+
 
  
 
+
         <details class="service-module">
+
 
           <summary>BATTERY DIAGNOSTICS</summary>
 
+
           <div class="service-module-body">
+
 
             <p>Komunikaty BAT, napięcia ogniw, pakietu i ADC odebrane z USB — bez możliwości edycji.</p>
 
+
             <pre id="serviceBatteryLog" class="service-data-log">Brak odebranych danych baterii.</pre>
+
 
           </div>
 
+
         </details>
+
 
  
 
+
         <details class="service-module">
+
 
           <summary>FIRMWARE &amp; SYSTEM</summary>
 
+
           <div class="service-module-body">
+
 
             <p>Pełny, tylko do odczytu dziennik komunikatów i surowych ramek odebranych przez USB.</p>
 
+
             <div class="service-monitor-card">
+
 
     <h2>Serial Monitor</h2>
 
+
     <div class="card-description">
+
 
       Dane kontrolne i status komunikacji
 
+
       pomiędzy przeglądarką a Gazela Sensor.
+
 
       Dane LIVE nie są tutaj wyświetlane.
 
+
     </div>
+
 
     <div
 
+
       id="serialMonitor"
+
 
       class="serial-monitor"
 
+
       role="log"
+
 
       aria-label="Monitor komunikatów diagnostycznych"
 
+
     ></div>
+
 
             </div>
 
+
           </div>
+
 
         </details>
 
+
  
+
 
         <details class="service-module">
 
+
           <summary>ADMIN</summary>
+
 
           <div class="service-module-body">
 
+
             <p>Panel informacyjny. Brak elementów sterujących, zapisu i kalibracji. Zmiany konfiguracji sensora pozostają wyłącznie po stronie firmware.</p>
+
 
           </div>
 
+
         </details>
+
 
       </div>
 
+
     </div>
+
 
   </section>
 
+
  
+
 
   </main>
 
+
 <footer>
+
 
   GAZELA SPINER SENSOR
 
+
   &nbsp; | &nbsp;
+
 
   Sensor Lab
 
+
 </footer>
+
 
 <script src="js/app.js"></script>
 
+
 </body>
+
 
 </html>
