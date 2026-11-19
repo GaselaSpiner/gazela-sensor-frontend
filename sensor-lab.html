@@ -16,13 +16,13 @@
 
   <meta name="description" content="Gazela Spiner Sensor Lab — podgląd danych sensora, rejestracja gestów i diagnostyka połączenia.">
 
-  <title>Gazela Spiner Sensor Lab V58</title>
+  <title>Gazela Spiner Sensor Lab V59</title>
 
   <link
 
     rel="stylesheet"
 
-    href="css/style.css?v=58"
+    href="css/style.css?v=59"
 
   >
 
@@ -80,105 +80,7 @@
 
   </section>
 
-  <!-- =====================================================
-
-       MODULE NAVIGATION
-
-       ===================================================== -->
-
-  <section class="modules" aria-label="Nawigacja modułów Sensor Lab">
-
-    <button
-
-      class="module module-button active"
-
-      id="liveSensorModule"
-
-      type="button"
-
-    >
-
-      <h3>LIVE SENSOR</h3>
-
-      <p>
-
-        Dane z sensora w czasie rzeczywistym:
-
-        przyspieszenie, żyroskop, G oraz kąty.
-
-      </p>
-
-    </button>
-
-    <button
-
-      class="module module-button"
-
-      id="liveChartsModule"
-
-      type="button"
-
-    >
-
-      <h3>LIVE CHARTS</h3>
-
-      <p>
-
-        Wizualizacja danych z czujnika
-
-        i parametrów ruchu.
-
-      </p>
-
-    </button>
-
-    <button
-
-      class="module module-button"
-
-      id="movementPlayerModule"
-
-      type="button"
-
-    >
-
-      <h3>MOVEMENT PLAYER</h3>
-
-      <p>
-
-        Odtwarzanie zapisanych ruchów
-
-        i obserwacja ich przebiegu w czasie.
-
-      </p>
-
-    </button>
-
-    <button
-
-      class="module module-button"
-
-      id="sessionModule"
-
-      type="button"
-
-    >
-
-      <h3>SESSION</h3>
-
-      <p>
-
-        Rejestracja i organizacja danych
-
-        z kolejnych sesji pomiarowych.
-
-      </p>
-
-    </button>
-
-  </section>
-
-  <!-- =====================================================
+<!-- =====================================================
 
        LIVE SENSOR
 
@@ -542,22 +444,23 @@
 
         <div class="card-description">
 
-          Laboratorium tworzenia sygnatur gestów — pełne dane 400 Hz oraz zachowany komparator LIVE 50 Hz.
+          Dwa niezależne stanowiska badawcze HR400: budowa wzorca i porównanie nowej próby. Jeden wspólny mechanizm rejestracji w Arduino.
 
         </div>
 
       </div>
 
-      <span id="gestureStatusBadge" class="gesture-status-badge" role="status" aria-live="polite">Waiting for LIVE</span>
+      <span class="gesture-status-badge">STAGE 8.9 • HR400</span>
 
     </div>
 
  
 
     <!-- STAGE 8.9 — GESTURE SIGNATURE LAB / HR400 -->
+    <div class="gesture-workspace">
     <section class="gsl-panel" id="gestureSignatureLab">
-      <h3>GESTURE SIGNATURE LAB — 400 Hz</h3>
-      <p class="card-description">Laboratorium sygnatur gestów. Każda próba: 1600 próbek ACC + GYRO, około 4 s. Korzysta ze wspólnego mechanizmu CAP,DONE, ale ma osobną bibliotekę nagrań. Nie zmienia firmware ani Gesture Recognizer V1.</p>
+      <h3>GESTURE LEARNING — HR400</h3>
+      <p class="card-description">Budowa sygnatury gestu z ręcznie ocenionych prób. Każda próba: 1600 próbek ACC + GYRO, około 4 s. Korzysta ze wspólnego mechanizmu CAP,DONE, ale ma osobną bibliotekę nagrań. Nie zmienia firmware ani Gesture Recognizer V1.</p>
       <div class="gsl-controls">
         <label>Rodzaj eksperymentu<select id="gslKind"><option value="double_tap">DOUBLE TAP — ACCEPT</option><option value="single_tap">Kontrola — pojedyncze stuknięcie</option><option value="ball">Kontrola — kontakt piłki</option><option value="double_ball">Kontrola — dwa kontakty piłki</option><option value="movement">Kontrola — ruch bez gestu</option><option value="other">Inne / niepewne</option></select></label>
         <button id="gslRecord" class="start" type="button" disabled>● RECORD GESTURE — 4 s</button>
@@ -582,133 +485,37 @@
       <div class="gsl-scroll"><table class="gsl-table"><thead><tr><th>Cecha</th><th>n</th><th>Mediana</th><th>P10–P90</th><th>Min–max</th></tr></thead><tbody id="gslProfileTable"></tbody></table></div>
       <p class="gesture-disclaimer">Profil zawiera statystyki pomiarowe, nie zwalidowane progi klasyfikacji. Nie jest przesyłany do Arduino. Ręczna ocena gestu jest niezależna od BALL/NO BALL. Wykres i zaznaczenia używają nominalnej osi czasu 2,5 ms.</p>
     </section>
-    <details class="gsl-legacy"><summary>LEGACY GESTURE COMPARATOR — LIVE ~50 Hz</summary>
-
-    <div class="gesture-stats">
-
-      <div class="summary-item">
-
-        <div class="summary-label">LIVE BUFFER</div>
-
-        <div id="gestureBufferCount" class="summary-value">0</div>
-
+    <section class="gsl-panel gc-panel" id="gestureComparator">
+      <h3>GESTURE COMPARATOR — HR400</h3>
+      <p>Porównaj niezależną próbę 400 Hz z potwierdzonym nagraniem lub aktualnym profilem z Gesture Learning. Test nie dołącza do zbioru uczącego.</p>
+      <div class="gsl-controls"><label>Wzorzec referencyjny<select id="gcReference"><option value="">Brak wzorca</option></select></label></div>
+      <div id="gcReferenceInfo" class="gsl-metrics">Zbuduj profil lub potwierdź gest z dwoma poprawnymi znacznikami w Learning.</div>
+      <div class="gsl-controls">
+        <button id="gcRecord" class="start" type="button" disabled>● RECORD TEST — 4 s</button>
+        <button id="gcCancel" class="stop" type="button" disabled>ANULUJ</button>
+        <label>Import testu CSV 400 Hz<input id="gcImport" type="file" accept=".csv,text/csv"></label>
+        <button id="gcFromContact" class="secondary" type="button" disabled>KOPIUJ PRÓBĘ CONTACT</button>
+        <button id="gcClear" class="secondary" type="button" disabled>WYCZYŚĆ TEST</button>
       </div>
-
-      <div class="summary-item">
-
-        <div class="summary-label">DURATION</div>
-
-        <div id="gestureDuration" class="summary-value">0.00 s</div>
-
+      <div id="gcStatus" class="measurement-status" role="status" aria-live="polite">Połącz BLE lub zaimportuj próbę. Wybierz wzorzec i oznacz dwa impulsy testowe.</div>
+      <div class="gsl-controls">
+        <label>Znacznik<select id="gcAnchorMode"><option value="1">TAP 1</option><option value="2">TAP 2</option></select></label>
+        <label>TAP1 — indeks<input id="gcTap1" type="number" min="0" max="1599" step="1"></label>
+        <label>TAP2 — indeks<input id="gcTap2" type="number" min="0" max="1599" step="1"></label>
+        <button id="gcSuggest" class="secondary" type="button">SUGESTIE DETEKTORA</button>
       </div>
-
-      <div class="summary-item">
-
-        <div class="summary-label">SAMPLES</div>
-
-        <div id="gestureSampleCount" class="summary-value">0</div>
-
-      </div>
-
-      <div class="summary-item">
-
-        <div class="summary-label">REFERENCE</div>
-
-        <div id="gestureReferenceStatus" class="summary-value">Not saved</div>
-
-      </div>
-
+      <div id="gcCandidates" class="gsl-metrics">Kandydaci: —</div>
+      <div class="gesture-chart-grid"><div class="gesture-chart-panel"><h4>TEST ACC [g]</h4><canvas id="gcAcc" height="190" aria-label="ACC testu, wybierz próbkę"></canvas></div><div class="gesture-chart-panel"><h4>TEST GYRO [°/s]</h4><canvas id="gcGyro" height="190" aria-label="GYRO testu, wybierz próbkę"></canvas></div></div>
+      <div class="gsl-controls"><button id="gcCompare" type="button" disabled>COMPARE WITH REFERENCE</button><button id="gcExport" class="secondary" type="button" disabled>EXPORT TEST ZIP</button></div>
+      <div class="gc-result"><div class="summary-label">OVERALL SIMILARITY — EKSPERYMENTALNE</div><div id="gcOverall" class="gesture-match-score">—</div><div id="gcMetrics"></div></div>
+      <p id="gcExplanation">Wyniki nie są prawdopodobieństwem rozpoznania gestu ani oceną techniki.</p>
+      <div class="gsl-controls"><label>Impuls porównywany na wykresach<select id="gcWaveMode"><option value="tap1">TAP 1</option><option value="tap2">TAP 2</option></select></label></div>
+      <p>Wzorzec: linia ciągła. Test: linia przerywana. X/Y/Z: czerwony/niebieski/zielony. Wspólna skala fizyczna, wyrównanie do znacznika, odjęta lokalna baza.</p>
+      <div class="gesture-chart-grid"><div class="gesture-chart-panel"><h4>ACC — WZORZEC / TEST [g]</h4><canvas id="gcWaveAcc" height="190"></canvas></div><div class="gesture-chart-panel"><h4>GYRO — WZORZEC / TEST [°/s]</h4><canvas id="gcWaveGyro" height="190"></canvas></div></div>
+      <div class="gsl-scroll"><table class="gsl-table"><thead><tr><th>Cecha</th><th>Wzorzec</th><th>Test</th><th>Różnica</th></tr></thead><tbody id="gcFeatures"></tbody></table></div>
+      <p class="gesture-disclaimer">Wskaźniki opisowe 0–100: kształt (cosinus dodatni), amplituda i czas (stosunek min/max), struktura (relacja amplitud, kierunki i kształt dwóch impulsów). Ogólny wynik to średnia pięciu dostępnych kategorii, wyłącznie gdy wszystkie są określone. Brak progu ACCEPT. Próby uczące i testowe są rozdzielone; identyczne nagranie nie może być własnym wzorcem. Dane lokalne — eksportuj przed odświeżeniem. Stare wzorce LIVE 50 Hz nie są zgodne z HR400.</p>
+    </section>
     </div>
-
- 
-
-    <div class="gesture-controls">
-
-      <button id="gestureRecordButton" class="start" type="button">● RECORD GESTURE</button>
-
-      <button id="gestureStopButton" class="stop" type="button" disabled>■ STOP RECORDING</button>
-
-      <button id="gestureReferenceButton" class="secondary" type="button" disabled>Save as reference</button>
-
-      <button id="gestureCompareButton" type="button" disabled>Compare with reference</button>
-
-      <button id="gestureClearButton" class="secondary" type="button">Clear current</button>
-
-    </div>
-
- 
-
-    <div id="gestureMessage" class="measurement-status" role="status" aria-live="polite">
-
-      Połącz sensor i uruchom LIVE. Rejestrator nie wysyła komend do Arduino.
-
-    </div>
-
- 
-
-    <div class="gesture-chart-grid">
-
-      <div class="gesture-chart-panel">
-
-        <h3>ACCELEROMETER — AX / AY / AZ</h3>
-
-        <canvas id="gestureAccelerationChart" height="190" role="img" aria-label="Wykres przyspieszenia: AX, AY i AZ">Wykres przyspieszenia AX, AY i AZ.</canvas>
-
-      </div>
-
-      <div class="gesture-chart-panel">
-
-        <h3>GYROSCOPE — GX / GY / GZ</h3>
-
-        <canvas id="gestureGyroscopeChart" height="190" role="img" aria-label="Wykres żyroskopu: GX, GY i GZ">Wykres żyroskopu GX, GY i GZ.</canvas>
-
-      </div>
-
-    </div>
-
- 
-
-    <div class="gesture-result">
-
-      <div>
-
-        <div class="summary-label">PRELIMINARY SHAPE SIMILARITY</div>
-
-        <div id="gestureMatchScore" class="gesture-match-score">—</div>
-
-      </div>
-
-      <div id="gestureMatchDescription" class="gesture-match-description">
-
-        Zarejestruj gest i zapisz ruch referencyjny, aby rozpocząć porównanie.
-
-      </div>
-
-    </div>
-
- 
-
-    <div class="gesture-history-wrap">
-
-      <h3>RECORDED GESTURES</h3>
-
-      <div id="gestureHistory" class="gesture-history">
-
-        <div class="gesture-history-empty">Brak zakończonych nagrań.</div>
-
-      </div>
-
-    </div>
-
-    <p class="gesture-disclaimer">
-
-      Wynik jest eksperymentalną miarą podobieństwa kształtu sygnałów,
-
-      a nie oceną techniki ani naukowo zwalidowaną dokładnością ruchu.
-
-    </p>
-
-    </details>
   </section>
 
  
@@ -832,7 +639,7 @@
             <h3>GESTURE RECOGNIZER — V1 OFFLINE STREAM REPLAY</h3>
             <p>Przetwarza kolejne próbki 400 Hz w kolejności SEQ. Kandydatów dostarcza istniejący Contact Detector po analizie ukończonej próby. ACCEPT jest <strong>symulacją</strong> — nie zapisuje uderzenia w Arduino.</p>
           </div>
-          <span class="gesture-replay-tag">STAGE 8.8 · EXPERIMENTAL</span>
+          <span class="gesture-replay-tag">STAGE 8.8 • EXPERIMENTAL</span>
         </div>
         <div class="gesture-replay-toolbar">
           <label for="gestureReplaySource">Źródło danych
@@ -1675,7 +1482,7 @@ USER MODE: połączenie treningowe z sensorem przez Bluetooth LE.
 
 </footer>
 
-<script src="js/app.js?v=58"></script>
+<script src="js/app.js?v=59"></script>
 
 </body>
 
