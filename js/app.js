@@ -1,4 +1,4 @@
-// app.js — GAZELA SENSOR V58 / STAGE 8.9 GESTURE SIGNATURE LAB 400 Hz + V57 REPLAY / V28.1 HR400
+// app.js — GAZELA SENSOR V59 / STAGE 8.9 GESTURE LEARNING & COMPARATOR HR400 + V57 REPLAY / V28.1 HR400
 //
 // V48 ARCHITECTURE:
 // 1. One application file: app.js. No additional JavaScript modules.
@@ -1911,13 +1911,6 @@ function parseLiveData(line) {
     if (angleyValue) angleyValue.textContent = formatNumber(AngleY, 1);
     // V55: read-only graphical preview, no change to FIFO/BLE protocol.
     liveWaveReceiveSample({AX, AY, AZ, GX, GY, GZ});
-    // Feed the manual gesture recorder from the existing LIVE stream.
-    // This is local browser-side processing only; no Arduino command is sent.
-    gestureReceiveSample({
-        AX, AY, AZ, G, Angle, GX, GY, GZ, AngleY,
-        SEQ: frameSequence,
-        FIFO_SEQ: fifoSequence
-    });
  
 }
 // ========================================================
@@ -2497,7 +2490,6 @@ function syncTransportState(reason = "state-change") {
         setTransportStatus("Transport: not connected");
         if (!bleConnecting && !usbConnecting) setStatus("Sensor not connected", "neutral");
     }
-    gestureUpdateUI();
     if (typeof contactRefresh === "function") contactRefresh();
 }
 async function connectSensor(kind = selectedTransport) {
@@ -2856,352 +2848,6 @@ window.gazelaSensor = {
 };
 // ========================================================
 // END OF APP.JS
-// ========================================================
-// ========================================================
-// GESTURE RECORDER / COMPARATOR — BROWSER SIDE ONLY
-// ========================================================
-// Receives the already validated LIVE samples. It does not send
-// L, S, Q or any other command and does not change firmware protocol.
-// The reference is stored locally in this browser's localStorage.
-// ========================================================
-const GESTURE_MAX_SAMPLES = 1500;
-const GESTURE_COMPARE_POINTS = 64;
-const GESTURE_REFERENCE_KEY = "gazelaGestureReferenceV1";
-const GESTURE_CHANNELS = ["AX", "AY", "AZ", "GX", "GY", "GZ"];
-let gestureRecording = false;
-let gestureCurrentBuffer = [];
-let gestureCompletedRecording = null;
-let gestureReference = null;
-let gestureHistoryItems = [];
-let gestureRecordingStartedAt = 0;
-let gestureLastDrawAt = 0;
-const gestureElements = {
-  badge: document.getElementById("gestureStatusBadge"),
-  buffer: document.getElementById("gestureBufferCount"),
-  duration: document.getElementById("gestureDuration"),
-  samples: document.getElementById("gestureSampleCount"),
-  reference: document.getElementById("gestureReferenceStatus"),
-  record: document.getElementById("gestureRecordButton"),
-  stop: document.getElementById("gestureStopButton"),
-  save: document.getElementById("gestureReferenceButton"),
-  compare: document.getElementById("gestureCompareButton"),
-  clear: document.getElementById("gestureClearButton"),
-  message: document.getElementById("gestureMessage"),
-  accelerationCanvas: document.getElementById("gestureAccelerationChart"),
-  gyroscopeCanvas: document.getElementById("gestureGyroscopeChart"),
-  score: document.getElementById("gestureMatchScore"),
-  description: document.getElementById("gestureMatchDescription"),
-  history: document.getElementById("gestureHistory")
-};
-function gestureSetMessage(message, active = false) {
-  if (!gestureElements.message) return;
-  gestureElements.message.textContent = message;
-  gestureElements.message.className = active
-    ? "measurement-status active"
-    : "measurement-status";
-}
-function gestureSetBadge(text, state = "") {
-  if (!gestureElements.badge) return;
-  gestureElements.badge.textContent = text;
-  gestureElements.badge.className = "gesture-status-badge";
-  if (state) gestureElements.badge.classList.add(state);
-}
-function gestureLoadReference() {
-  try {
-    const raw = localStorage.getItem(GESTURE_REFERENCE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (!parsed || !Array.isArray(parsed.samples) || parsed.samples.length < 2) {
-      return null;
-    }
-    return parsed;
-  } catch (error) {
-    console.warn("Gesture reference could not be loaded:", error);
-    return null;
-  }
-}
-function gestureUpdateUI() {
-  const count = gestureCurrentBuffer.length;
-  const duration = count > 1
-    ? (gestureCurrentBuffer[count - 1].t - gestureCurrentBuffer[0].t) / 1000
-    : 0;
-  if (gestureElements.buffer) gestureElements.buffer.textContent = String(count);
-  if (gestureElements.duration) gestureElements.duration.textContent = duration.toFixed(2) + " s";
-  if (gestureElements.samples) gestureElements.samples.textContent = String(count);
-  if (gestureElements.reference) {
- 
-    gestureElements.reference.textContent = gestureReference ? "Saved" : "Not saved";
-  }
-  if (gestureElements.record) {
-    gestureElements.record.disabled = gestureRecording || !activeDataSource;
-  }
-  if (gestureElements.stop) gestureElements.stop.disabled = !gestureRecording;
-  if (gestureElements.save) gestureElements.save.disabled = gestureRecording || !gestureCompletedRecording || gestureCompletedRecording.length < 2;
-  if (gestureElements.compare) {
-    gestureElements.compare.disabled = gestureRecording || !gestureReference || !gestureCompletedRecording;
-  }
-  if (gestureElements.clear) gestureElements.clear.disabled = gestureRecording;
-  if (!gestureRecording && !activeDataSource) {
-    gestureSetBadge("Waiting for LIVE");
-  } else if (!gestureRecording && activeDataSource) {
-    gestureSetBadge("Sensor connected", "ready");
-  }
-}
-function gestureReceiveSample(sample) {
-  if (!gestureRecording || !sample) return;
-  const values = {};
-  for (const key of GESTURE_CHANNELS) {
-    const value = Number(sample[key]);
-    if (!Number.isFinite(value)) return;
-    values[key] = value;
-  }
-  const now = performance.now();
-  gestureCurrentBuffer.push({
-    t: now - gestureRecordingStartedAt,
-    ...values
-  });
-  if (gestureCurrentBuffer.length > GESTURE_MAX_SAMPLES) {
-    gestureCurrentBuffer.shift();
-    const offset = gestureCurrentBuffer[0].t;
-    gestureCurrentBuffer.forEach(point => { point.t -= offset; });
-    gestureRecordingStartedAt = now - gestureCurrentBuffer[0].t;
-  }
-  if (now - gestureLastDrawAt >= 100) {
-    gestureLastDrawAt = now;
-    gestureUpdateUI();
-    gestureDrawCharts(gestureCurrentBuffer);
-  }
-}
-function gestureStartRecording() {
-  if (!activeDataSource) {
-    gestureSetMessage("Najpierw połącz sensor. Rejestracja korzysta z istniejącego strumienia LIVE.");
-    return;
-  }
-  if (gestureRecording) return;
-  gestureCurrentBuffer = [];
-  gestureRecordingStartedAt = performance.now();
-  gestureLastDrawAt = 0;
-  gestureRecording = true;
-  if (gestureElements.score) gestureElements.score.textContent = "—";
-  if (gestureElements.description) {
-    gestureElements.description.textContent = "Nagrywanie gestu. Wykonaj ruch i naciśnij STOP.";
-  }
-  gestureSetBadge("Recording", "recording");
-  gestureSetMessage("Trwa ręczna rejestracja danych LIVE…", true);
-  gestureUpdateUI();
-  gestureDrawCharts([]);
-}
-function gestureStopRecording() {
-  if (!gestureRecording) return;
-  gestureRecording = false;
-  if (gestureCurrentBuffer.length >= 2) {
-    // Keep the completed take separate so a later recording cannot overwrite it.
-    gestureCompletedRecording = gestureCurrentBuffer.map(point => ({ ...point }));
-    const duration = (gestureCompletedRecording.at(-1).t - gestureCompletedRecording[0].t) / 1000;
-    gestureHistoryItems.unshift({
-      id: Date.now(),
-      count: gestureCompletedRecording.length,
-      duration,
-      label: "Gesture " + (gestureHistoryItems.length + 1)
-    });
-    gestureHistoryItems = gestureHistoryItems.slice(0, 10);
-    gestureRenderHistory();
-    gestureSetBadge("Recording complete", "ready");
-    gestureSetMessage("Zapisano gest: " + gestureCompletedRecording.length + " próbek, " + duration.toFixed(2) + " s.");
-    gestureDrawCharts(gestureCompletedRecording);
-  } else {
-    gestureCompletedRecording = null;
-    gestureSetBadge("Too few samples");
-    gestureSetMessage("Za mało próbek. Sprawdź, czy sensor wysyła dane LIVE i spróbuj ponownie.");
-    gestureDrawCharts([]);
-  }
-  gestureUpdateUI();
-}
-function gestureSaveReference() {
-  if (!gestureCompletedRecording || gestureCompletedRecording.length < 2) return;
-  const reference = {
-    version: 1,
-    savedAt: new Date().toISOString(),
-    samples: gestureResample(gestureCompletedRecording, GESTURE_COMPARE_POINTS)
-  };
-  try {
-    localStorage.setItem(GESTURE_REFERENCE_KEY, JSON.stringify(reference));
-    gestureReference = reference;
-    gestureSetMessage("Gest referencyjny zapisany lokalnie w tej przeglądarce.");
-    gestureUpdateUI();
-  } catch (error) {
- 
-    console.error("Could not save gesture reference:", error);
-    gestureSetMessage("Nie udało się zapisać wzorca. Sprawdź dostępność pamięci lokalnej przeglądarki.");
-  }
-}
-function gestureResample(samples, targetCount) {
-  if (!Array.isArray(samples) || samples.length < 2) return [];
-  const firstT = samples[0].t;
-  const lastT = samples[samples.length - 1].t;
-  const duration = Math.max(1, lastT - firstT);
-  const output = [];
-  for (let i = 0; i < targetCount; i++) {
-    const targetT = firstT + duration * i / (targetCount - 1);
-    let right = samples.findIndex(point => point.t >= targetT);
-    if (right < 0) right = samples.length - 1;
-    const left = Math.max(0, right - 1);
-    const a = samples[left];
-    const b = samples[right];
-    const span = b.t - a.t;
-    const ratio = span > 0 ? (targetT - a.t) / span : 0;
-    const point = { t: i / (targetCount - 1) };
-    for (const key of GESTURE_CHANNELS) {
-      point[key] = a[key] + (b[key] - a[key]) * ratio;
-    }
-    output.push(point);
-  }
-  return output;
-}
-function gestureCompare() {
-  if (!gestureReference || !gestureCompletedRecording) return;
-  const current = gestureResample(gestureCompletedRecording, GESTURE_COMPARE_POINTS);
-  const reference = gestureReference.samples;
-  if (current.length !== reference.length || current.length < 2) return;
-  let totalError = 0;
-  let totalReferenceEnergy = 0;
-  let channelCount = 0;
-  for (const channel of GESTURE_CHANNELS) {
-    const refValues = reference.map(point => Number(point[channel]));
-    const curValues = current.map(point => Number(point[channel]));
-    const refMean = refValues.reduce((sum, value) => sum + value, 0) / refValues.length;
-    const curMean = curValues.reduce((sum, value) => sum + value, 0) / curValues.length;
-    const refScale = Math.sqrt(refValues.reduce((sum, value) => sum + (value - refMean) ** 2, 0) / refValues.length) || 1;
-    const curScale = Math.sqrt(curValues.reduce((sum, value) => sum + (value - curMean) ** 2, 0) / curValues.length) || 1;
-    for (let i = 0; i < GESTURE_COMPARE_POINTS; i++) {
-      const normalizedRef = (refValues[i] - refMean) / refScale;
-      const normalizedCur = (curValues[i] - curMean) / curScale;
-      totalError += (normalizedRef - normalizedCur) ** 2;
-      totalReferenceEnergy += normalizedRef ** 2;
-    }
-    channelCount++;
-  }
-  const rmse = Math.sqrt(totalError / (channelCount * GESTURE_COMPARE_POINTS));
-  const similarity = Math.max(0, Math.min(100, Math.round(100 * Math.exp(-rmse / 2))));
-  if (gestureElements.score) gestureElements.score.textContent = similarity + "/100";
-  if (gestureElements.description) {
-    gestureElements.description.textContent =
-      "Wstępne podobieństwo kształtu sygnałów: " + similarity +
-      "/100. Porównanie obejmuje AX, AY, AZ, GX, GZ i GY po normalizacji i resamplingu do 64 punktów.";
-  }
-  gestureSetMessage("Porównanie zakończone. Wynik traktuj jako wskaźnik eksperymentalny, nie ocenę jakości techniki.");
-}
-function gestureClearCurrent() {
-  if (gestureRecording) return;
-  gestureCurrentBuffer = [];
-  gestureCompletedRecording = null;
-  if (gestureElements.score) gestureElements.score.textContent = "—";
-  if (gestureElements.description) {
-    gestureElements.description.textContent = "Zarejestruj gest i zapisz ruch referencyjny, aby rozpocząć porównanie.";
-  }
-  gestureSetMessage("Bieżące nagranie wyczyszczone. Wzorzec referencyjny pozostaje zapisany.");
-  gestureDrawCharts([]);
-  gestureUpdateUI();
-}
-function gestureRenderHistory() {
-  if (!gestureElements.history) return;
-  gestureElements.history.replaceChildren();
-  if (!gestureHistoryItems.length) {
-    const empty = document.createElement("div");
-    empty.className = "gesture-history-empty";
-    empty.textContent = "Brak zakończonych nagrań.";
-    gestureElements.history.appendChild(empty);
-    return;
-  }
-  gestureHistoryItems.forEach(item => {
-    const row = document.createElement("div");
-    row.className = "gesture-history-item";
-    const label = document.createElement("span");
-    label.textContent = item.label + " — " + item.count + " próbek, " + item.duration.toFixed(2) + " s";
-    const status = document.createElement("span");
-    status.textContent = "Saved in current page session";
-    row.append(label, status);
-    gestureElements.history.appendChild(row);
-  });
-}
-function gestureDrawSingleChart(canvas, samples, channels) {
-  if (!canvas) return;
-  const rect = canvas.getBoundingClientRect();
-  const width = Math.max(320, Math.floor(rect.width || 600));
-  const height = 190;
-  const dpr = window.devicePixelRatio || 1;
-  canvas.width = width * dpr;
- 
-  canvas.height = height * dpr;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return;
-  ctx.scale(dpr, dpr);
-  ctx.clearRect(0, 0, width, height);
-  ctx.strokeStyle = "#e5e7eb";
-  ctx.lineWidth = 1;
-  for (let i = 1; i <= 4; i++) {
-    const y = height * i / 5;
-    ctx.beginPath();
-    ctx.moveTo(34, y);
-    ctx.lineTo(width - 10, y);
-    ctx.stroke();
-  }
-  ctx.fillStyle = "#64748b";
-  ctx.font = "11px Arial";
-  ctx.fillText("LIVE samples", 34, 13);
-  if (!samples || samples.length < 2) {
-    ctx.fillStyle = "#94a3b8";
-    ctx.font = "13px Arial";
-    ctx.fillText("No recorded gesture", 34, height / 2);
-    return;
-  }
-  const colors = ["#dc2626", "#2563eb", "#16a34a"];
-  const values = channels.flatMap(channel => samples.map(point => point[channel]).filter(Number.isFinite));
-  if (!values.length) return;
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const range = Math.max(0.0001, max - min);
-  const plotTop = 22;
-  const plotBottom = height - 18;
-  channels.forEach((channel, channelIndex) => {
-    ctx.strokeStyle = colors[channelIndex];
-    ctx.lineWidth = 1.7;
-    ctx.beginPath();
-    samples.forEach((point, index) => {
-      const x = 34 + (width - 46) * index / (samples.length - 1);
-      const y = plotBottom - ((point[channel] - min) / range) * (plotBottom - plotTop);
-      if (index === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
-    ctx.stroke();
-    ctx.fillStyle = colors[channelIndex];
-    ctx.fillText(channel, 36 + channelIndex * 48, height - 3);
-  });
-}
-function gestureDrawCharts(samples) {
-  gestureDrawSingleChart(gestureElements.accelerationCanvas, samples, ["AX", "AY", "AZ"]);
-  gestureDrawSingleChart(gestureElements.gyroscopeCanvas, samples, ["GX", "GY", "GZ"]);
-}
-if (gestureElements.record) gestureElements.record.addEventListener("click", gestureStartRecording);
-if (gestureElements.stop) gestureElements.stop.addEventListener("click", gestureStopRecording);
-if (gestureElements.save) gestureElements.save.addEventListener("click", gestureSaveReference);
-if (gestureElements.compare) gestureElements.compare.addEventListener("click", gestureCompare);
-if (gestureElements.clear) gestureElements.clear.addEventListener("click", gestureClearCurrent);
-gestureReference = gestureLoadReference();
-gestureRenderHistory();
-gestureDrawCharts([]);
-gestureUpdateUI();
-// Keep recorder controls in sync with sensor connection lifecycle.
-const gestureOriginalSetTransportStatus = setTransportStatus;
-setTransportStatus = function(text) {
-  gestureOriginalSetTransportStatus(text);
-  if (typeof gestureUpdateUI === "function") gestureUpdateUI();
-};
-window.addEventListener("resize", () => {
-  gestureDrawCharts(gestureRecording ? gestureCurrentBuffer : (gestureCompletedRecording || []));
-});
-// ========================================================
-// END GESTURE RECORDER / COMPARATOR
 // ========================================================
 // USER MODE is the default transport on every page load.
 selectBLETransport();
@@ -3583,6 +3229,7 @@ function contactRenderTruth() {
  
 function contactSetStatus(message, forceContact=false) {
     if (!forceContact && contactCapture.purpose === "gesture") { window.GazelaSignatureLab?.status(message); return; }
+    if (!forceContact && contactCapture.purpose === "comparator") { window.GazelaSignatureLab?.comparatorStatus(message); return; }
     if (contactUI.status) contactUI.status.textContent = message;
 }
 function contactIsBusy() {
@@ -3615,7 +3262,7 @@ function contactRefresh() {
     const trial = contactSelectedTrial();
     const st = contactStats();
     if (contactUI.start) contactUI.start.disabled = !active || !contactTransportReady() || measuring || busy || st.trials >= CONTACT_MAX_TRIALS;
-    if (contactUI.cancel) contactUI.cancel.disabled = !busy || contactCapture.purpose === "gesture" || contactCapture.state === "finalizing";
+    if (contactUI.cancel) contactUI.cancel.disabled = !busy || contactCapture.purpose !== "contact" || contactCapture.state === "finalizing";
     if (contactUI.download) contactUI.download.disabled = !trial || busy;
     if (contactUI.label) contactUI.label.disabled = !active || busy;
     if (contactUI.sessionStart) contactUI.sessionStart.disabled = active || busy;
@@ -3668,7 +3315,7 @@ function contactFail(message) {
     // A transfer that failed before CAP,DONE must NEVER enter the dataset.
     contactCapture.pendingTrial = null;
     contactCapture.state = "failed";
-    if(contactCapture.purpose!=="gesture")contactSession.failures.push({at:new Date().toISOString(),phase:oldState,error:message});
+    if(contactCapture.purpose==="contact")contactSession.failures.push({at:new Date().toISOString(),phase:oldState,error:message});
     contactSetStatus("Nieudana próba: " + message + ". Poprzednie udane próby pozostają w sesji.");
     contactRefresh();
     if (validConnection) bleTransport.send("X").catch(() => {});
@@ -3706,8 +3353,8 @@ function contactEndSession() {
 }
 async function contactStart(purpose = "contact", gestureKind = null) {
     // Existing click listener passes a DOM event, so only the explicit string selects gesture capture.
-    purpose = purpose === "gesture" ? "gesture" : "contact";
-    if ((purpose === "contact" && (!contactSession.active || contactSession.trials.length >= CONTACT_MAX_TRIALS)) || (purpose === "gesture" && !window.GazelaSignatureLab) || !contactTransportReady() || measuring || contactIsBusy()) return;
+    purpose = ["gesture","comparator"].includes(purpose) ? purpose : "contact";
+    if ((purpose === "contact" && (!contactSession.active || contactSession.trials.length >= CONTACT_MAX_TRIALS)) || (purpose !== "contact" && !window.GazelaSignatureLab) || !contactTransportReady() || measuring || contactIsBusy()) return;
     contactClearTimers();
  
     Object.assign(contactCapture, {
@@ -3747,7 +3394,7 @@ function contactReceiveStatus(line) {
     if (type === "STARTED" && contactCapture.state === "starting") {
         if (Number(fields[2]) !== CONTACT_SAMPLE_COUNT) { contactFail("Niezgodna wersja firmware: CAP,STARTED="+fields[2]+", oczekiwano "+CONTACT_SAMPLE_COUNT); return; }
         contactCapture.state = "recording";
-        contactSetStatus(contactCapture.purpose === "gesture" ? "Rejestracja trwa — wykonaj wybrany gest lub próbę kontrolną teraz (~4 s)." : "Rejestracja trwa — okno ok. 4 s (1600 próbek @ 400 Hz). Uderz piłkę lub wykonaj próbę kontrolną teraz.");
+        contactSetStatus(contactCapture.purpose !== "contact" ? "Rejestracja trwa — wykonaj wybrany gest lub próbę kontrolną teraz (~4 s)." : "Rejestracja trwa — okno ok. 4 s (1600 próbek @ 400 Hz). Uderz piłkę lub wykonaj próbę kontrolną teraz.");
         contactRefresh();
         contactPhaseTimeout(11000,"brak CAP,READY po nagrywaniu",["recording"]);
         return;
@@ -3781,12 +3428,15 @@ function contactReceiveStatus(line) {
             return;
         }
         contactClearTimers();
-        if (contactCapture.purpose === "gesture") {
+        if (contactCapture.purpose !== "contact") {
             trial.completedAt = new Date().toISOString();
             trial.transportFinalized = true;
             contactCapture.pendingTrial = null;
             contactCapture.state = "done";
-            try { window.GazelaSignatureLab.commit(trial,contactCapture.gestureKind); }
+            try {
+                if (contactCapture.purpose === "comparator") window.GazelaSignatureLab.commitComparator(trial);
+                else window.GazelaSignatureLab.commit(trial,contactCapture.gestureKind);
+            }
             catch(error) { contactCapture.state = "failed"; console.error("Gesture Lab commit",error); }
             contactRefresh();
             return;
@@ -4174,7 +3824,7 @@ function contactExport() {
         schema:"gazela.contact.session.v3",sessionId:contactSession.id,
         startedAt:contactSession.startedAt,endedAt:contactSession.endedAt,
         exportedAt:new Date().toISOString(),
-        firmware:"V28.1 HR400 (expected; not remotely attested)",frontend:"V57 / Stage 8.8 GESTURE OFFLINE STREAM REPLAY",
+        firmware:"V28.1 HR400 (expected; not remotely attested)",frontend:"V59 / Stage 8.9 GESTURE LEARNING & COMPARATOR HR400",
         sensor:"BMI270 ACC+GYRO",sampleRateNominalHz:CONTACT_NOMINAL_HZ,
         samplePeriodUsNominal:CONTACT_SAMPLE_PERIOD_US, samplesPerTrial:CONTACT_SAMPLE_COUNT,
         nominalCaptureDurationMs:CONTACT_SAMPLE_COUNT * CONTACT_SAMPLE_PERIOD_US / 1000,
@@ -4807,12 +4457,14 @@ function gazelaSignatureBuild(records) {
     if(!ui.Record)return;
     const records=[];let selectedId=null,profile=null,serial=0, importing=false;
     const maxRecords=100;
+    const cu=Object.fromEntries(["Reference","ReferenceInfo","Record","Cancel","Import","FromContact","Clear","Status","AnchorMode","Tap1","Tap2","Suggest","Candidates","Acc","Gyro","Compare","Export","Overall","Metrics","Explanation","WaveMode","WaveAcc","WaveGyro","Features"].map(id=>[id,document.getElementById("gc"+id)]));
+    let comparatorTest=null, comparatorResult=null, comparatorImporting=false, comparatorRefKey="";
     const kinds={double_tap:"DOUBLE TAP",single_tap:"SINGLE TAP",ball:"BALL",double_ball:"DOUBLE BALL",movement:"MOVEMENT",other:"OTHER"};
     const selected=()=>records.find(r=>r.id===selectedId)||null;
     const status=s=>{ui.Status.textContent=s;};
     const fmt=x=>Number.isFinite(x)?Number(x.toFixed(3)).toString():"—";
     function row(target,values){const tr=document.createElement("tr");for(const val of values){const td=document.createElement("td");td.textContent=String(val);tr.appendChild(td);}target.appendChild(tr);}
-    function invalidate(){profile=null;ui.WaveMode.value="trial";ui.ProfileTable.replaceChildren();ui.ProfileStatus.textContent="Profil nieaktualny — zbuduj ponownie. Minimum 5 potwierdzonych gestów z osobnymi oknami (zalecane 20).";}
+    function invalidate(){clearComparison();profile=null;ui.WaveMode.value="trial";ui.ProfileTable.replaceChildren();ui.ProfileStatus.textContent="Profil nieaktualny — zbuduj ponownie. Minimum 5 potwierdzonych gestów z osobnymi oknami (zalecane 20).";}
     function updateControls(){
         const busy=contactIsBusy(),r=selected(),own=busy&&contactCapture.purpose==="gesture";
         ui.Record.disabled=busy||measuring||!contactTransportReady()||records.length>=maxRecords||importing;
@@ -4827,6 +4479,7 @@ function gazelaSignatureBuild(records) {
         ui.Export.disabled=busy||importing||!records.length;
         ui.Profile.disabled=busy||importing||!profile;
         ui.WaveMode.options[1].disabled=!profile;
+        comparatorRefresh();
         ui.Counts.textContent=`Nagrania: ${records.length} / ${maxRecords} • Gesty potwierdzone i gotowe do profilu: ${good} • Kontrole: ${records.filter(r=>r.truth==="negative").length} • Nieocenione: ${records.filter(r=>r.truth==="unreviewed").length}`;
     }
     function describe(r){
@@ -4885,7 +4538,7 @@ function gazelaSignatureBuild(records) {
         ui.Trial.value=selectedId||"";ui.Truth.value=r?.truth||"unreviewed";
         ui.Tap1.value=r?.anchors[0]??"";ui.Tap2.value=r?.anchors[1]??"";
         ui.Candidates.textContent="Kandydaci (indeksy): "+(r?.candidates.map(c=>c.index+" / "+fmt(c.timeMs)+" ms").join("; ")||"—");
-        plot(ui.Acc,["AX","AY","AZ"],r);plot(ui.Gyro,["GX","GY","GZ"],r);renderFeatures(r);renderWaves();updateControls();
+        plot(ui.Acc,["AX","AY","AZ"],r);plot(ui.Gyro,["GX","GY","GZ"],r);renderFeatures(r);renderWaves();updateControls();renderComparatorPlots();
     }
     function addTrial(trial,kind,name,proof){
         if(records.length>=maxRecords)throw new Error("Limit 100 nagrań laboratorium");
@@ -4918,7 +4571,7 @@ function gazelaSignatureBuild(records) {
     ui.Suggest.addEventListener("click",()=>{const r=selected();if(!r)return;if(r.candidates.length===2){r.anchors=r.candidates.map(c=>c.index);describe(r);invalidate();render();status("Podstawiono 2 kandydatów. Zweryfikuj znaczniki i potwierdź wykonanie ręcznie.");}else status("Sugestia automatyczna wymaga dokładnie dwóch kandydatów. Wskaż ręcznie TAP1/TAP2 na wykresie lub wpisz ich indeksy ("+r.candidates.length+" kandydatów)." );});
     ui.ClearAnchors.addEventListener("click",()=>{const r=selected();if(r){r.anchors=[null,null];describe(r);invalidate();render();}});
     ui.WaveMode.addEventListener("change",renderWaves);
-    ui.Build.addEventListener("click",()=>{try{profile=gazelaSignatureBuild(records);ui.ProfileTable.replaceChildren();for(const [k,v] of Object.entries(profile.statistics))row(ui.ProfileTable,[k,v.n,fmt(v.median),fmt(v.p10)+" – "+fmt(v.p90),fmt(v.min)+" – "+fmt(v.max)]);ui.ProfileStatus.textContent=`GESTURE SIGNATURE V1: ${profile.recordCount} ręcznie potwierdzonych nagrań. Statystyki opisowe i mediany przebiegów sześciu osi. Profil jeszcze NIE jest klasyfikatorem. Kontrole w ZIP: ${records.filter(r=>r.truth==="negative").length}.`;ui.WaveMode.value="profile";renderWaves();updateControls();}catch(e){status(e.message);}});
+    ui.Build.addEventListener("click",()=>{try{profile=gazelaSignatureBuild(records);ui.ProfileTable.replaceChildren();for(const [k,v] of Object.entries(profile.statistics))row(ui.ProfileTable,[k,v.n,fmt(v.median),fmt(v.p10)+" – "+fmt(v.p90),fmt(v.min)+" – "+fmt(v.max)]);ui.ProfileStatus.textContent=`GESTURE SIGNATURE V1: ${profile.recordCount} ręcznie potwierdzonych nagrań. Statystyki opisowe i mediany przebiegów sześciu osi. Profil jeszcze NIE jest klasyfikatorem. Kontrole w ZIP: ${records.filter(r=>r.truth==="negative").length}.`;ui.WaveMode.value="profile";clearComparison();renderWaves();updateControls();renderComparatorPlots();}catch(e){status(e.message);}});
     ui.Profile.addEventListener("click",()=>{if(profile)contactSaveBlob("GAZELA_GESTURE_SIGNATURE_V1.json",new Blob([JSON.stringify(profile,null,2)],{type:"application/json"}));});
     ui.Export.addEventListener("click",()=>{try{
         const files=[];
@@ -4927,8 +4580,143 @@ function gazelaSignatureBuild(records) {
         files.push(["gesture_lab.json",JSON.stringify(manifest,null,2)]);if(profile)files.push(["gesture_signature_v1.json",JSON.stringify(profile,null,2)]);
         contactSaveBlob("GAZELA_GESTURE_LAB_"+Date.now()+".zip",contactBuildZip(files));status("Eksport ZIP gotowy: surowe CSV, ręczne oceny, cechy i aktualny profil (jeśli zbudowany).");
     }catch(e){status("Eksport: "+e.message);}});
-    window.GazelaSignatureLab=Object.freeze({refresh:updateControls,status,commit,kind:()=>ui.Kind.value});
-    window.addEventListener("resize",()=>{const r=selected();plot(ui.Acc,["AX","AY","AZ"],r);plot(ui.Gyro,["GX","GY","GZ"],r);renderWaves();});
+    // V59: independent HR400 comparator. The same capture engine routes CAP,DONE here.
+    const cmpAxes=["AX","AY","AZ","GX","GY","GZ"];
+    const cmpKeys=["accPeakG","deltaPeakG","accRmsG","gyroChangePeakDps","gyroChangeRmsDps","impulseDurationMs","dirX","dirY","dirZ"];
+    const cmpPairKeys=["gapMs","betweenGyroMedianDps","deltaPeakRatio","directionCosine","accShapeCosine","gyroShapeCosine"];
+    const comparatorStatus=s=>{cu.Status.textContent=s;};
+    function referenceChoices(){
+        const choices=records.filter(r=>r.truth==="gesture"&&r.description&&!r.description.overlappingWindows).map(r=>({id:r.id,label:r.id+" • "+r.name,record:r}));
+        if(profile)choices.unshift({id:"profile",label:`PROFILE • ${profile.recordCount} gestów`,profile});
+        return choices;
+    }
+    function currentReference(){return referenceChoices().find(r=>r.id===cu.Reference.value)||null;}
+    function referenceDescription(ref){
+        if(!ref)return null;
+        if(ref.record)return ref.record.description;
+        const med=ref.profile.statistics;
+        const tap=which=>({features:Object.fromEntries(Object.keys(med).filter(k=>k.startsWith(which+".")).map(k=>[k.slice(which.length+1),med[k].median])),waveform:ref.profile.medianWaveforms[which]});
+        return {tap1:tap("tap1"),tap2:tap("tap2"),pair:Object.fromEntries(Object.keys(med).filter(k=>k.startsWith("pair.")).map(k=>[k.slice(5),med[k].median]))};
+    }
+    function sameCapture(a,b){return a.samples[0].sequence===b.samples[0].sequence&&a.samples.every((s,i)=>cmpAxes.every(k=>s[k]===b.samples[i][k]));}
+    function isTrainingCapture(ref){
+        if(!ref||!comparatorTest)return false;
+        return ref.record?sameCapture(ref.record,comparatorTest):records.some(r=>ref.profile.recordIds.includes(r.id)&&sameCapture(r,comparatorTest));
+    }
+    function clearComparison(){
+        comparatorResult=null;
+        cu.Overall.textContent="—";cu.Metrics.replaceChildren();cu.Features.replaceChildren();
+        cu.Explanation.textContent="Wskaż dwa impulsy testowe i wybierz wzorzec. Wynik nie jest prawdopodobieństwem rozpoznania.";
+    }
+    function comparatorRefresh(){
+        const opts=referenceChoices(), key=JSON.stringify(opts.map(o=>[o.id,o.label]));
+        if(key!==comparatorRefKey){
+            const prior=cu.Reference.value;cu.Reference.replaceChildren();
+            const empty=document.createElement("option");empty.value="";empty.textContent=opts.length?"Wybierz wzorzec":"Brak wzorca";cu.Reference.appendChild(empty);
+            for(const opt of opts){const o=document.createElement("option");o.value=opt.id;o.textContent=opt.label;cu.Reference.appendChild(o);}
+            cu.Reference.value=opts.some(o=>o.id===prior)?prior:"";comparatorRefKey=key;
+        }
+        const ref=currentReference(), busy=contactIsBusy(), own=busy&&contactCapture.purpose==="comparator";
+        const locked=busy||comparatorImporting||importing;
+        cu.Reference.disabled=locked||!opts.length;
+        cu.ReferenceInfo.textContent=ref?(ref.record?`Wzorzec: ${ref.record.id}, ręcznie potwierdzony gest.`:`Profil: ${ref.profile.recordCount} potwierdzonych gestów, mediany; niewalidowany.`):"Wybierz potwierdzone nagranie lub zbuduj profil w Learning.";
+        cu.Record.disabled=locked||measuring||!contactTransportReady();
+        cu.Cancel.disabled=!own||contactCapture.state==="finalizing";
+        cu.Import.disabled=locked;
+        cu.FromContact.disabled=locked||!contactSelectedTrial()?.transportFinalized;
+        cu.Clear.disabled=locked||!comparatorTest;
+        for(const el of [cu.AnchorMode,cu.Tap1,cu.Tap2,cu.Suggest])el.disabled=locked||!comparatorTest;
+        cu.Compare.disabled=locked||!ref||!comparatorTest?.description||comparatorTest.description.overlappingWindows||isTrainingCapture(ref);
+        cu.Export.disabled=locked||!comparatorTest;
+        if(ref&&isTrainingCapture(ref))cu.ReferenceInfo.textContent+=" Test jest częścią tego wzorca — porównanie zablokowane.";
+    }
+    function renderComparatorPlots(){
+        const r=comparatorTest;plot(cu.Acc,["AX","AY","AZ"],r);plot(cu.Gyro,["GX","GY","GZ"],r);
+        const which=cu.WaveMode.value, j=which==="tap1"?0:1;
+        const waves=[referenceDescription(currentReference())?.[which]?.waveform||null,r?.tapFeatures[j]?.waveform||null];
+        plotAligned(cu.WaveAcc,"acc",waves);plotAligned(cu.WaveGyro,"gyro",waves);
+    }
+    function renderComparator(){
+        const r=comparatorTest;cu.Tap1.value=r?.anchors[0]??"";cu.Tap2.value=r?.anchors[1]??"";
+        cu.Candidates.textContent="Kandydaci (indeksy): "+(r?.candidates.map(c=>c.index+" / "+fmt(c.timeMs)+" ms").join("; ")||"—");
+        comparatorRefresh();renderComparatorPlots();
+    }
+    function loadComparatorTrial(trial,name,proof){
+        gazelaSignatureValidate(trial.samples);
+        const samples=trial.samples.map(s=>({...s})),d=gazelaDetectContactOffline(samples);
+        comparatorTest={name,proof,kind:"double_tap",samples,anchors:[null,null],tapFeatures:[null,null],candidates:d.candidates||[],description:null,capturedAt:trial.capturedAt||null};
+        clearComparison();renderComparator();comparatorStatus(name+" • 1600/1600 • "+proof+". Wskaż TAP1 i TAP2.");
+    }
+    function commitComparator(trial){
+        try{loadComparatorTrial(trial,"BLE — "+trial.completedAt,"CAP_DONE_CRC16_SEQ");}
+        catch(e){comparatorStatus("Błąd testu: "+e.message);throw e;}
+    }
+    function setComparatorAnchor(j,value){
+        if(!comparatorTest||contactIsBusy()||comparatorImporting||importing)return;
+        if(value!==null&&(!Number.isInteger(value)||value<0||value>1599)){comparatorStatus("Indeks 0–1599 (liczba całkowita).");renderComparator();return;}
+        comparatorTest.anchors[j]=value;describe(comparatorTest);clearComparison();renderComparator();
+        comparatorStatus(comparatorTest.error|| (comparatorTest.description?.overlappingWindows?"Nakładające się okna — porównanie wyłączone.":comparatorTest.description?"Dwa znaczniki ustawione. Zweryfikuj ich położenie, potem COMPARE.":"Wskaż oba impulsy testowe."));
+    }
+    // Scores are descriptive, not calibrated probabilities. No time warping or axis normalization.
+    const validMean=values=>{const good=values.filter(Number.isFinite);return good.length?good.reduce((a,b)=>a+b,0)/good.length:null;};
+    function positiveRatio(a,b){if(!Number.isFinite(a)||!Number.isFinite(b)||a<0||b<0||Math.max(a,b)===0)return null;return 100*Math.min(a,b)/Math.max(a,b);}
+    function similarityCos(a,b){
+        if(a.length!==b.length||!a.length||!a.every(Number.isFinite)||!b.every(Number.isFinite))return null;
+        const den=Math.hypot(...a)*Math.hypot(...b);return den>0?100*Math.max(0,Math.min(1,a.reduce((s,v,i)=>s+v*b[i],0)/den)):null;
+    }
+    function cosineFeature(a,b){return Number.isFinite(a)&&Number.isFinite(b)?100*Math.max(0,1-Math.abs(a-b)/2):null;}
+    function compareDescriptions(ref,test){
+        const taps=["tap1","tap2"];
+        const shape=key=>validMean(taps.map(t=>similarityCos(ref[t].waveform.flatMap(s=>s[key]),test[t].waveform.flatMap(s=>s[key]))));
+        const amplitude=validMean(taps.flatMap(t=>["accPeakG","deltaPeakG","accRmsG","gyroChangePeakDps","gyroChangeRmsDps"].map(k=>positiveRatio(ref[t].features[k],test[t].features[k]))));
+        const timing=validMean([positiveRatio(ref.pair.gapMs,test.pair.gapMs),...taps.map(t=>positiveRatio(ref[t].features.impulseDurationMs,test[t].features.impulseDurationMs))]);
+        // Pair structure: ratio of impulse peaks, direction cosine and within-pair shapes.
+        const structure=validMean([positiveRatio(ref.pair.deltaPeakRatio,test.pair.deltaPeakRatio),...['directionCosine','accShapeCosine','gyroShapeCosine'].map(k=>cosineFeature(ref.pair[k],test.pair[k]))]);
+        const metrics={accShape:shape("acc"),gyroShape:shape("gyro"),amplitude,timing,structure};
+        const vals=Object.values(metrics);return {metrics,overall:vals.every(Number.isFinite)?validMean(vals):null};
+    }
+    function runComparison(){
+        const ref=currentReference(),test=comparatorTest?.description;
+        if(contactIsBusy()||!ref||!test||test.overlappingWindows||isTrainingCapture(ref))return;
+        clearComparison();const rd=referenceDescription(ref), scores=compareDescriptions(rd,test);
+        const labels={accShape:"ACC — kształt",gyroShape:"GYRO — kształt",amplitude:"Amplituda impulsów",timing:"Czas i odstęp",structure:"Struktura gestu"};
+        comparatorResult={schema:"gazela.gesture.comparator.v1.experimental",referenceId:ref.id,reference:rd,testDescription:test,metrics:scores.metrics,overall:scores.overall,validated:false};
+        cu.Overall.textContent=Number.isFinite(scores.overall)?scores.overall.toFixed(1)+"%":"—";
+        for(const [k,v] of Object.entries(scores.metrics)){
+            const item=document.createElement("div");item.className="gc-metric";
+            const lab=document.createElement("div");lab.className="gc-metric-label";const a=document.createElement("span"),b=document.createElement("span");a.textContent=labels[k];b.textContent=Number.isFinite(v)?v.toFixed(1)+"%":"N/D";lab.append(a,b);item.appendChild(lab);
+            if(Number.isFinite(v)){const meter=document.createElement("progress");meter.className="gc-meter";meter.max=100;meter.value=v;meter.setAttribute("aria-label",labels[k]);item.appendChild(meter);}cu.Metrics.appendChild(item);
+        }
+        const feature=(name,a,b)=>row(cu.Features,[name,fmt(a),fmt(b),Number.isFinite(a)&&Number.isFinite(b)?fmt(b-a):"—"]);
+        for(const t of ["tap1","tap2"])for(const k of cmpKeys)feature(t+"."+k,rd[t].features[k],test[t].features[k]);
+        for(const k of cmpPairKeys)feature("pair."+k,rd.pair[k],test.pair[k]);
+        cu.Explanation.textContent=Number.isFinite(scores.overall)?"Porównanie opisowe: równoważna średnia pięciu kategorii. Nie jest to decyzja ACCEPT.":"Co najmniej jedna kategoria nieokreślona (np. brak energii GYRO) — brak ogólnego wyniku. N/D nie oznacza 0%.";
+        comparatorStatus("Porównano test z "+ref.id+". Wynik eksperymentalny.");renderComparatorPlots();
+    }
+    cu.Reference.addEventListener("change",()=>{clearComparison();renderComparator();});
+    cu.Record.addEventListener("click",()=>contactStart("comparator"));
+    cu.Cancel.addEventListener("click",()=>{if(contactCapture.purpose==="comparator")contactCancel();});
+    cu.Clear.addEventListener("click",()=>{comparatorTest=null;clearComparison();renderComparator();comparatorStatus("Wyczyszczono test. Biblioteka Learning bez zmian.");});
+    cu.FromContact.addEventListener("click",()=>{const t=contactSelectedTrial();if(!t?.transportFinalized)return;try{loadComparatorTrial(t,"Contact #"+t.id,"CAP_DONE_CRC16_SEQ");}catch(e){comparatorStatus(e.message);}});
+    cu.Import.addEventListener("change",async()=>{
+        const file=cu.Import.files?.[0];if(!file)return;comparatorImporting=true;updateControls();
+        try{if(file.size>2000000)throw new Error("Limit 2 MB/CSV");const t=window.GazelaGestureReplayUI.parseCsv(await file.text(),file.name);loadComparatorTrial(t,file.name,"CSV_SEQ_ONLY_NOT_CRC");}catch(e){comparatorStatus("Import: "+e.message);}finally{comparatorImporting=false;cu.Import.value="";updateControls();}
+    });
+    [cu.Tap1,cu.Tap2].forEach((el,j)=>el.addEventListener("change",()=>setComparatorAnchor(j,el.value.trim()===""?null:Number(el.value))));
+    [cu.Acc,cu.Gyro].forEach(canvas=>canvas.addEventListener("click",e=>{if(!comparatorTest||contactIsBusy())return;const g=canvas._gslGeometry,rect=canvas.getBoundingClientRect();if(!g||!rect.width)return;const pos=(e.clientX-rect.left)*g.width/rect.width;if(pos<g.left||pos>g.right)return;setComparatorAnchor(Number(cu.AnchorMode.value)-1,Math.round((pos-g.left)/(g.right-g.left)*1599));}));
+    cu.Suggest.addEventListener("click",()=>{const r=comparatorTest;if(!r)return;if(r.candidates.length!==2){comparatorStatus("Wymagane dokładnie dwa sugerowane impulsy; oznacz ręcznie ("+r.candidates.length+" kandydatów).");return;}r.anchors=r.candidates.map(c=>c.index);describe(r);clearComparison();renderComparator();comparatorStatus(r.error||"Podstawiono kandydatów. Zweryfikuj znaczniki ręcznie.");});
+    cu.WaveMode.addEventListener("change",renderComparatorPlots);
+    cu.Compare.addEventListener("click",runComparison);
+    cu.Export.addEventListener("click",()=>{if(!comparatorTest)return;try{
+        const {samples,...metadata}=comparatorTest;
+        const rows=[["index","sequence","time_ms","AX_g","AY_g","AZ_g","GX_dps","GY_dps","GZ_dps"],...samples.map(s=>[s.index,s.sequence,s.time_ms,s.AX,s.AY,s.AZ,s.GX,s.GY,s.GZ])];
+        const data={schema:"gazela.gesture.comparator.v1.experimental",exportedAt:new Date().toISOString(),sampleRateHz:400,test:metadata,result:comparatorResult};
+        contactSaveBlob("GAZELA_GESTURE_TEST_"+Date.now()+".zip",contactBuildZip([["test.csv",contactCSV(rows)],["comparison.json",JSON.stringify(data,null,2)]]));comparatorStatus("Eksport testu ZIP gotowy.");
+    }catch(e){comparatorStatus("Eksport: "+e.message);}});
+
+    window.GazelaSignatureLab=Object.freeze({refresh:updateControls,status,commit,kind:()=>ui.Kind.value,comparatorStatus,commitComparator});
+    window.addEventListener("resize",()=>{const r=selected();plot(ui.Acc,["AX","AY","AZ"],r);plot(ui.Gyro,["GX","GY","GZ"],r);renderWaves();renderComparatorPlots();});
     render();
+    renderComparator();
 })();
 // END STAGE 8.9
