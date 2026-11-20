@@ -1918,3 +1918,16 @@ footer {
 .grl-panel #grlStatus,.grl-panel #grlInfo{overflow-wrap:anywhere}
 @media(max-width:700px){.grl-panel .gsl-controls>*{flex:1 1 100%}}
 
+/* V61 — local read-only progress of the shared HR400 BLE transfer */
+.gesture-transfer{margin:12px 0;padding:12px;border:1px solid #dbe5f1;border-radius:10px;background:#f8fafc;min-width:0}
+.gesture-transfer-title{font-size:12px;font-weight:700;color:#334155;margin-bottom:10px}
+.gesture-transfer-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.gesture-transfer-stats span{display:block;font-size:11px;font-weight:600;color:#64748b;margin-bottom:4px}
+.gesture-transfer-stats strong{display:block;font-size:20px;font-variant-numeric:tabular-nums;color:#1d4ed8;overflow-wrap:anywhere}
+.gesture-transfer progress{display:block;width:100%;height:12px;margin:10px 0;accent-color:#2563eb}
+.gesture-transfer-phase{font-size:12px;font-weight:600;line-height:1.5;overflow-wrap:anywhere;color:#475569}
+.gesture-transfer[data-phase="done"] .gesture-transfer-phase{color:#166534}
+.gesture-transfer[data-phase="done"] progress{accent-color:#16a34a}
+.gesture-transfer[data-phase="failed"] .gesture-transfer-phase{color:#b91c1c}
+.gesture-transfer[data-phase="failed"] progress{accent-color:#dc2626}
+
