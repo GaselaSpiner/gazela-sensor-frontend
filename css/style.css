@@ -1910,3 +1910,11 @@ footer {
 @media(max-width:1000px){.gesture-workspace{grid-template-columns:1fr}.gesture-workspace .gesture-chart-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:700px){.gesture-workspace .gesture-chart-grid{grid-template-columns:1fr}.gesture-workspace .gsl-controls>*{flex:1 1 100%}}
 
+/* V60 — local reference snapshots */
+.grl-panel{border-color:#a7cbbd;background:#f7fcfa;margin-bottom:16px}
+.grl-panel .gsl-controls label{flex:1 1 230px;min-width:0}
+.grl-panel .gsl-controls input,.grl-panel .gsl-controls select{width:100%;box-sizing:border-box}
+.grl-panel .gsl-controls button{min-height:40px;font-size:12px}
+.grl-panel #grlStatus,.grl-panel #grlInfo{overflow-wrap:anywhere}
+@media(max-width:700px){.grl-panel .gsl-controls>*{flex:1 1 100%}}
+
