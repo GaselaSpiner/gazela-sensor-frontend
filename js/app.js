@@ -1,4 +1,5 @@
-// app.js — GAZELA SENSOR V59 / STAGE 8.9 GESTURE LEARNING & COMPARATOR HR400 + V57 REPLAY / V28.1 HR400
+// app.js — GAZELA SENSOR V60 / STAGE 8.9 LOCAL REFERENCE LIBRARY HR400 + V57 REPLAY / V28.1 HR400
+// V60: persistent, explicitly saved reference snapshots in IndexedDB; research sessions remain in RAM.
 //
 // V48 ARCHITECTURE:
 // 1. One application file: app.js. No additional JavaScript modules.
@@ -3824,7 +3825,7 @@ function contactExport() {
         schema:"gazela.contact.session.v3",sessionId:contactSession.id,
         startedAt:contactSession.startedAt,endedAt:contactSession.endedAt,
         exportedAt:new Date().toISOString(),
-        firmware:"V28.1 HR400 (expected; not remotely attested)",frontend:"V59 / Stage 8.9 GESTURE LEARNING & COMPARATOR HR400",
+        firmware:"V28.1 HR400 (expected; not remotely attested)",frontend:"V60 / Stage 8.9 LOCAL REFERENCE LIBRARY HR400",
         sensor:"BMI270 ACC+GYRO",sampleRateNominalHz:CONTACT_NOMINAL_HZ,
         samplePeriodUsNominal:CONTACT_SAMPLE_PERIOD_US, samplesPerTrial:CONTACT_SAMPLE_COUNT,
         nominalCaptureDurationMs:CONTACT_SAMPLE_COUNT * CONTACT_SAMPLE_PERIOD_US / 1000,
@@ -4445,9 +4446,75 @@ function gazelaSignatureBuild(records) {
     const vectors=rows.map(r=>flat(r.description));
     const statistics=Object.fromEntries(Object.keys(vectors[0]).map(k=>{const values=vectors.map(v=>v[k]).filter(Number.isFinite);return [k,{n:values.length,min:gazelaSignatureQuantile(values,0),p10:gazelaSignatureQuantile(values,.1),median:gazelaSignatureQuantile(values,.5),p90:gazelaSignatureQuantile(values,.9),max:gazelaSignatureQuantile(values,1)}];}));
     const meanWave=which=>rows[0].description[which].waveform.map((s,i)=>({offsetMs:s.offsetMs,acc:[0,1,2].map(k=>gazelaSignatureQuantile(rows.map(r=>r.description[which].waveform[i].acc[k]),.5)),gyro:[0,1,2].map(k=>gazelaSignatureQuantile(rows.map(r=>r.description[which].waveform[i].gyro[k]),.5))}));
-    return {schema:GAZELA_SIGNATURE_VERSION,gesture:"DOUBLE_TAP_ACCEPT",sampleRateHz:400,window:GAZELA_SIGNATURE_WINDOW,recordCount:rows.length,recordIds:rows.map(r=>r.id),statistics,medianWaveforms:{tap1:meanWave("tap1"),tap2:meanWave("tap2")},validated:false,note:"Descriptive statistics only; not thresholds, not firmware configuration."};
+    return {schema:GAZELA_SIGNATURE_VERSION,gesture:"DOUBLE_TAP_ACCEPT",sampleRateHz:400,window:GAZELA_SIGNATURE_WINDOW,recordCount:rows.length,recordIds:rows.map(r=>r.id),captureFingerprints:rows.map(r=>gazelaReferenceFingerprint(r.samples)),statistics,medianWaveforms:{tap1:meanWave("tap1"),tap2:meanWave("tap2")},validated:false,note:"Descriptive statistics only; not thresholds, not firmware configuration."};
 }
 // END SIGNATURE FEATURE ENGINE
+
+// V60 — device-local reference snapshots only. No session persistence or network sync.
+const GAZELA_REFERENCE_SCHEMA = "gazela.gesture.reference.v1";
+const GAZELA_REFERENCE_CONFIG = Object.freeze({sampleRateHz:400,accRangeG:16,gyroRangeDps:2000,axes:"GAZELA_AX_AY_AZ_GX_GY_GZ",timeBasis:"nominal_2.5ms",expectedFirmware:"V28.1 HR400",featureSchema:GAZELA_SIGNATURE_VERSION});
+const GAZELA_REFERENCE_AXES=["AX","AY","AZ","GX","GY","GZ"];
+const referenceFingerprintCache=new WeakMap();
+function gazelaReferenceFingerprint(samples){
+    if(referenceFingerprintCache.has(samples))return referenceFingerprintCache.get(samples);
+    // Non-cryptographic exact-signal fingerprint (not an authentication mechanism).
+    // Exclude sequence so re-indexing an identical waveform cannot bypass the guard.
+    let a=2166136261,b=0x9e3779b9;
+    for(const s of samples){const str=GAZELA_REFERENCE_AXES.map(k=>String(s[k])).join(",")+";";
+        for(let i=0;i<str.length;i++){const c=str.charCodeAt(i);a=Math.imul(a^c,16777619);b=Math.imul(b^c,2246822519);}}
+    const key="sig1:"+(a>>>0).toString(16).padStart(8,"0")+(b>>>0).toString(16).padStart(8,"0");
+    referenceFingerprintCache.set(samples,key);return key;
+}
+function gazelaReferenceClone(value){return JSON.parse(JSON.stringify(value));}
+function gazelaReferenceValidateProfile(p){
+    if(!p||p.schema!==GAZELA_SIGNATURE_VERSION||p.gesture!=="DOUBLE_TAP_ACCEPT"||p.sampleRateHz!==400||!Object.keys(GAZELA_SIGNATURE_WINDOW).every(k=>p.window?.[k]===GAZELA_SIGNATURE_WINDOW[k])||!Number.isInteger(p.recordCount)||p.recordCount<5||p.recordCount>100)throw new Error("Niezgodny profil HR400 / schema / okno analizy");
+    const tapKeys=["accPeakG","deltaPeakG","accRmsG","gyroChangePeakDps","gyroChangeRmsDps","gyroAbsolutePeakDps","e20G","impulseDurationMs","tailRmsG","dirX","dirY","dirZ","axRmsG","ayRmsG","azRmsG","gxRmsDps","gyRmsDps","gzRmsDps"];
+    const pairKeys=["gapMs","betweenGyroMedianDps","deltaPeakRatio","directionCosine","accShapeCosine","gyroShapeCosine"];
+    const keys=[...['tap1','tap2'].flatMap(t=>tapKeys.map(k=>t+"."+k)),...pairKeys.map(k=>"pair."+k)];
+    const statistics={};
+    for(const k of keys){const v=p.statistics?.[k];if(!v||!Number.isInteger(v.n)||v.n<0||v.n>p.recordCount)throw new Error("Nieprawidłowa statystyka: "+k);
+        const vals=[v.min,v.p10,v.median,v.p90,v.max];
+        if(v.n===0?!vals.every(x=>x===null):!vals.every((x,i)=>Number.isFinite(x)&&Math.abs(x)<=1e9&&(!i||x>=vals[i-1])))throw new Error("Nieprawidłowa statystyka: "+k);
+        statistics[k]={n:v.n,min:v.min,p10:v.p10,median:v.median,p90:v.p90,max:v.max};}
+    if(statistics['pair.gapMs'].min<=200||statistics['pair.gapMs'].max>4000)throw new Error("Nieprawidłowy odstęp TAP1–TAP2 w profilu");
+    const medianWaveforms={};for(const t of ['tap1','tap2']){const w=p.medianWaveforms?.[t];if(!Array.isArray(w)||w.length!==57)throw new Error("Wymagane 57 próbek każdego przebiegu");
+        medianWaveforms[t]=w.map((s,i)=>{if(!s||s.offsetMs!==(i-16)*2.5||![s.acc,s.gyro].every(a=>Array.isArray(a)&&a.length===3&&a.every(x=>Number.isFinite(x)&&Math.abs(x)<=1e6)))throw new Error("Nieprawidłowy przebieg "+t+" / "+i);return {offsetMs:s.offsetMs,acc:s.acc.slice(),gyro:s.gyro.slice()};});}
+    const recordIds=Array.isArray(p.recordIds)?p.recordIds.filter(x=>typeof x==="string").slice(0,100).map(x=>x.slice(0,120)):[];
+    const fingerprints=Array.isArray(p.captureFingerprints)?p.captureFingerprints.filter(x=>typeof x==="string"&&/^sig1:[0-9a-f]{16}$/.test(x)):[];
+    return {schema:GAZELA_SIGNATURE_VERSION,gesture:"DOUBLE_TAP_ACCEPT",sampleRateHz:400,window:{...GAZELA_SIGNATURE_WINDOW},recordCount:p.recordCount,recordIds,statistics,medianWaveforms,captureFingerprints:fingerprints.length===p.recordCount?fingerprints:[],validated:false,note:"Descriptive statistics only; not thresholds, not firmware configuration."};
+}
+function gazelaReferenceMakeId(){return "REF-"+(globalThis.crypto?.randomUUID?.()||Date.now().toString(36)+"-"+Math.random().toString(36).slice(2));}
+function gazelaReferenceNormalize(raw){
+    if(!raw||raw.schema!==GAZELA_REFERENCE_SCHEMA||!['single','profile'].includes(raw.type))throw new Error("Nieobsługiwany format wzorca");
+    if(!Object.keys(GAZELA_REFERENCE_CONFIG).every(k=>raw.config?.[k]===GAZELA_REFERENCE_CONFIG[k]))throw new Error("Wzorzec ma niezgodną konfigurację HR400");
+    if(typeof raw.id!=="string"||!/^REF-[a-zA-Z0-9-]{1,100}$/.test(raw.id))throw new Error("Nieprawidłowy identyfikator wzorca");
+    if(typeof raw.name!=="string"||!raw.name.trim()||raw.name.length>100)throw new Error("Nazwa wzorca: 1–100 znaków");
+    if(typeof raw.createdAt!=="string"||!Number.isFinite(Date.parse(raw.createdAt)))throw new Error("Nieprawidłowa data wzorca");
+    const common={schema:GAZELA_REFERENCE_SCHEMA,id:raw.id,name:raw.name.trim(),createdAt:raw.createdAt,type:raw.type,config:{...GAZELA_REFERENCE_CONFIG},validated:false};
+    if(raw.type==="profile")return {...common,profile:gazelaReferenceValidateProfile(raw.profile)};
+    const r=raw.record;
+    if(!r||r.truth!=="gesture"||!Array.isArray(r.anchors)||r.anchors.length!==2)throw new Error("Wymagany ręcznie potwierdzony gest z dwoma znacznikami");
+    gazelaSignatureValidate(r.samples);
+    const samples=r.samples.map(s=>({index:s.index,sequence:s.sequence,time_ms:s.time_ms,...Object.fromEntries(GAZELA_REFERENCE_AXES.map(k=>[k,s[k]]))}));
+    if(samples.some(s=>GAZELA_REFERENCE_AXES.some(k=>Math.abs(s[k])>1e6)))throw new Error("Nieprawidłowy zakres danych próbki");
+    const description=gazelaSignatureDescribe(samples,...r.anchors);
+    if(description.overlappingWindows)throw new Error("Nakładające się okna analizy");
+    return {...common,record:{id:common.id,name:common.name,truth:"gesture",kind:"double_tap",anchors:r.anchors.slice(),samples,description,proof:typeof r.proof==="string"?r.proof.slice(0,100):"IMPORTED_REFERENCE",capturedAt:typeof r.capturedAt==="string"?r.capturedAt.slice(0,50):null},captureFingerprint:gazelaReferenceFingerprint(samples)};
+}
+function gazelaReferenceOpen(){
+    return new Promise((resolve,reject)=>{
+        if(!globalThis.indexedDB){reject(new Error("IndexedDB niedostępna"));return;}
+        const req=indexedDB.open("gazela-gesture-references",1);
+        req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains("references"))req.result.createObjectStore("references",{keyPath:"id"});};
+        req.onsuccess=()=>{const db=req.result;db.onversionchange=()=>db.close();resolve(db);};
+        req.onerror=()=>reject(req.error||new Error("Nie można otworzyć bazy"));
+        req.onblocked=()=>reject(new Error("Baza zablokowana przez inną kartę"));
+    });
+}
+function gazelaReferenceTransaction(db,mode,action){
+    return new Promise((resolve,reject)=>{const tx=db.transaction("references",mode);let result;const req=action(tx.objectStore("references"));req.onsuccess=()=>{result=req.result;};tx.oncomplete=()=>resolve(result);tx.onabort=tx.onerror=()=>reject(tx.error||req.error||new Error("Operacja lokalnej bazy nie powiodła się"));});
+}
+
 
 // STAGE 8.9 — UI and separate gesture library; shared capture engine.
 (function initGazelaSignatureLab(){
@@ -4459,6 +4526,8 @@ function gazelaSignatureBuild(records) {
     const maxRecords=100;
     const cu=Object.fromEntries(["Reference","ReferenceInfo","Record","Cancel","Import","FromContact","Clear","Status","AnchorMode","Tap1","Tap2","Suggest","Candidates","Acc","Gyro","Compare","Export","Overall","Metrics","Explanation","WaveMode","WaveAcc","WaveGyro","Features"].map(id=>[id,document.getElementById("gc"+id)]));
     let comparatorTest=null, comparatorResult=null, comparatorImporting=false, comparatorRefKey="";
+    const ru=Object.fromEntries(["Name","SaveSingle","SaveProfile","Select","Use","Export","Import","Delete","Info","Status"].map(id=>[id,document.getElementById("grl"+id)]));
+    const savedReferences=new Map();let referenceDb=null,referenceBusy=true,referenceReady=false,referenceListKey="";
     const kinds={double_tap:"DOUBLE TAP",single_tap:"SINGLE TAP",ball:"BALL",double_ball:"DOUBLE BALL",movement:"MOVEMENT",other:"OTHER"};
     const selected=()=>records.find(r=>r.id===selectedId)||null;
     const status=s=>{ui.Status.textContent=s;};
@@ -4480,6 +4549,7 @@ function gazelaSignatureBuild(records) {
         ui.Profile.disabled=busy||importing||!profile;
         ui.WaveMode.options[1].disabled=!profile;
         comparatorRefresh();
+        referenceRefresh();
         ui.Counts.textContent=`Nagrania: ${records.length} / ${maxRecords} • Gesty potwierdzone i gotowe do profilu: ${good} • Kontrole: ${records.filter(r=>r.truth==="negative").length} • Nieocenione: ${records.filter(r=>r.truth==="unreviewed").length}`;
     }
     function describe(r){
@@ -4588,7 +4658,7 @@ function gazelaSignatureBuild(records) {
     function referenceChoices(){
         const choices=records.filter(r=>r.truth==="gesture"&&r.description&&!r.description.overlappingWindows).map(r=>({id:r.id,label:r.id+" • "+r.name,record:r}));
         if(profile)choices.unshift({id:"profile",label:`PROFILE • ${profile.recordCount} gestów`,profile});
-        return choices;
+        return [...Array.from(savedReferences.values(),r=>({...r,label:"LOCAL • "+r.name+" • "+(r.type==="single"?"GESTURE":r.profile.recordCount+" gestów")})),...choices];
     }
     function currentReference(){return referenceChoices().find(r=>r.id===cu.Reference.value)||null;}
     function referenceDescription(ref){
@@ -4601,7 +4671,11 @@ function gazelaSignatureBuild(records) {
     function sameCapture(a,b){return a.samples[0].sequence===b.samples[0].sequence&&a.samples.every((s,i)=>cmpAxes.every(k=>s[k]===b.samples[i][k]));}
     function isTrainingCapture(ref){
         if(!ref||!comparatorTest)return false;
-        return ref.record?sameCapture(ref.record,comparatorTest):records.some(r=>ref.profile.recordIds.includes(r.id)&&sameCapture(r,comparatorTest));
+        if(ref.record)return gazelaReferenceFingerprint(ref.record.samples)===gazelaReferenceFingerprint(comparatorTest.samples);
+        const fp=gazelaReferenceFingerprint(comparatorTest.samples);
+        if(ref.profile.captureFingerprints?.includes(fp))return true;
+        // Session IDs are reused on reload: do not use them to match imported profiles.
+        return ref.id==="profile"&&records.some(r=>ref.profile.recordIds.includes(r.id)&&sameCapture(r,comparatorTest));
     }
     function clearComparison(){
         comparatorResult=null;
@@ -4614,12 +4688,14 @@ function gazelaSignatureBuild(records) {
             const prior=cu.Reference.value;cu.Reference.replaceChildren();
             const empty=document.createElement("option");empty.value="";empty.textContent=opts.length?"Wybierz wzorzec":"Brak wzorca";cu.Reference.appendChild(empty);
             for(const opt of opts){const o=document.createElement("option");o.value=opt.id;o.textContent=opt.label;cu.Reference.appendChild(o);}
-            cu.Reference.value=opts.some(o=>o.id===prior)?prior:"";comparatorRefKey=key;
+            cu.Reference.value=opts.some(o=>o.id===prior)?prior:"";if(prior&&!cu.Reference.value)clearComparison();comparatorRefKey=key;
         }
         const ref=currentReference(), busy=contactIsBusy(), own=busy&&contactCapture.purpose==="comparator";
         const locked=busy||comparatorImporting||importing;
         cu.Reference.disabled=locked||!opts.length;
         cu.ReferenceInfo.textContent=ref?(ref.record?`Wzorzec: ${ref.record.id}, ręcznie potwierdzony gest.`:`Profil: ${ref.profile.recordCount} potwierdzonych gestów, mediany; niewalidowany.`):"Wybierz potwierdzone nagranie lub zbuduj profil w Learning.";
+        if(ref?.schema===GAZELA_REFERENCE_SCHEMA)cu.ReferenceInfo.textContent="LOCAL • "+ref.name+" • "+ref.createdAt.slice(0,10)+". "+cu.ReferenceInfo.textContent;
+        if(ref?.profile&&!ref.profile.captureFingerprints?.length)cu.ReferenceInfo.textContent+=" Import starszego profilu bez identyfikatorów sygnałów: samodzielnie zapewnij niezależność testu.";
         cu.Record.disabled=locked||measuring||!contactTransportReady();
         cu.Cancel.disabled=!own||contactCapture.state==="finalizing";
         cu.Import.disabled=locked;
@@ -4680,7 +4756,7 @@ function gazelaSignatureBuild(records) {
         if(contactIsBusy()||!ref||!test||test.overlappingWindows||isTrainingCapture(ref))return;
         clearComparison();const rd=referenceDescription(ref), scores=compareDescriptions(rd,test);
         const labels={accShape:"ACC — kształt",gyroShape:"GYRO — kształt",amplitude:"Amplituda impulsów",timing:"Czas i odstęp",structure:"Struktura gestu"};
-        comparatorResult={schema:"gazela.gesture.comparator.v1.experimental",referenceId:ref.id,reference:rd,testDescription:test,metrics:scores.metrics,overall:scores.overall,validated:false};
+        comparatorResult={schema:"gazela.gesture.comparator.v1.experimental",referenceId:ref.id,referenceName:ref.name||ref.label,referenceType:ref.record?"single":"profile",referenceCreatedAt:ref.createdAt||null,referenceConfig:ref.config||GAZELA_REFERENCE_CONFIG,reference:rd,testDescription:test,metrics:scores.metrics,overall:scores.overall,validated:false};
         cu.Overall.textContent=Number.isFinite(scores.overall)?scores.overall.toFixed(1)+"%":"—";
         for(const [k,v] of Object.entries(scores.metrics)){
             const item=document.createElement("div");item.className="gc-metric";
@@ -4714,6 +4790,65 @@ function gazelaSignatureBuild(records) {
         contactSaveBlob("GAZELA_GESTURE_TEST_"+Date.now()+".zip",contactBuildZip([["test.csv",contactCSV(rows)],["comparison.json",JSON.stringify(data,null,2)]]));comparatorStatus("Eksport testu ZIP gotowy.");
     }catch(e){comparatorStatus("Eksport: "+e.message);}});
 
+    // V60 — save/import/export only explicitly selected immutable reference snapshots.
+    function referenceStatus(message){ru.Status.textContent=message;}
+    function librarySelection(){return savedReferences.get(ru.Select.value)||null;}
+    function referenceRefresh(){
+        const prior=ru.Select.value,key=JSON.stringify(Array.from(savedReferences.values(),r=>[r.id,r.name,r.type]));
+        if(key!==referenceListKey){ru.Select.replaceChildren();const empty=document.createElement("option");empty.value="";empty.textContent=savedReferences.size?"Wybierz zapisany wzorzec":"Brak zapisanych wzorców";ru.Select.appendChild(empty);
+            for(const r of savedReferences.values()){const o=document.createElement("option");o.value=r.id;o.textContent=r.name+" • "+(r.type==="single"?"GESTURE":`PROFILE (${r.profile.recordCount})`)+" • "+r.createdAt.slice(0,10);ru.Select.appendChild(o);}
+            ru.Select.value=savedReferences.has(prior)?prior:"";referenceListKey=key;}
+        const r=selected(),ref=librarySelection(),locked=referenceBusy||!referenceReady||contactIsBusy()||importing||comparatorImporting;
+        ru.Name.disabled=locked;ru.SaveSingle.disabled=locked||r?.truth!=="gesture"||!r.description||r.description.overlappingWindows;
+        ru.SaveProfile.disabled=locked||!profile;ru.Import.disabled=locked;ru.Select.disabled=locked||!savedReferences.size;
+        for(const el of [ru.Use,ru.Export,ru.Delete])el.disabled=locked||!ref;
+        ru.Info.textContent=`Lokalne wzorce: ${savedReferences.size}. `+(ref?`${ref.name} • ${ref.type==="single"?"1600 próbek + ręczne TAP1/TAP2":"Profil z "+ref.profile.recordCount+" gestów"} • ${ref.createdAt}. `:"Wybierz wzorzec z listy. ")+(ref?.profile&&!ref.profile.captureFingerprints.length?"Starszy import bez odcisków sygnałów uczących — nie można sprawdzić niezależności testu.":"Wzorce opisowe, nie zwalidowany klasyfikator.");
+    }
+    function libraryChanged(id){
+        referenceListKey="";clearComparison();updateControls();
+        if(id&&savedReferences.has(id)){ru.Select.value=id;cu.Reference.value=id;}
+        referenceRefresh();renderComparator();
+    }
+    async function saveReference(raw,message){
+        referenceBusy=true;updateControls();
+        try{const ref=gazelaReferenceNormalize(raw);await gazelaReferenceTransaction(referenceDb,"readwrite",store=>store.add(ref));savedReferences.set(ref.id,ref);ru.Name.value="";libraryChanged(ref.id);referenceStatus(message+" • "+ref.name+". Zapis lokalny zakończony. "+(ref.profile&&!ref.profile.captureFingerprints.length?"Uwaga: brak odcisków nagrań uczących w starszym profilu.":""));}
+        catch(e){referenceStatus("Nie zapisano wzorca: "+e.message);}
+        finally{referenceBusy=false;updateControls();}
+    }
+    function makeReference(type,source,name){return {schema:GAZELA_REFERENCE_SCHEMA,id:gazelaReferenceMakeId(),name,createdAt:new Date().toISOString(),type,config:GAZELA_REFERENCE_CONFIG,...(type==="single"?{record:source}:{profile:source})};}
+    ru.SaveSingle.addEventListener("click",()=>{const r=selected();if(ru.SaveSingle.disabled||!r)return;void saveReference(makeReference("single",r,ru.Name.value.trim()||"DOUBLE TAP — "+r.id),"Zapisano gest referencyjny");});
+    ru.SaveProfile.addEventListener("click",()=>{if(ru.SaveProfile.disabled||!profile)return;void saveReference(makeReference("profile",profile,ru.Name.value.trim()||`DOUBLE TAP — PROFILE ${profile.recordCount}`),"Zapisano profil referencyjny");});
+    ru.Select.addEventListener("change",referenceRefresh);
+    ru.Use.addEventListener("click",()=>{const ref=librarySelection();if(ru.Use.disabled||!ref)return;cu.Reference.value=ref.id;clearComparison();renderComparator();referenceStatus("Wzorzec aktywny w Comparator: "+ref.name);});
+    ru.Export.addEventListener("click",()=>{const ref=librarySelection();if(ru.Export.disabled||!ref)return;try{contactSaveBlob("GAZELA_"+ref.id+".json",new Blob([JSON.stringify(ref,null,2)],{type:"application/json"}));referenceStatus("Eksport JSON: "+ref.name+". Zachowaj plik jako kopię lub przenieś na inne urządzenie.");}catch(e){referenceStatus("Eksport: "+e.message);}});
+    ru.Import.addEventListener("change",async()=>{
+        const file=ru.Import.files?.[0];if(!file||ru.Import.disabled)return;referenceBusy=true;updateControls();
+        try{if(file.size>2000000)throw new Error("Limit 2 MB/JSON");const raw=JSON.parse(await file.text());let ref;
+            if(raw.schema===GAZELA_SIGNATURE_VERSION){ref=makeReference("profile",raw,ru.Name.value.trim()||file.name.replace(/\.json$/i,"").slice(0,100));}
+            else{ref={...raw,id:gazelaReferenceMakeId()};}
+            await saveReference(ref,"Zaimportowano wzorzec");
+        }catch(e){referenceStatus("Import odrzucony: "+e.message);}finally{ru.Import.value="";referenceBusy=false;updateControls();}
+    });
+    ru.Delete.addEventListener("click",async()=>{
+        const ref=librarySelection();if(ru.Delete.disabled||!ref||!window.confirm("Usunąć lokalny wzorzec: "+ref.name+"? Kopia JSON, jeśli istnieje, pozostanie."))return;
+        referenceBusy=true;updateControls();try{await gazelaReferenceTransaction(referenceDb,"readwrite",store=>store.delete(ref.id));savedReferences.delete(ref.id);libraryChanged(null);referenceStatus("Usunięto lokalny wzorzec: "+ref.name);}catch(e){referenceStatus("Nie usunięto wzorca: "+e.message);}finally{referenceBusy=false;updateControls();}
+    });
+    async function initReferences(){
+        try{referenceDb=await gazelaReferenceOpen();const rows=await gazelaReferenceTransaction(referenceDb,"readonly",store=>store.getAll());let skipped=0;
+            for(const raw of rows){try{const r=gazelaReferenceNormalize(raw);savedReferences.set(r.id,r);}catch(e){skipped++;}}
+            referenceReady=true;referenceStatus(`Baza lokalna gotowa: ${savedReferences.size} wzorców.`+(skipped?` Pominięto niezgodne wpisy: ${skipped}.`:""));libraryChanged(savedReferences.keys().next().value);return true;
+        }catch(e){referenceStatus("Zapis lokalny niedostępny: "+e.message+". Learning i Comparator sesyjny nadal działają.");return false;}
+        finally{referenceBusy=false;updateControls();}
+    }
+    // Shared, read-only API for a future offline recognizer. No detection or ACCEPT in V60.
+    window.GazelaReferenceLibrary=Object.freeze({schema:GAZELA_REFERENCE_SCHEMA,
+        ready:()=>referenceInitPromise,
+        list:()=>Array.from(savedReferences.values(),r=>({id:r.id,name:r.name,type:r.type,createdAt:r.createdAt,recordCount:r.profile?.recordCount||1,validated:false})),
+        get:id=>savedReferences.has(id)?gazelaReferenceClone(savedReferences.get(id)):null,
+        describe:id=>savedReferences.has(id)?gazelaReferenceClone(referenceDescription(savedReferences.get(id))):null,
+        compare:(id,samples,tap1,tap2)=>{const ref=savedReferences.get(id);if(!ref)throw new Error("Wzorzec nie istnieje");const test=gazelaSignatureDescribe(samples,tap1,tap2);if(test.overlappingWindows)throw new Error("Nakładające się okna");const fp=gazelaReferenceFingerprint(samples);if(ref.captureFingerprint===fp||ref.profile?.captureFingerprints.includes(fp))throw new Error("Próba należy do wzorca");return {...compareDescriptions(referenceDescription(ref),test),validated:false,trainingIdentityAvailable:!!ref.captureFingerprint||!!ref.profile?.captureFingerprints.length};}
+    });
+    const referenceInitPromise=initReferences();
     window.GazelaSignatureLab=Object.freeze({refresh:updateControls,status,commit,kind:()=>ui.Kind.value,comparatorStatus,commitComparator});
     window.addEventListener("resize",()=>{const r=selected();plot(ui.Acc,["AX","AY","AZ"],r);plot(ui.Gyro,["GX","GY","GZ"],r);renderWaves();renderComparatorPlots();});
     render();
