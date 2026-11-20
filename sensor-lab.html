@@ -16,13 +16,13 @@
 
   <meta name="description" content="Gazela Spiner Sensor Lab — podgląd danych sensora, rejestracja gestów i diagnostyka połączenia.">
 
-  <title>Gazela Spiner Sensor Lab V59</title>
+  <title>Gazela Spiner Sensor Lab V60</title>
 
   <link
 
     rel="stylesheet"
 
-    href="css/style.css?v=59"
+    href="css/style.css?v=60"
 
   >
 
@@ -456,6 +456,26 @@
 
  
 
+    <!-- V60 — independent local reference library; research sessions remain temporary. -->
+    <section class="gsl-panel grl-panel" id="gestureReferenceLibrary">
+      <h3>REFERENCE GESTURE LIBRARY — LOCAL HR400</h3>
+      <p>Zapisz tylko wybrany, ręcznie potwierdzony gest lub zbudowany profil. Wzorzec pozostaje dostępny po zamknięciu strony w tej samej przeglądarce i pod tym samym adresem. Sesja Learning i próby Comparator pozostają tymczasowe.</p>
+      <div class="gsl-controls">
+        <label>Nazwa nowego wzorca<input id="grlName" type="text" maxlength="100" placeholder="np. DOUBLE TAP V1" disabled></label>
+        <button id="grlSaveSingle" type="button" disabled>SAVE SELECTED GESTURE</button>
+        <button id="grlSaveProfile" type="button" disabled>SAVE BUILT PROFILE</button>
+      </div>
+      <div class="gsl-controls">
+        <label>Lokalne wzorce<select id="grlSelect" disabled><option value="">Ładowanie biblioteki…</option></select></label>
+        <button id="grlUse" type="button" disabled>USE IN COMPARATOR</button>
+        <button id="grlExport" class="secondary" type="button" disabled>EXPORT REFERENCE JSON</button>
+        <label>IMPORT REFERENCE / PROFILE JSON<input id="grlImport" type="file" accept=".json,application/json" disabled></label>
+        <button id="grlDelete" class="stop" type="button" disabled>DELETE LOCAL REFERENCE</button>
+      </div>
+      <div id="grlInfo" class="gsl-metrics">Lokalne wzorce: —</div>
+      <div id="grlStatus" class="measurement-status" role="status" aria-live="polite">Otwieranie lokalnej bazy IndexedDB…</div>
+      <p class="gesture-disclaimer">Nie ma synchronizacji z chmurą ani zapisu do Arduino. Eksportuj JSON jako kopię zapasową lub aby przenieść wzorzec na inne urządzenie. Wyczyszczenie danych witryny lub tryb prywatny może usunąć dane. Import tworzy nowy wpis, nie nadpisuje istniejącego. Profil zawiera medianowe przebiegi i statystyki, nie wszystkie nagrania uczące. Konfiguracja HR400 jest oczekiwana, nie potwierdzana przez urządzenie. Gesture Recognizer V1 pozostaje bez zmian.</p>
+    </section>
     <!-- STAGE 8.9 — GESTURE SIGNATURE LAB / HR400 -->
     <div class="gesture-workspace">
     <section class="gsl-panel" id="gestureSignatureLab">
@@ -487,7 +507,7 @@
     </section>
     <section class="gsl-panel gc-panel" id="gestureComparator">
       <h3>GESTURE COMPARATOR — HR400</h3>
-      <p>Porównaj niezależną próbę 400 Hz z potwierdzonym nagraniem lub aktualnym profilem z Gesture Learning. Test nie dołącza do zbioru uczącego.</p>
+      <p>Porównaj niezależną próbę 400 Hz z lokalnym wzorcem, potwierdzonym nagraniem lub aktualnym profilem z Gesture Learning. Test nie dołącza do zbioru uczącego.</p>
       <div class="gsl-controls"><label>Wzorzec referencyjny<select id="gcReference"><option value="">Brak wzorca</option></select></label></div>
       <div id="gcReferenceInfo" class="gsl-metrics">Zbuduj profil lub potwierdź gest z dwoma poprawnymi znacznikami w Learning.</div>
       <div class="gsl-controls">
@@ -513,7 +533,7 @@
       <p>Wzorzec: linia ciągła. Test: linia przerywana. X/Y/Z: czerwony/niebieski/zielony. Wspólna skala fizyczna, wyrównanie do znacznika, odjęta lokalna baza.</p>
       <div class="gesture-chart-grid"><div class="gesture-chart-panel"><h4>ACC — WZORZEC / TEST [g]</h4><canvas id="gcWaveAcc" height="190"></canvas></div><div class="gesture-chart-panel"><h4>GYRO — WZORZEC / TEST [°/s]</h4><canvas id="gcWaveGyro" height="190"></canvas></div></div>
       <div class="gsl-scroll"><table class="gsl-table"><thead><tr><th>Cecha</th><th>Wzorzec</th><th>Test</th><th>Różnica</th></tr></thead><tbody id="gcFeatures"></tbody></table></div>
-      <p class="gesture-disclaimer">Wskaźniki opisowe 0–100: kształt (cosinus dodatni), amplituda i czas (stosunek min/max), struktura (relacja amplitud, kierunki i kształt dwóch impulsów). Ogólny wynik to średnia pięciu dostępnych kategorii, wyłącznie gdy wszystkie są określone. Brak progu ACCEPT. Próby uczące i testowe są rozdzielone; identyczne nagranie nie może być własnym wzorcem. Dane lokalne — eksportuj przed odświeżeniem. Stare wzorce LIVE 50 Hz nie są zgodne z HR400.</p>
+      <p class="gesture-disclaimer">Wskaźniki opisowe 0–100: kształt (cosinus dodatni), amplituda i czas (stosunek min/max), struktura (relacja amplitud, kierunki i kształt dwóch impulsów). Ogólny wynik to średnia pięciu dostępnych kategorii, wyłącznie gdy wszystkie są określone. Brak progu ACCEPT. Próby uczące i testowe są rozdzielone; identyczne nagranie nie może być własnym wzorcem. Próby testowe są tymczasowe — eksportuj przed odświeżeniem. Zapisane wzorce pozostają w lokalnej bibliotece. Stare wzorce LIVE 50 Hz nie są zgodne z HR400.</p>
     </section>
     </div>
   </section>
@@ -1482,7 +1502,7 @@ USER MODE: połączenie treningowe z sensorem przez Bluetooth LE.
 
 </footer>
 
-<script src="js/app.js?v=59"></script>
+<script src="js/app.js?v=60"></script>
 
 </body>
 
