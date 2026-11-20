@@ -16,7 +16,7 @@
 
   <meta name="description" content="Gazela Spiner Sensor Lab — podgląd danych sensora, rejestracja gestów i diagnostyka połączenia.">
 
-  <title>Gazela Spiner Sensor Lab V62</title>
+  <title>Gazela Spiner Sensor Lab V63</title>
 
   <link
 
@@ -516,8 +516,8 @@
       <p class="gesture-disclaimer">Profil zawiera statystyki pomiarowe, nie zwalidowane progi klasyfikacji. Nie jest przesyłany do Arduino. Ręczna ocena gestu jest niezależna od BALL/NO BALL. Wykres i zaznaczenia używają nominalnej osi czasu 2,5 ms.</p>
     </section>
     <section class="gsl-panel gc-panel" id="gestureComparator">
-      <h3>GESTURE COMPARATOR — HR400</h3>
-      <p>Porównaj niezależną próbę 400 Hz z lokalnym wzorcem, potwierdzonym nagraniem lub aktualnym profilem z Gesture Learning. Test nie dołącza do zbioru uczącego.</p>
+      <h3>GESTURE COMPARATOR — HR400 • V63</h3>
+      <p>Porównaj niezależną próbę 400 Hz z lokalnym wzorcem. V63 dopasowuje jeden wspólny kąt obrotu wokół osi GAZELA Y (0–360°) dla obu impulsów ACC/GYRO. RAW pozostaje niezmieniony. Test nie dołącza do zbioru uczącego.</p>
       <div class="gsl-controls"><label>Wzorzec referencyjny<select id="gcReference"><option value="">Brak wzorca</option></select></label></div>
       <div id="gcReferenceInfo" class="gsl-metrics">Zbuduj profil lub potwierdź gest z dwoma poprawnymi znacznikami w Learning.</div>
       <div class="gsl-controls">
@@ -547,13 +547,15 @@
       <div id="gcCandidates" class="gsl-metrics">Kandydaci: —</div>
       <div class="gesture-chart-grid"><div class="gesture-chart-panel"><h4>TEST ACC [g]</h4><canvas id="gcAcc" height="190" aria-label="ACC testu, wybierz próbkę"></canvas></div><div class="gesture-chart-panel"><h4>TEST GYRO [°/s]</h4><canvas id="gcGyro" height="190" aria-label="GYRO testu, wybierz próbkę"></canvas></div></div>
       <div class="gsl-controls"><button id="gcCompare" type="button" disabled>COMPARE WITH REFERENCE</button><button id="gcExport" class="secondary" type="button" disabled>EXPORT TEST ZIP</button></div>
-      <div class="gc-result"><div class="summary-label">OVERALL SIMILARITY — EKSPERYMENTALNE</div><div id="gcOverall" class="gesture-match-score">—</div><div id="gcMetrics"></div></div>
+      <div class="gc-result"><div class="summary-label">OVERALL SIMILARITY — NORMALIZED Y 360° (EKSPERYMENTALNE)</div><div id="gcOverall" class="gesture-match-score">—</div>
+      <div class="gc-orientation"><div><span>RAW (bez normalizacji)</span><strong id="gcRawOverall">—</strong></div><div><span>WZGLĘDNY KĄT DOPASOWANIA Y</span><strong id="gcMatchedAngle">—</strong></div></div>
+      <div id="gcMetrics"></div></div>
       <p id="gcExplanation">Wyniki nie są prawdopodobieństwem rozpoznania gestu ani oceną techniki.</p>
-      <div class="gsl-controls"><label>Impuls porównywany na wykresach<select id="gcWaveMode"><option value="tap1">TAP 1</option><option value="tap2">TAP 2</option></select></label></div>
-      <p>Wzorzec: linia ciągła. Test: linia przerywana. X/Y/Z: czerwony/niebieski/zielony. Wspólna skala fizyczna, wyrównanie do znacznika, odjęta lokalna baza.</p>
+      <div class="gsl-controls"><label>Impuls porównywany na wykresach<select id="gcWaveMode"><option value="tap1">TAP 1</option><option value="tap2">TAP 2</option></select></label><label>Widok porównania<select id="gcWaveOrientation"><option value="raw">RAW — oryginalne osie</option><option value="normalized">NORMALIZED — obrót Y</option></select></label></div>
+      <p>Wzorzec: linia ciągła. Test: linia przerywana. X/Y/Z: czerwony/niebieski/zielony. RAW przedstawia oryginalne osie, NORMALIZED jedynie wizualizuje dopasowany obrót Y; test.csv pozostaje RAW. Wspólna skala fizyczna, odjęta lokalna baza.</p>
       <div class="gesture-chart-grid"><div class="gesture-chart-panel"><h4>ACC — WZORZEC / TEST [g]</h4><canvas id="gcWaveAcc" height="190"></canvas></div><div class="gesture-chart-panel"><h4>GYRO — WZORZEC / TEST [°/s]</h4><canvas id="gcWaveGyro" height="190"></canvas></div></div>
       <div class="gsl-scroll"><table class="gsl-table"><thead><tr><th>Cecha</th><th>Wzorzec</th><th>Test</th><th>Różnica</th></tr></thead><tbody id="gcFeatures"></tbody></table></div>
-      <p class="gesture-disclaimer">Wskaźniki opisowe 0–100: kształt (cosinus dodatni), amplituda i czas (stosunek min/max), struktura (relacja amplitud, kierunki i kształt dwóch impulsów). Ogólny wynik to średnia pięciu dostępnych kategorii, wyłącznie gdy wszystkie są określone. Brak progu ACCEPT. Próby uczące i testowe są rozdzielone; identyczne nagranie nie może być własnym wzorcem. Próby testowe są tymczasowe — eksportuj przed odświeżeniem. Zapisane wzorce pozostają w lokalnej bibliotece. Stare wzorce LIVE 50 Hz nie są zgodne z HR400.</p>
+      <p class="gesture-disclaimer">Wskaźniki opisowe 0–100: kształt (cosinus dodatni, po wspólnym dopasowaniu kąta Y), amplituda i czas (stosunek min/max), struktura (relacja amplitud, kierunki i kształt dwóch impulsów). Normalizacja nie wyznacza orientacji względem kortu ani nie kompensuje wszystkich przestrzennych rotacji. Ogólny wynik to średnia pięciu dostępnych kategorii, wyłącznie gdy wszystkie są określone. Brak progu ACCEPT. Próby uczące i testowe są rozdzielone; identyczne nagranie nie może być własnym wzorcem. Próby testowe są tymczasowe — eksportuj przed odświeżeniem. Zapisane wzorce pozostają w lokalnej bibliotece. Stare wzorce LIVE 50 Hz nie są zgodne z HR400.</p>
     </section>
     </div>
   </section>
