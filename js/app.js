@@ -1,4 +1,5 @@
-// app.js — GAZELA SENSOR V60 / STAGE 8.9 LOCAL REFERENCE LIBRARY HR400 + V57 REPLAY / V28.1 HR400
+// app.js — GAZELA SENSOR V61 / STAGE 8.9 LOCAL REFERENCE LIBRARY HR400 + V57 REPLAY / V28.1 HR400
+// V61: local capture/transfer indicators for Learning and Comparator; same BLE engine.
 // V60: persistent, explicitly saved reference snapshots in IndexedDB; research sessions remain in RAM.
 //
 // V48 ARCHITECTURE:
@@ -3257,7 +3258,38 @@ function contactStats() {
         errors: contactSession.failures.length
     };
 }
+// V61 — presentation only. Keep each module's last capture visible until its next capture.
+// Count only CRC16/SEQ-verified packets already appended by the shared BLE engine.
+function gestureTransferRefresh() {
+    const prefix = {gesture: "gsl", comparator: "gc"}[contactCapture.purpose];
+    if (!prefix) return;
+    const panel = document.getElementById(prefix + "Transfer");
+    const samples = document.getElementById(prefix + "TransferSamples");
+    const percent = document.getElementById(prefix + "TransferPercent");
+    const bar = document.getElementById(prefix + "TransferBar");
+    const phase = document.getElementById(prefix + "TransferPhase");
+    if (!panel || !samples || !percent || !bar || !phase) return;
+    const state = contactCapture.state;
+    const total = contactCapture.total;
+    const received = Math.min(total, contactCapture.data.length);
+    const labels = {
+        starting: "STARTING — oczekiwanie na CAP,STARTED",
+        recording: "RECORDING — wykonaj gest teraz (~4 s)",
+        downloading: "DOWNLOADING — odbiór i kontrola CRC16 + SEQ",
+        finalizing: "FINALIZING — 1600/1600; oczekiwanie na CAP,DONE",
+        done: "DONE — CAP,DONE PASS; nagranie zapisane w module",
+        failed: "FAILED — próba nieukończona; sprawdź komunikat",
+        idle: "CANCELLED — próba anulowana"
+    };
+    panel.dataset.phase = state;
+    samples.textContent = `${received} / ${total}`;
+    percent.textContent = `${Math.floor(100 * received / total)}%`;
+    bar.max = total;
+    bar.value = received;
+    phase.textContent = labels[state] || state.toUpperCase();
+}
 function contactRefresh() {
+    gestureTransferRefresh();
     const busy = contactIsBusy();
     const active = contactSession.active;
     const trial = contactSelectedTrial();
@@ -3825,7 +3857,7 @@ function contactExport() {
         schema:"gazela.contact.session.v3",sessionId:contactSession.id,
         startedAt:contactSession.startedAt,endedAt:contactSession.endedAt,
         exportedAt:new Date().toISOString(),
-        firmware:"V28.1 HR400 (expected; not remotely attested)",frontend:"V60 / Stage 8.9 LOCAL REFERENCE LIBRARY HR400",
+        firmware:"V28.1 HR400 (expected; not remotely attested)",frontend:"V61 / Stage 8.9 LOCAL REFERENCE LIBRARY HR400",
         sensor:"BMI270 ACC+GYRO",sampleRateNominalHz:CONTACT_NOMINAL_HZ,
         samplePeriodUsNominal:CONTACT_SAMPLE_PERIOD_US, samplesPerTrial:CONTACT_SAMPLE_COUNT,
         nominalCaptureDurationMs:CONTACT_SAMPLE_COUNT * CONTACT_SAMPLE_PERIOD_US / 1000,
