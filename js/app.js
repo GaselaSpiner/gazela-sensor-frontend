@@ -1,4 +1,5 @@
-// app.js — GAZELA SENSOR V62 / STAGE 8.10 BLE GATT SERIALIZATION HR400 / V28.1 HR400
+// app.js — GAZELA SENSOR V63 / STAGE 8.11 HR400 ORIENTATION-INVARIANT COMPARATOR / V28.1 HR400
+// V63: comparator uses one common fitted Y rotation for ACC+GYRO and both taps.
 // V62: serialize BLE command writes; start packet timeout only after write completion;
 //      prevent outdated queued N requests; reduce UI work in all HR400 modules.
 // V61: local capture/transfer indicators for Learning and Comparator; same BLE engine.
@@ -4570,7 +4571,7 @@ function gazelaReferenceTransaction(db,mode,action){
     if(!ui.Record)return;
     const records=[];let selectedId=null,profile=null,serial=0, importing=false;
     const maxRecords=100;
-    const cu=Object.fromEntries(["Reference","ReferenceInfo","Record","Cancel","Import","FromContact","Clear","Status","AnchorMode","Tap1","Tap2","Suggest","Candidates","Acc","Gyro","Compare","Export","Overall","Metrics","Explanation","WaveMode","WaveAcc","WaveGyro","Features"].map(id=>[id,document.getElementById("gc"+id)]));
+    const cu=Object.fromEntries(["Reference","ReferenceInfo","Record","Cancel","Import","FromContact","Clear","Status","AnchorMode","Tap1","Tap2","Suggest","Candidates","Acc","Gyro","Compare","Export","Overall","RawOverall","MatchedAngle","Metrics","Explanation","WaveMode","WaveOrientation","WaveAcc","WaveGyro","Features"].map(id=>[id,document.getElementById("gc"+id)]));
     let comparatorTest=null, comparatorResult=null, comparatorImporting=false, comparatorRefKey="";
     const ru=Object.fromEntries(["Name","SaveSingle","SaveProfile","Select","Use","Export","Import","Delete","Info","Status"].map(id=>[id,document.getElementById("grl"+id)]));
     const savedReferences=new Map();let referenceDb=null,referenceBusy=true,referenceReady=false,referenceListKey="";
@@ -4725,7 +4726,8 @@ function gazelaReferenceTransaction(db,mode,action){
     }
     function clearComparison(){
         comparatorResult=null;
-        cu.Overall.textContent="—";cu.Metrics.replaceChildren();cu.Features.replaceChildren();
+        cu.Overall.textContent="—";cu.RawOverall.textContent="—";cu.MatchedAngle.textContent="—";
+        cu.Metrics.replaceChildren();cu.Features.replaceChildren();cu.WaveOrientation.value="raw";
         cu.Explanation.textContent="Wskaż dwa impulsy testowe i wybierz wzorzec. Wynik nie jest prawdopodobieństwem rozpoznania.";
     }
     function comparatorRefresh(){
@@ -4755,7 +4757,10 @@ function gazelaReferenceTransaction(db,mode,action){
     function renderComparatorPlots(){
         const r=comparatorTest;plot(cu.Acc,["AX","AY","AZ"],r);plot(cu.Gyro,["GX","GY","GZ"],r);
         const which=cu.WaveMode.value, j=which==="tap1"?0:1;
-        const waves=[referenceDescription(currentReference())?.[which]?.waveform||null,r?.tapFeatures[j]?.waveform||null];
+        const testWave=r?.tapFeatures[j]?.waveform||null;
+        const rotate=cu.WaveOrientation.value==="normalized"&&Number.isFinite(comparatorResult?.orientationNormalization?.matchedAngleDeg);
+        const waves=[referenceDescription(currentReference())?.[which]?.waveform||null,
+            rotate&&testWave?gazelaRotateWaveformY(testWave,comparatorResult.orientationNormalization.matchedAngleDeg):testWave];
         plotAligned(cu.WaveAcc,"acc",waves);plotAligned(cu.WaveGyro,"gyro",waves);
     }
     function renderComparator(){
@@ -4779,7 +4784,38 @@ function gazelaReferenceTransaction(db,mode,action){
         comparatorTest.anchors[j]=value;describe(comparatorTest);clearComparison();renderComparator();
         comparatorStatus(comparatorTest.error|| (comparatorTest.description?.overlappingWindows?"Nakładające się okna — porównanie wyłączone.":comparatorTest.description?"Dwa znaczniki ustawione. Zweryfikuj ich położenie, potem COMPARE.":"Wskaż oba impulsy testowe."));
     }
-    // Scores are descriptive, not calibrated probabilities. No time warping or axis normalization.
+    // V63: body-fixed raw ACC/GYRO and the original features stay unchanged. Only
+    // the comparator's temporary waveform view is rotated. A single common Y
+    // rotation is used for TAP1/TAP2 and ACC/GYRO — NEVER an axis-by-axis sign fit.
+    // The fitted angle is relative to the reference, NOT measured court/world attitude.
+    function gazelaRotateWaveformY(waveform,degrees){
+        const a=degrees*Math.PI/180,c=Math.cos(a),s=Math.sin(a);
+        const rotate=v=>[c*v[0]+s*v[2],v[1],-s*v[0]+c*v[2]];
+        return waveform.map(w=>({offsetMs:w.offsetMs,acc:rotate(w.acc),gyro:rotate(w.gyro)}));
+    }
+    function gazelaFindBestRotationY(ref,test){
+        const taps=["tap1","tap2"],raw={};
+        for(const key of ["acc","gyro"])raw[key]=taps.map(t=>ref[t].waveform.flatMap(w=>w[key]));
+        const trialAngle=angle=>{
+            const waves=Object.fromEntries(taps.map(t=>[t,gazelaRotateWaveformY(test[t].waveform,angle)]));
+            const cos=(key,i)=>similarityCos(raw[key][i],waves[taps[i]].flatMap(w=>w[key]));
+            const acc=[0,1].map(i=>cos("acc",i)),gyro=[0,1].map(i=>cos("gyro",i));
+            const good=[...acc,...gyro].filter(Number.isFinite);
+            return {angle,score:good.length===4?good.reduce((a,b)=>a+b,0)/good.length:-Infinity};
+        };
+        let best=trialAngle(0);
+        // Coarse sweep followed by local refinement; this is small (~160k samples)
+        // and runs only when the user presses COMPARE, never in the BLE stream.
+        for(let angle=1;angle<360;angle+=1){const candidate=trialAngle(angle);if(candidate.score>best.score+1e-9)best=candidate;}
+        const coarseAngle=best.angle;
+        for(let offset=-0.9;offset<=0.91;offset+=0.1){
+            const angle=(((coarseAngle+offset)%360)+360)%360;
+            const candidate=trialAngle(angle);if(candidate.score>best.score+1e-9)best=candidate;
+        }
+        return Number.isFinite(best.score)?{matchedAngleDeg:Math.round(best.angle*10)/10,score:best.score}:{matchedAngleDeg:0,score:null};
+    }
+    // Scores remain descriptive similarities, not calibrated probabilities.
+    // No time warping and no modification of the underlying trial samples.
     const validMean=values=>{const good=values.filter(Number.isFinite);return good.length?good.reduce((a,b)=>a+b,0)/good.length:null;};
     function positiveRatio(a,b){if(!Number.isFinite(a)||!Number.isFinite(b)||a<0||b<0||Math.max(a,b)===0)return null;return 100*Math.min(a,b)/Math.max(a,b);}
     function similarityCos(a,b){
@@ -4800,10 +4836,16 @@ function gazelaReferenceTransaction(db,mode,action){
     function runComparison(){
         const ref=currentReference(),test=comparatorTest?.description;
         if(contactIsBusy()||!ref||!test||test.overlappingWindows||isTrainingCapture(ref))return;
-        clearComparison();const rd=referenceDescription(ref), scores=compareDescriptions(rd,test);
+        clearComparison();
+        const rd=referenceDescription(ref), rawScores=compareDescriptions(rd,test);
+        const fit=gazelaFindBestRotationY(rd,test);
+        const transformed={...test,tap1:{...test.tap1,waveform:gazelaRotateWaveformY(test.tap1.waveform,fit.matchedAngleDeg)},tap2:{...test.tap2,waveform:gazelaRotateWaveformY(test.tap2.waveform,fit.matchedAngleDeg)}};
+        const scores=compareDescriptions(rd,transformed);
         const labels={accShape:"ACC — kształt",gyroShape:"GYRO — kształt",amplitude:"Amplituda impulsów",timing:"Czas i odstęp",structure:"Struktura gestu"};
-        comparatorResult={schema:"gazela.gesture.comparator.v1.experimental",referenceId:ref.id,referenceName:ref.name||ref.label,referenceType:ref.record?"single":"profile",referenceCreatedAt:ref.createdAt||null,referenceConfig:ref.config||GAZELA_REFERENCE_CONFIG,reference:rd,testDescription:test,metrics:scores.metrics,overall:scores.overall,validated:false};
+        comparatorResult={schema:"gazela.gesture.comparator.v1.experimental",referenceId:ref.id,referenceName:ref.name||ref.label,referenceType:ref.record?"single":"profile",referenceCreatedAt:ref.createdAt||null,referenceConfig:ref.config||GAZELA_REFERENCE_CONFIG,reference:rd,testDescription:test,metrics:scores.metrics,overall:scores.overall,rawMetrics:rawScores.metrics,rawOverall:rawScores.overall,orientationNormalization:{method:"one_constant_rotation_about_GAZELA_Y",matchedAngleDeg:fit.matchedAngleDeg,comparisonFrame:"relative_reference",scope:"TAP1_TAP2_ACC_GYRO",rawDataChanged:false},validated:false};
         cu.Overall.textContent=Number.isFinite(scores.overall)?scores.overall.toFixed(1)+"%":"—";
+        cu.RawOverall.textContent=Number.isFinite(rawScores.overall)?rawScores.overall.toFixed(1)+"%":"—";
+        cu.MatchedAngle.textContent=Number.isFinite(fit.score)?fit.matchedAngleDeg.toFixed(1)+"°":"N/D";
         for(const [k,v] of Object.entries(scores.metrics)){
             const item=document.createElement("div");item.className="gc-metric";
             const lab=document.createElement("div");lab.className="gc-metric-label";const a=document.createElement("span"),b=document.createElement("span");a.textContent=labels[k];b.textContent=Number.isFinite(v)?v.toFixed(1)+"%":"N/D";lab.append(a,b);item.appendChild(lab);
@@ -4812,10 +4854,11 @@ function gazelaReferenceTransaction(db,mode,action){
         const feature=(name,a,b)=>row(cu.Features,[name,fmt(a),fmt(b),Number.isFinite(a)&&Number.isFinite(b)?fmt(b-a):"—"]);
         for(const t of ["tap1","tap2"])for(const k of cmpKeys)feature(t+"."+k,rd[t].features[k],test[t].features[k]);
         for(const k of cmpPairKeys)feature("pair."+k,rd.pair[k],test.pair[k]);
-        cu.Explanation.textContent=Number.isFinite(scores.overall)?"Porównanie opisowe: równoważna średnia pięciu kategorii. Nie jest to decyzja ACCEPT.":"Co najmniej jedna kategoria nieokreślona (np. brak energii GYRO) — brak ogólnego wyniku. N/D nie oznacza 0%.";
-        comparatorStatus("Porównano test z "+ref.id+". Wynik eksperymentalny.");renderComparatorPlots();
+        cu.Explanation.textContent=Number.isFinite(scores.overall)?"V63: wynik po dopasowaniu jednego kąta Y dla TAP1/TAP2 i ACC/GYRO; wynik RAW obok. Kąt to dopasowanie matematyczne względem wzorca, nie zmierzona orientacja rakiety. Dane surowe i eksport test.csv są niezmienione. Brak decyzji ACCEPT.":"Co najmniej jedna kategoria nieokreślona (np. brak energii GYRO) — brak ogólnego wyniku. N/D nie oznacza 0%.";
+        comparatorStatus("Porównano test z "+ref.id+". RAW i NORMALIZED Y 360°; wynik eksperymentalny.");renderComparatorPlots();
     }
     cu.Reference.addEventListener("change",()=>{clearComparison();renderComparator();});
+    cu.WaveOrientation.addEventListener("change",renderComparatorPlots);
     cu.Record.addEventListener("click",()=>contactStart("comparator"));
     cu.Cancel.addEventListener("click",()=>{if(contactCapture.purpose==="comparator")contactCancel();});
     cu.Clear.addEventListener("click",()=>{comparatorTest=null;clearComparison();renderComparator();comparatorStatus("Wyczyszczono test. Biblioteka Learning bez zmian.");});
