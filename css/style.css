@@ -1930,4 +1930,3 @@ footer {
 .gesture-transfer[data-phase="done"] progress{accent-color:#16a34a}
 .gesture-transfer[data-phase="failed"] .gesture-transfer-phase{color:#b91c1c}
 .gesture-transfer[data-phase="failed"] progress{accent-color:#dc2626}
-
