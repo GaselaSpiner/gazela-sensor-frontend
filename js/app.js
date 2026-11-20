@@ -1,4 +1,6 @@
-// app.js — GAZELA SENSOR V61 / STAGE 8.9 LOCAL REFERENCE LIBRARY HR400 + V57 REPLAY / V28.1 HR400
+// app.js — GAZELA SENSOR V62 / STAGE 8.10 BLE GATT SERIALIZATION HR400 / V28.1 HR400
+// V62: serialize BLE command writes; start packet timeout only after write completion;
+//      prevent outdated queued N requests; reduce UI work in all HR400 modules.
 // V61: local capture/transfer indicators for Learning and Comparator; same BLE engine.
 // V60: persistent, explicitly saved reference snapshots in IndexedDB; research sessions remain in RAM.
 //
@@ -1171,6 +1173,10 @@ class WebBluetoothTransport
             this.handleDisconnected.bind(this);
         // Prevent duplicate handling of the same BLE disconnect event.
         this.disconnectHandled = false;
+        // V62: ONE in-flight GATT command write per connection. The browser may
+        // deliver a notification before writeValueWithResponse() has settled.
+        this.gattWriteTail = Promise.resolve();
+        this.gattWriteQueueClosed = false;
     }
     get name() {
         return "Web Bluetooth";
@@ -1320,78 +1326,51 @@ class WebBluetoothTransport
             addSerialLine("BLE notification error: " + error.message, "serial-error");
         }
     }
-    async send(command) {
-        if (
-            !this.commandCharacteristic
-        ) {
-            throw new Error(
-                "BLE command characteristic nie jest gotowa."
-            );
-        }
-        const data =
-            new TextEncoder().encode(
-                command
-            );
-        if (typeof this.commandCharacteristic.writeValueWithResponse === "function") {
-            await this.commandCharacteristic.writeValueWithResponse(data);
-        } else {
-            await this.commandCharacteristic.writeValue(data);
-        }
+    async send(command, stillCurrent = null) {
+        // V62: all command writers (L/S/Q/C/N/F/X) share this FIFO promise chain.
+        // An N[index] notification may arrive before the previous GATT WRITE
+        // promise settles. Serializing writes prevents "GATT operation in progress".
+        // The optional guard skips a queued N[index] if it has already arrived
+        // or the capture was cancelled; false means "skipped", not an error.
+        const data = new TextEncoder().encode(command);
+        const task = this.gattWriteTail.then(async () => {
+            if (this.gattWriteQueueClosed || !this.running ||
+                !this.device?.gatt?.connected || !this.commandCharacteristic) {
+                throw new Error("BLE zostało rozłączone lub nie jest gotowe do zapisu GATT.");
+            }
+            if (stillCurrent && !stillCurrent()) return false;
+            if (typeof this.commandCharacteristic.writeValueWithResponse === "function") {
+                await this.commandCharacteristic.writeValueWithResponse(data);
+            } else {
+                await this.commandCharacteristic.writeValue(data);
+            }
+            return true;
+        });
+        // A rejected write must not poison the queue for later commands.
+        this.gattWriteTail = task.catch(() => {});
+        return task;
     }
     async disconnect() {
+        // V62: invalidate queued commands BEFORE closing the connection.
+        // stopNotifications() is itself a GATT operation and could race with an
+        // in-flight write. Disconnecting GATT stops notifications on the device;
+        // do not start new stopNotifications() operations during teardown.
+        this.gattWriteQueueClosed = true;
         this.running = false;
         if (this.contactCaptureCharacteristic) {
-            try { await this.contactCaptureCharacteristic.stopNotifications(); } catch (error) { console.warn(error); }
-            this.contactCaptureCharacteristic.removeEventListener("characteristicvaluechanged", this.boundContactCaptureHandler);
+            try { this.contactCaptureCharacteristic.removeEventListener("characteristicvaluechanged", this.boundContactCaptureHandler); }
+            catch (error) { console.warn(error); }
         }
-        if (
-            this.liveCharacteristic
-        ) {
-            try {
-                await this.liveCharacteristic
-                    .stopNotifications();
-            }
-            catch (error) {
-                console.warn(
-                    "BLE stopNotifications:",
-                    error
-                );
-            }
-            try {
-                this.liveCharacteristic
-                    .removeEventListener(
-                        "characteristicvaluechanged",
-                        this.boundNotificationHandler
-                    );
-            }
-            catch (error) {
-                console.warn(error);
-            }
-        }
-        if (
-            this.device &&
-            this.device.gatt &&
-            this.device.gatt.connected
-        ) {
-            try {
-                this.device.gatt.disconnect();
-            }
-            catch (error) {
-                console.warn(
-                    "BLE disconnect:",
-                    error
-                );
-            }
+        if (this.liveCharacteristic) {
+            try { this.liveCharacteristic.removeEventListener("characteristicvaluechanged", this.boundNotificationHandler); }
+            catch (error) { console.warn(error); }
         }
         if (this.device) {
-            try {
-                this.device.removeEventListener(
-                    "gattserverdisconnected",
-                    this.boundDisconnectHandler
-                );
-            }
-            catch (error) {
-                console.warn(error);
+            try { this.device.removeEventListener("gattserverdisconnected", this.boundDisconnectHandler); }
+            catch (error) { console.warn(error); }
+            if (this.device.gatt?.connected) {
+                try { this.device.gatt.disconnect(); }
+                catch (error) { console.warn("BLE disconnect:", error); }
             }
         }
         this.device = null;
@@ -1405,6 +1384,7 @@ class WebBluetoothTransport
     handleDisconnected() {
         if (this.disconnectHandled) return;
         this.disconnectHandled = true;
+        this.gattWriteQueueClosed = true;
         this.running = false;
         contactDisconnected();
         this.rxBuffer = "";
@@ -1418,9 +1398,14 @@ class WebBluetoothTransport
             try { this.device.removeEventListener("gattserverdisconnected", this.boundDisconnectHandler); }
             catch (error) { console.warn(error); }
         }
+        if (this.contactCaptureCharacteristic) {
+            try { this.contactCaptureCharacteristic.removeEventListener("characteristicvaluechanged", this.boundContactCaptureHandler); }
+            catch (error) { console.warn(error); }
+        }
         this.server = null;
         this.sensorService = null;
         this.liveCharacteristic = null;
+        this.contactCaptureCharacteristic = null;
         this.controlService = null;
         this.commandCharacteristic = null;
         handleUnexpectedTransportEnd(this, "BLE GATT disconnected", "ble").catch(error => console.error("BLE disconnect recovery:", error));
@@ -3288,6 +3273,15 @@ function gestureTransferRefresh() {
     bar.value = received;
     phase.textContent = labels[state] || state.toUpperCase();
 }
+// V62: while receiving 1600 packets, update ONLY the visible counters and
+// progress bar; do not recalculate session stats, redraw reports or re-render
+// the Gesture Learning / Comparator interface after every 20 packets.
+function contactTransferProgressRefresh() {
+    gestureTransferRefresh();
+    if (contactUI.samples) contactUI.samples.textContent = `${contactCapture.data.length} / ${contactCapture.total}`;
+    if (contactUI.phase) contactUI.phase.textContent = contactCapture.state.toUpperCase();
+    if (contactUI.integrity) contactUI.integrity.textContent = contactCapture.state === "done" ? "PASS" : contactCapture.state === "failed" ? "FAIL" : "—";
+}
 function contactRefresh() {
     gestureTransferRefresh();
     const busy = contactIsBusy();
@@ -3509,21 +3503,37 @@ function contactReceiveStatus(line) {
 }
 async function contactRequest(index) {
     if (contactCapture.state !== "downloading" || index !== contactCapture.expected || !bleTransport) return;
-    if (contactCapture.packetTimer) clearTimeout(contactCapture.packetTimer);
     const generation = contactCapture.attemptId;
-    contactCapture.packetTimer = setTimeout(() => {
-        if (contactCapture.state !== "downloading" || generation !== contactCapture.attemptId || index !== contactCapture.expected) return;
-        contactCapture.retries++;
-        contactCapture.retryTotal++;
-        if (contactCapture.retries > 6) {
-            contactFail("brak pakietu #" + index + " po 6 ponowieniach");
-            return;
-        }
-        contactRequest(index);
-    },2500);
-    try { await bleTransport.send("N" + index); }
-    catch(e) {
-        if (generation === contactCapture.attemptId && contactCapture.state === "downloading") contactFail(e.message);
+    const transport = bleTransport;
+    // Do not let a delayed queued write request a sample from a previous
+    // attempt, or re-request a packet that has already passed CRC16 and SEQ.
+    const stillCurrent = () => (
+        contactCapture.state === "downloading" &&
+        contactCapture.attemptId === generation &&
+        contactCapture.expected === index &&
+        bleTransport === transport
+    );
+    try {
+        // V62: the GATT command queue waits until the PREVIOUS write settles.
+        // The packet might arrive while this write is still pending. In that
+        // case expected changes, the next request queues safely, and no stale
+        // timer is installed for this index.
+        const sent = await transport.send("N" + index, stillCurrent);
+        if (!sent || !stillCurrent()) return;
+        if (contactCapture.packetTimer) clearTimeout(contactCapture.packetTimer);
+        contactCapture.packetTimer = setTimeout(() => {
+            if (!stillCurrent()) return;
+            contactCapture.retries++;
+            contactCapture.retryTotal++;
+            if (contactCapture.retries > 6) {
+                contactFail("brak pakietu #" + index + " po 6 ponowieniach");
+                return;
+            }
+            contactRequest(index);
+        },2500);
+    }
+    catch (error) {
+        if (stillCurrent()) contactFail(error.message);
     }
 }
 function contactReceiveDataPacket(event) {
@@ -3548,7 +3558,11 @@ function contactReceiveDataPacket(event) {
     });
     contactCapture.expected++;
     contactCapture.retries = 0;
-    if (index%20 === 0 || contactCapture.expected === contactCapture.total) contactRefresh();
+    // V62: progress-only UI while downloading, across all three modules.
+    // Full refresh remains on phase changes and after CAP,DONE.
+    if (index%20 === 0 || contactCapture.expected === contactCapture.total) {
+        contactTransferProgressRefresh();
+    }
     if (contactCapture.expected === contactCapture.total) {
         contactFinishTrial();
         return;
