@@ -16,13 +16,13 @@
 
   <meta name="description" content="Gazela Spiner Sensor Lab — podgląd danych sensora, rejestracja gestów i diagnostyka połączenia.">
 
-  <title>Gazela Spiner Sensor Lab V60</title>
+  <title>Gazela Spiner Sensor Lab V61</title>
 
   <link
 
     rel="stylesheet"
 
-    href="css/style.css?v=60"
+    href="css/style.css?v=61"
 
   >
 
@@ -489,6 +489,16 @@
         <label>Import CSV 400 Hz<input type="file" id="gslImport" accept=".csv,text/csv" multiple></label>
       </div>
       <div class="measurement-status" id="gslStatus" role="status" aria-live="polite">Połącz BLE lub wczytaj wcześniejsze nagranie CSV. Dane są przechowywane w pamięci strony; eksportuj przed odświeżeniem.</div>
+      <!-- V61 — shared capture status, local display only. -->
+      <div class="gesture-transfer" id="gslTransfer" data-phase="idle">
+        <div class="gesture-transfer-title">HR400 — CAPTURE &amp; TRANSFER</div>
+        <div class="gesture-transfer-stats">
+          <div><span>BIEŻĄCY TRANSFER</span><strong id="gslTransferSamples">0 / 1600</strong></div>
+          <div><span>POSTĘP</span><strong id="gslTransferPercent">0%</strong></div>
+        </div>
+        <progress id="gslTransferBar" max="1600" value="0" aria-label="Gesture Learning — zweryfikowane próbki BLE"></progress>
+        <div class="gesture-transfer-phase" id="gslTransferPhase">IDLE — gotowy do rejestracji</div>
+      </div>
       <div id="gslCounts" class="gsl-metrics">Nagrania: 0</div>
       <div class="gsl-controls"><label>Nagranie<select id="gslTrial"><option value="">Brak nagrań</option></select></label><label>Ocena wykonania<select id="gslTruth" disabled><option value="unreviewed">Nieocenione</option><option value="gesture">Potwierdzony DOUBLE TAP</option><option value="negative">Brak DOUBLE TAP (kontrola)</option><option value="uncertain">Niepewne</option></select></label></div>
       <p>Wybierz ręcznie próbki początku stuknięć. Sugestie detektora są pomocą, nie etykietą referencyjną. Na wykresie: wybierz TAP1/TAP2, następnie kliknij odpowiedni punkt. Możesz doprecyzować indeks liczbowo.</p>
@@ -518,6 +528,16 @@
         <button id="gcClear" class="secondary" type="button" disabled>WYCZYŚĆ TEST</button>
       </div>
       <div id="gcStatus" class="measurement-status" role="status" aria-live="polite">Połącz BLE lub zaimportuj próbę. Wybierz wzorzec i oznacz dwa impulsy testowe.</div>
+      <!-- V61 — shared capture status, local display only. -->
+      <div class="gesture-transfer" id="gcTransfer" data-phase="idle">
+        <div class="gesture-transfer-title">HR400 — CAPTURE &amp; TRANSFER</div>
+        <div class="gesture-transfer-stats">
+          <div><span>BIEŻĄCY TRANSFER</span><strong id="gcTransferSamples">0 / 1600</strong></div>
+          <div><span>POSTĘP</span><strong id="gcTransferPercent">0%</strong></div>
+        </div>
+        <progress id="gcTransferBar" max="1600" value="0" aria-label="Gesture Comparator — zweryfikowane próbki BLE"></progress>
+        <div class="gesture-transfer-phase" id="gcTransferPhase">IDLE — gotowy do rejestracji</div>
+      </div>
       <div class="gsl-controls">
         <label>Znacznik<select id="gcAnchorMode"><option value="1">TAP 1</option><option value="2">TAP 2</option></select></label>
         <label>TAP1 — indeks<input id="gcTap1" type="number" min="0" max="1599" step="1"></label>
@@ -1502,7 +1522,7 @@ USER MODE: połączenie treningowe z sensorem przez Bluetooth LE.
 
 </footer>
 
-<script src="js/app.js?v=60"></script>
+<script src="js/app.js?v=61"></script>
 
 </body>
 
