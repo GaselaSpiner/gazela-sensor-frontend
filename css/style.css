@@ -1930,3 +1930,10 @@ footer {
 .gesture-transfer[data-phase="done"] progress{accent-color:#16a34a}
 .gesture-transfer[data-phase="failed"] .gesture-transfer-phase{color:#b91c1c}
 .gesture-transfer[data-phase="failed"] progress{accent-color:#dc2626}
+
+/* V63 — RAW versus orientation-normalized match summary */
+.gc-orientation{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:12px 0 18px}
+.gc-orientation>div{display:flex;flex-direction:column;gap:4px;padding:11px;border:1px solid #dce5ec;border-radius:8px}
+.gc-orientation span{font-size:11px;color:#526578;font-weight:600}
+.gc-orientation strong{font-size:20px;font-weight:700}
+@media(max-width:500px){.gc-orientation{grid-template-columns:1fr}}
