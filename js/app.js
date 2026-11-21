@@ -1,4 +1,4 @@
-// app.js — GAZELA SENSOR V65 (V63 baseline; V64 session replaced) / STAGE 8.11 HR400 ORIENTATION-INVARIANT COMPARATOR / V28.1 HR400
+// app.js — GAZELA SENSOR LAB V65.1 (V65 baseline; BLE retransmission) / STAGE 8.11 HR400 ORIENTATION-INVARIANT COMPARATOR / V28.1 HR400
 // V63: comparator uses one common fitted Y rotation for ACC+GYRO and both taps.
 // V62: serialize BLE command writes; start packet timeout only after write completion;
 //      prevent outdated queued N requests; reduce UI work in all HR400 modules.
@@ -1336,7 +1336,7 @@ class WebBluetoothTransport
             }
  
             const messages = packet.split(/\r?\n/).map(message => message.trim()).filter(Boolean);
-            for (const message of messages) {if(message.startsWith('STREAM,STOPPED,'))window.GazelaSessionV65?.onStreamStopped(message);this.onLine(message);}
+            for (const message of messages) {if(message.startsWith('STREAM,STOPPED,'))window.GazelaSessionV65?.onStreamStopped(message);window.GazelaSessionV65?.onStreamMessage(message);this.onLine(message);}
         } catch (error) {
             console.error("BLE notification error:", error);
             addSerialLine("BLE notification error: " + error.message, "serial-error");
@@ -4987,7 +4987,7 @@ function gazelaReferenceTransaction(db,mode,action){
 (function gazelaV65SessionEngine(){
 "use strict";
 const $=id=>document.getElementById(id);
-const ui={mode:$('v64Mode'),import:$('v64Import'),file:$('v64FileStatus'),start:$('v64Start'),stop:$('v64Stop'),exp:$('v64Export'),recover:$('v65Recover'),storage:$('v65Storage'),status:$('v64Status'),clock:$('v64Time'),samples:$('v64Samples'),integrity:$('v64Integrity'),bar:$('v64Progress'),ac:$('v64AutoContact'),ag:$('v64AutoGesture'),mc:$('v64ManualContact'),mg:$('v64ManualGesture'),markC:$('v64MarkContact'),markG:$('v64MarkGesture'),undo:$('v64Undo'),sound:$('v64Sound'),events:$('v64EventList'),marks:$('v64LabelList'),reference:$('v64Reference'),referenceStatus:$('v64ReferenceStatus'),rate:$('v64Rate'),notes:$('v64Notes')};
+const ui={mode:$('v64Mode'),import:$('v64Import'),file:$('v64FileStatus'),start:$('v64Start'),stop:$('v64Stop'),exp:$('v64Export'),recover:$('v65Recover'),storage:$('v65Storage'),transportOnly:$('v651TransportOnly'),status:$('v64Status'),clock:$('v64Time'),samples:$('v64Samples'),integrity:$('v64Integrity'),bar:$('v64Progress'),ac:$('v64AutoContact'),ag:$('v64AutoGesture'),mc:$('v64ManualContact'),mg:$('v64ManualGesture'),markC:$('v64MarkContact'),markG:$('v64MarkGesture'),undo:$('v64Undo'),sound:$('v64Sound'),events:$('v64EventList'),marks:$('v64LabelList'),reference:$('v64Reference'),referenceStatus:$('v64ReferenceStatus'),rate:$('v64Rate'),notes:$('v64Notes')};
 if(!ui.start)return;
 const UUID='7a1e0004-5a9a-4c71-9b3a-47415a5a0001';
 const PERIOD_MS=2.5, MAX_IMPORT_BYTES=16000000, MAX_REPLAY=120000;
@@ -4996,7 +4996,7 @@ let s=null, source=null, timer=null, audioCtx=null, writer=null, renderAt=0, rep
 const text=(tag,cl,t)=>{const x=document.createElement(tag);if(cl)x.className=cl;x.textContent=t;return x;};
 const clock=t=>{if(!Number.isFinite(t))return '—';const n=Math.max(0,Math.round(t));return String(Math.floor(n/60000)).padStart(2,'0')+':'+String(Math.floor(n%60000/1000)).padStart(2,'0')+'.'+String(n%1000).padStart(3,'0');};
 const say=(msg,type='info')=>{ui.status.textContent=msg;ui.status.dataset.state=type;};
-const id=()=>`GZ65-${Date.now()}-${Math.floor(Math.random()*1e6)}`;
+const id=()=>`GZ651-${Date.now()}-${Math.floor(Math.random()*1e6)}`;
 const csv=rows=>rows.map(r=>r.map(v=>{const v0=String(v??'');return /[",\r\n]/.test(v0)?'"'+v0.replace(/"/g,'""')+'"':v0;}).join(',')).join('\r\n')+'\r\n';
 function crc16(b,len=b.length){let crc=65535;for(let i=0;i<len;i++){crc^=b[i]<<8;for(let k=0;k<8;k++)crc=((crc<<1)^((crc&32768)?0x1021:0))&65535;}return crc;}
 // The complete GATT notification is an atomic packet, not a serial byte stream.
@@ -5017,7 +5017,7 @@ async function dbGet(store,key){const db=await dbOpen();return new Promise((reso
 async function dbAll(store){const db=await dbOpen();return new Promise((resolve,reject)=>{const tx=db.transaction(store,'readonly'),r=tx.objectStore(store).getAll();r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});}
 function queueWrite(work){if(!s)return;const ref=s;
  ref.writeTail=(ref.writeTail||Promise.resolve()).then(work).catch(e=>{ref.storageError=String(e);ref.diagnostics.push({kind:'STORAGE_ERROR',error:String(e),at:new Date().toISOString()});say('BŁĄD ZAPISU LOKALNEGO. Zatrzymano sesję: '+e.message,'error');if(ref.state==='recording')void stop('STORAGE_ERROR');});}
-function smallManifest(ref){return {id:ref.id,schema:'gazela.continuous.v65',version:'V65_STAGE_B',mode:ref.mode,state:ref.state,startedAt:ref.startedAt,endedAt:ref.endedAt,stopReason:ref.stopReason,source:ref.sourceName,firstSeq:ref.firstSeq,lastSeq:ref.lastSeq,sampleCount:ref.samples,frames:ref.frames,parts:ref.parts,gaps:ref.gaps,missingSamples:ref.missingSamples,crcErrors:ref.crcErrors,decoderErrors:ref.decoderErrors,referenceId:ref.referenceId,referenceName:ref.referenceName,events:ref.events,manual:ref.manual,diagnostics:ref.diagnostics.slice(-400),storageError:ref.storageError,quantization:'ACC 0.001g, GYRO 0.1deg/s; nominal 2.5ms; not hardware SensorTime'};}
+function smallManifest(ref){return {id:ref.id,schema:'gazela.continuous.v65',version:'V65.1_RETRANSMIT_TEST',mode:ref.mode,state:ref.state,startedAt:ref.startedAt,endedAt:ref.endedAt,stopReason:ref.stopReason,source:ref.sourceName,firstSeq:ref.firstSeq,lastSeq:ref.lastSeq,sampleCount:ref.samples,frames:ref.frames,parts:ref.parts,gaps:ref.gaps,missingSamples:ref.missingSamples,crcErrors:ref.crcErrors,decoderErrors:ref.decoderErrors,referenceId:ref.referenceId,referenceName:ref.referenceName,events:ref.events,manual:ref.manual,diagnostics:ref.diagnostics.slice(-400),storageError:ref.storageError,replayRequests:ref.replayRequests||0,recoveredFrames:ref.recoveredFrames||0,duplicates:ref.duplicates||0,receiverFrames:ref.rxFrames||0,transportOnly:!!ref.transportOnly,firmwareStop:ref.firmwareStop||null,startSequence:ref.startSequence??null,finalExpectedSeq:ref.finalExpectedSeq??null,quantization:'ACC 0.001g, GYRO 0.1deg/s; nominal 2.5ms; not hardware SensorTime'};}
 function saveManifest(ref){if(ref.mode!=='ble400')return;queueWrite(()=>dbPut('sessions',smallManifest(ref)));}
 function flushPackets(ref){if(ref.mode!=='ble400'||!ref.pending.length)return;const packets=ref.pending;ref.pending=[];const part=ref.parts++;
  queueWrite(async()=>{await dbPut('chunks',{sessionId:ref.id,part,packets});await dbPut('sessions',smallManifest(ref));});}
@@ -5027,11 +5027,11 @@ function sound(type){if(!ui.sound.checked)return;try{const AC=window.AudioContex
 function controls(){const run=s?.state==='recording',busy=run||s?.state==='stopping',connected=!!(bleTransport?.running&&bleTransport.raw400Characteristic);
  ui.start.disabled=busy||(ui.mode.value==='ble400'&&!connected)||(ui.mode.value==='replay'&&!source);
  ui.stop.disabled=!run;ui.markC.disabled=!run;ui.markG.disabled=!run;ui.undo.disabled=!s?.manual?.length;
- ui.exp.disabled=!s||busy;ui.mode.disabled=run;ui.import.disabled=run;ui.reference.disabled=run;ui.rate.disabled=run;
+ ui.exp.disabled=!s||busy;ui.mode.disabled=run;ui.import.disabled=run;ui.reference.disabled=run;ui.rate.disabled=run;if(ui.transportOnly)ui.transportOnly.disabled=run;
  if(ui.recover)ui.recover.disabled=run;
 }
 function newSession(mode){const ref=window.GazelaReferenceLibrary?.get(ui.reference.value)||null;
- return {id:id(),mode,state:'recording',startedAt:new Date().toISOString(),endedAt:null,stopReason:null,sourceName:source?.name||null,firstSeq:null,lastSeq:null,samples:0,frames:0,parts:0,gaps:0,missingSamples:0,crcErrors:0,decoderErrors:0,storageError:null,pending:[],writeTail:Promise.resolve(),raw:[],events:[],manual:[],diagnostics:[],history:[],candidates:[],lastCandidate:-1e12,gesture:new GazelaGestureStreamRecognizerV1(),perfStart:performance.now(),lastPacketPerf:performance.now(),firstPacketPerf:null,lastSampleTime:0,ref,referenceId:ref?.id||null,referenceName:ref?.name||null};}
+ return {id:id(),mode,state:'recording',startedAt:new Date().toISOString(),endedAt:null,stopReason:null,sourceName:source?.name||null,firstSeq:null,lastSeq:null,samples:0,frames:0,rxFrames:0,replayRequests:0,recoveredFrames:0,duplicates:0,transportOnly:!!ui.transportOnly?.checked,firmwareStop:null,startSequence:null,finalExpectedSeq:null,parts:0,gaps:0,missingSamples:0,crcErrors:0,decoderErrors:0,storageError:null,packetBuffer:new Map(),nextSeq:null,gapStartedAt:0,lastRecoveryAt:0,attemptedSeq:null,recoveryAttempts:0,recoveryFailed:new Set(),replayRequested:new Set(),pending:[],writeTail:Promise.resolve(),raw:[],events:[],manual:[],diagnostics:[],history:[],candidates:[],lastCandidate:-1e12,gesture:new GazelaGestureStreamRecognizerV1(),perfStart:performance.now(),lastPacketPerf:performance.now(),firstPacketPerf:null,lastSampleTime:0,ref,referenceId:ref?.id||null,referenceName:ref?.name||null};}
 function addEvent(type,base,extra){const item={id:'E'+(s.events.length+1),kind:'AUTO',type,index:base?.index??null,sequence:base?.sequence??null,time_ms:base?.time_ms??null,detector:type.startsWith('GESTURE')?'V65_DOUBLE_TAP_PAIR_V1':GAZELA_OFFLINE_DETECTOR_VERSION,algorithmUnvalidated:true,detectedAt:new Date().toISOString(),...extra};s.events.push(item);sound(type);return item;}
 function ingest(raw){if(!s||(s.state!=='recording'&&s.state!=='stopping'))return;const seq=raw.sequence;
  if(s.firstSeq===null)s.firstSeq=seq;
@@ -5049,6 +5049,7 @@ function ingest(raw){if(!s||(s.state!=='recording'&&s.state!=='stopping'))return
  const sample={...raw,index,time_ms:index*PERIOD_MS};s.lastSeq=seq;s.samples++;s.lastSampleTime=sample.time_ms;
  if(s.mode==='replay'){s.raw.push(sample);}else if(s.raw.length<1600){s.raw.push(sample);}else{s.raw[s.samples%1600]=sample;}
  s.history.push(sample);if(s.history.length>512)s.history.shift();
+ if(s.transportOnly)return;
  s.gesture.pushSample(sample);
  if(index%12!==0||s.history.length<100)return;
  const result=gazelaDetectContactOffline(s.history);
@@ -5067,17 +5068,109 @@ function ingest(raw){if(!s||(s.state!=='recording'&&s.state!=='stopping'))return
   s.candidates.push({...c,used:false});if(s.candidates.length>10)s.candidates.shift();
  }
 }
-function onRawPacket(value){if(!s||s.mode!=='ble400'||(s.state!=='recording'&&s.state!=='stopping'))return;
- try{const p=decodePacket(value);if(s.firstPacketPerf===null)s.firstPacketPerf=performance.now();s.frames++;s.lastPacketPerf=performance.now();s.pending.push(p.bytes);
-  for(const raw of p.out)ingest(raw);
-  if(s.pending.length>=100)flushPackets(s);
-  if(performance.now()-renderAt>175){renderAt=performance.now();render();}
- }catch(e){const bad=String(e.message||e);if(bad.includes('CRC'))s.crcErrors++;else s.decoderErrors++;s.diagnostics.push({kind:'RAW_PACKET_REJECTED',error:bad,at:new Date().toISOString()});}
+// V65.1: receive out-of-order retransmissions, but feed classifiers ONLY in
+// increasing SEQ order. Store all unique good GATT frames in IndexedDB.
+const REPLAY_RETRY_MS=300, REPLAY_MAX_ATTEMPTS=4, REPLAY_TIMEOUT_MS=1750;
+const MAX_PENDING_PACKET_FRAMES=110;
+function unsignedAhead(a,b){return ((a-b)>>>0)<0x80000000;}
+function drainOrdered(ref){
+ if(!ref||ref.nextSeq===null)return;
+ let advanced=false;
+ while(ref.packetBuffer.has(ref.nextSeq)){
+  const pkt=ref.packetBuffer.get(ref.nextSeq);
+  ref.packetBuffer.delete(ref.nextSeq);
+  // A missing packet may have been received late (recovery request in flight).
+  for(const raw of pkt.out)ingest(raw);
+  ref.nextSeq=(ref.nextSeq+pkt.out.length)>>>0;
+  advanced=true;
+ }
+ if(advanced){ref.gapStartedAt=0;ref.attemptedSeq=null;ref.recoveryAttempts=0;}
+ if(!ref.packetBuffer.size){
+  if(ref.finalExpectedSeq!==null&&ref.nextSeq!==ref.finalExpectedSeq&&unsignedAhead(ref.finalExpectedSeq,ref.nextSeq)){
+   if(!ref.gapStartedAt)ref.gapStartedAt=performance.now();
+   const overdue=performance.now()-ref.gapStartedAt;
+   if(ref.recoveryFailed.has(ref.nextSeq)||overdue>REPLAY_TIMEOUT_MS){
+    const missing=(ref.finalExpectedSeq-ref.nextSeq)>>>0;
+    ref.gaps++;ref.missingSamples+=missing;
+    ref.diagnostics.push({kind:'UNRECOVERED_TRAILING_SEQ',expected:ref.nextSeq,finalExpected:ref.finalExpectedSeq,missing});
+    ref.nextSeq=ref.finalExpectedSeq;ref.gapStartedAt=0;
+   }else requestRecovery(ref,ref.nextSeq);
+  }else ref.gapStartedAt=0;
+  return;
+ }
+ // Use the first buffered future packet; the gap begins at nextSeq.
+ const target=ref.nextSeq;
+ const nearest=[...ref.packetBuffer.keys()].sort((x,y)=>(x-target>>>0)-(y-target>>>0))[0];
+ if(!unsignedAhead(nearest,target)||nearest===target)return;
+ if(!ref.gapStartedAt)ref.gapStartedAt=performance.now();
+ const overdue=performance.now()-ref.gapStartedAt;
+ if(ref.recoveryFailed.has(target)||overdue>REPLAY_TIMEOUT_MS||ref.packetBuffer.size>MAX_PENDING_PACKET_FRAMES){
+  ref.diagnostics.push({kind:'REPLAY_UNRECOVERABLE',expected:target,nextAvailable:nearest,missing:(nearest-target)>>>0,afterMs:Math.round(overdue)});
+  ref.nextSeq=nearest;
+  ref.gapStartedAt=0;ref.attemptedSeq=null;ref.recoveryAttempts=0;
+  drainOrdered(ref); // existing ingest() detects and records the permanent gap.
+  return;
+ }
+ requestRecovery(ref,target);
+}
+function requestRecovery(ref,target){
+ if(!bleTransport?.running||!bleTransport?.raw400Characteristic)return;
+ const now=performance.now();
+ if(ref.attemptedSeq!==target){ref.attemptedSeq=target;ref.recoveryAttempts=0;ref.lastRecoveryAt=-1e12;}
+ if(ref.recoveryAttempts>=REPLAY_MAX_ATTEMPTS || now-ref.lastRecoveryAt<REPLAY_RETRY_MS)return;
+ ref.lastRecoveryAt=now;ref.recoveryAttempts++;ref.replayRequests++;
+ ref.replayRequested.add(target);
+ bleTransport.send('R'+target,()=>!!s&&s.id===ref.id&&
+   (ref.state==='recording'||ref.state==='stopping')&&ref.nextSeq===target)
+ .catch(e=>{ref.diagnostics.push({kind:'REPLAY_COMMAND_ERROR',seq:target,error:String(e)});});
+}
+function onRawPacket(value){
+ if(!s||s.mode!=='ble400'||(s.state!=='recording'&&s.state!=='stopping'))return;
+ const ref=s;
+ try{
+  const p=decodePacket(value),now=performance.now();
+  ref.rxFrames++;ref.lastPacketPerf=now;
+  if(ref.firstPacketPerf===null)ref.firstPacketPerf=now;
+  if(ref.nextSeq===null){ref.nextSeq=ref.startSequence??p.seq;ref.firstSeq=ref.nextSeq;}
+  if(!unsignedAhead(p.seq,ref.nextSeq)||ref.packetBuffer.has(p.seq)){
+   // A delivered frame is already ingested (or already buffered).
+   ref.duplicates++;
+   return;
+  }
+  if(ref.replayRequested.has(p.seq)){
+   ref.replayRequested.delete(p.seq);
+   ref.recoveredFrames++;
+   ref.diagnostics.push({kind:'REPLAY_FRAME_RECEIVED',firstSeq:p.seq,samples:p.out.length});
+  }
+  ref.packetBuffer.set(p.seq,p);
+  ref.frames++;
+  ref.pending.push(p.bytes); // Persist immediately even if ordering is pending.
+  if(ref.pending.length>=100)flushPackets(ref);
+  drainOrdered(ref);
+  if(now-renderAt>175){renderAt=now;render();}
+ }catch(e){
+  const bad=String(e.message||e);
+  if(bad.includes('CRC'))ref.crcErrors++;else ref.decoderErrors++;
+  ref.diagnostics.push({kind:'RAW_PACKET_REJECTED',error:bad,at:new Date().toISOString()});
+ }
+}
+function onStreamMessage(msg){
+ if(!s||s.mode!=='ble400')return;
+ if(msg.startsWith('STREAM,STARTED,')){
+  const parts=msg.split(','),first=Number(parts[6]);
+  if(Number.isSafeInteger(first)&&first>0){s.startSequence=first;}
+ }
+ if(msg.startsWith('STREAM,REPLAY_MISS,')){
+  const seq=Number(msg.split(',')[2]);
+  s.diagnostics.push({kind:'FIRMWARE_REPLAY_CACHE_MISS',sequence:seq});
+  s.recoveryFailed.add(seq);
+  if(s.nextSeq===seq)drainOrdered(s);
+ }
 }
 function pressLabel(type){if(!s||s.state!=='recording')return;const perf=performance.now();const mark={id:'M'+(s.manual.length+1),type,pressedAt:new Date().toISOString(),pressMonotonicMs:perf,pressStreamTimeMs:perf-(s.mode==='ble400'&&s.firstPacketPerf!==null?s.firstPacketPerf:s.perfStart),nearestReceivedSequence:s.lastSeq,nearestReceivedRawTimeMs:s.lastSampleTime,eventTimeMs:null,eventSequence:null,linkedEventId:null,status:'UNLINKED',note:'PRESS TIME != PHYSICAL EVENT TIME; sync uncertainty includes BLE latency'};
  s.manual.push(mark);if(navigator.vibrate)navigator.vibrate(25);if(s.mode==='ble400')saveManifest(s);render(true);}
 async function start(){const mode=ui.mode.value;
- if(mode==='ble400'&&!(bleTransport?.raw400Characteristic&&bleTransport.running)){say('Połącz Arduino V29 przez BLE. Wymagana charakterystyka RAW400 (0004).','error');return;}
+ if(mode==='ble400'&&!(bleTransport?.raw400Characteristic&&bleTransport.running)){say('Połącz Arduino V29.1 przez BLE. Wymagana charakterystyka RAW400 (0004).','error');return;}
  if(mode==='replay'&&!source){say('Wczytaj prawdziwy CSV 400 Hz.','error');return;}
  if(s?.state==='recording')return;
  if(ui.sound.checked){try{const AC=window.AudioContext||window.webkitAudioContext;if(AC){audioCtx=audioCtx||new AC();void audioCtx.resume();}}catch(e){console.warn(e);}}
@@ -5088,9 +5181,10 @@ async function start(){const mode=ui.mode.value;
    await dbPut('sessions',smallManifest(s));await bleTransport.send('U8');
    say('U8 wysłano. Oczekiwanie na pierwsze pełne pakiety RAW 400 Hz…','warn');
    timer=setInterval(()=>{if(s?.state!=='recording')return;
+    drainOrdered(s);
     if(performance.now()-s.lastPacketPerf>3500){void stop('RAW_TIMEOUT');say('RAW 400 Hz przerwany — STOP. Sprawdź BLE/MTU i eksport.','error');}
     else if(performance.now()-renderAt>500){renderAt=performance.now();render();}
-   },500);
+   },150);
   }catch(e){s.state='stopped';s.stopReason='START_ERROR';say('Nie uruchomiono RAW: '+e.message,'error');controls();}
  }else{replayIndex=0;replayAt=performance.now();timer=setInterval(replayTick,20);say('REPLAY RAW400: detektory działają na kolejnych próbkach CSV.','ok');}
 }
@@ -5107,12 +5201,30 @@ async function stop(reason='USER_STOP'){
  if(ref.mode==='ble400'){
   try{
    if(bleTransport?.running){
-    const receivedStop=new Promise(resolve=>{ref.stopResolver=resolve;setTimeout(()=>resolve('ACK_TIMEOUT'),900);});
-    await bleTransport.send('U0');
-    const answer=await receivedStop;
-    if(answer==='ACK_TIMEOUT')ref.diagnostics.push({kind:'STOP_ACK_TIMEOUT'});
-    // GATT notifications on the RAW characteristic may arrive after the status event.
-    await new Promise(resolve=>setTimeout(resolve,120));
+    // STOP ACK can itself be dropped. Firmware repeats cached STOP status on U0.
+    let answer='ACK_TIMEOUT';
+    for(let pass=0;pass<2;pass++){
+     const receivedStop=new Promise(resolve=>{ref.stopResolver=resolve;setTimeout(()=>resolve('ACK_TIMEOUT'),1700);});
+     await bleTransport.send('U0');
+     answer=await receivedStop;
+     if(answer==='ACK_OK')break;
+    }
+    if(answer!=='ACK_OK')ref.diagnostics.push({kind:'STOP_ACK_TIMEOUT'});
+    ref.stopResolver=null;
+    // Let already-notified frames arrive; finish outstanding retransmissions.
+    const settleUntil=performance.now()+2100;
+    while(performance.now()<settleUntil){
+     drainOrdered(ref);
+     if(!ref.packetBuffer.size&&(ref.finalExpectedSeq===null||ref.nextSeq===ref.finalExpectedSeq)){await new Promise(resolve=>setTimeout(resolve,200));break;}
+     await new Promise(resolve=>setTimeout(resolve,125));
+    }
+    // A disconnect / unrecoverable cache miss must not hide missing samples.
+    while(ref.packetBuffer.size){
+     const nearest=[...ref.packetBuffer.keys()].sort((x,y)=>(x-ref.nextSeq>>>0)-(y-ref.nextSeq>>>0))[0];
+     if(nearest!==ref.nextSeq)ref.recoveryFailed.add(ref.nextSeq);
+     drainOrdered(ref);
+    }
+    if(ref.finalExpectedSeq!==null&&ref.nextSeq!==ref.finalExpectedSeq){ref.recoveryFailed.add(ref.nextSeq);drainOrdered(ref);}
    }
   }catch(e){ref.diagnostics.push({kind:'BLE_STOP_ERROR',error:String(e)});}
   ref.stopResolver=null;
@@ -5149,11 +5261,11 @@ function showMarks(){ui.marks.replaceChildren();if(!s?.manual?.length){ui.marks.
   }ui.marks.append(el);
  }}
 function render(force=false){const ref=s;ui.clock.textContent=ref?clock(ref.state==='recording'&&ref.mode==='replay'?ref.lastSampleTime:ref.state==='recording'?performance.now()-(ref.mode==='ble400'&&ref.firstPacketPerf!==null?ref.firstPacketPerf:ref.perfStart):ref.lastSampleTime):'00:00.000';
- ui.samples.textContent=ref?ref.samples.toLocaleString('pl-PL'):'0';ui.integrity.textContent=ref?`SEQ gaps: ${ref.gaps} • missing: ${ref.missingSamples} • CRC: ${ref.crcErrors} • BLE: ${ref.frames} frames`:'—';
+ ui.samples.textContent=ref?ref.samples.toLocaleString('pl-PL'):'0';ui.integrity.textContent=ref?`SEQ gaps: ${ref.gaps} • missing: ${ref.missingSamples} • recovered: ${ref.recoveredFrames||0} • pending: ${ref.packetBuffer?.size||0} • CRC: ${ref.crcErrors} • BLE: ${ref.frames} frames`:'—';
  ui.ac.textContent=ref?ref.events.filter(e=>e.type==='CONTACT_CANDIDATE').length:0;ui.ag.textContent=ref?ref.events.filter(e=>e.type.startsWith('GESTURE')).length:0;
  ui.mc.textContent=ref?ref.manual.filter(e=>e.type==='CONTACT').length:0;ui.mg.textContent=ref?ref.manual.filter(e=>e.type==='GEST').length:0;
  ui.bar.value=ref?.mode==='replay'&&source?(100*replayIndex/source.samples.length):0;
- ui.notes.textContent=ref?.mode==='ble400'?`LIVE RAW400 • ${ref.samples} próbek • zapis IndexedDB: ${ref.parts} fragmentów. Kontakt i DOUBLE TAP są hipotezami; czas dotknięcia przycisku NIE jest czasem uderzenia.`:'Detektory działają na pełnych danych 400 Hz. Wyniki AUTO pozostają niezależne od etykiet ręcznych.';
+ ui.notes.textContent=ref?.mode==='ble400'?`LIVE RAW400 • ${ref.samples} próbek • odzyskane ramki: ${ref.recoveredFrames||0} • zapis IndexedDB: ${ref.parts} fragmentów. Kontakt i DOUBLE TAP są hipotezami; czas dotknięcia przycisku NIE jest czasem uderzenia.`:'Detektory działają na pełnych danych 400 Hz. Wyniki AUTO pozostają niezależne od etykiet ręcznych.';
  if(force||ref?.events?.length!==Number(ui.events.dataset.count)){showEvents();ui.events.dataset.count=String(ref?.events?.length||0);}
  if(force||ref?.manual?.length!==Number(ui.marks.dataset.count)){showMarks();ui.marks.dataset.count=String(ref?.manual?.length||0);}controls();}
 // A compact ZIP writer supporting binary Uint8Array payloads (no external CDN).
@@ -5175,9 +5287,9 @@ function zip(files){
 }
 async function exportSession(){if(!s||s.state==='recording'||s.state==='stopping')return;const ref=s;ui.exp.disabled=true;
  try{if(ref.writeTail)await ref.writeTail;let raw=null,meta=smallManifest(ref);
-  const files=[['session.json',JSON.stringify(meta,null,2)+'\n'],['auto_events.json',JSON.stringify(ref.events,null,2)+'\n'],['manual_labels.json',JSON.stringify(ref.manual,null,2)+'\n'],['manual_labels.csv',csv([['id','type','pressedAt','pressStreamTimeMs','nearestReceivedSequence','nearestReceivedRawTimeMs','eventTimeMs','eventSequence','linkedEventId','status'],...ref.manual.map(m=>[m.id,m.type,m.pressedAt,m.pressStreamTimeMs,m.nearestReceivedSequence,m.nearestReceivedRawTimeMs,m.eventTimeMs,m.eventSequence,m.linkedEventId,m.status])])],['README.txt','GAZELA V65: LIVE RAW 400 Hz packets; each frame has magic GZ, version, N, SEQ, nominal time, 6x int16 per sample, CRC16. Full session raw is concatenated binary GATT frames. No claim of BMI270 hardware timestamps. Detector predictions are hypotheses, NOT confirmed contact/gesture. Manual press latency is unknown. Check missing SEQ / CRC / storage errors.\n']];
+  const files=[['session.json',JSON.stringify(meta,null,2)+'\n'],['auto_events.json',JSON.stringify(ref.events,null,2)+'\n'],['manual_labels.json',JSON.stringify(ref.manual,null,2)+'\n'],['manual_labels.csv',csv([['id','type','pressedAt','pressStreamTimeMs','nearestReceivedSequence','nearestReceivedRawTimeMs','eventTimeMs','eventSequence','linkedEventId','status'],...ref.manual.map(m=>[m.id,m.type,m.pressedAt,m.pressStreamTimeMs,m.nearestReceivedSequence,m.nearestReceivedRawTimeMs,m.eventTimeMs,m.eventSequence,m.linkedEventId,m.status])])],['README.txt','GAZELA V65.1: Sequenced live RAW and retransmitted frames sorted by SEQ in export; gaps refer to unrecoverable samples. LIVE RAW 400 Hz packets; each frame has magic GZ, version, N, SEQ, nominal time, 6x int16 per sample, CRC16. Full session raw is concatenated binary GATT frames. No claim of BMI270 hardware timestamps. Detector predictions are hypotheses, NOT confirmed contact/gesture. Manual press latency is unknown. Check missing SEQ / CRC / storage errors.\n']];
   if(ref.mode==='ble400'){const chunks=(await dbAll('chunks')).filter(x=>x.sessionId===ref.id).sort((a,b)=>a.part-b.part);
-    const buffers=chunks.flatMap(x=>x.packets);const bytes=buffers.reduce((n,x)=>n+x.length,0);raw=new Uint8Array(bytes);let at=0;for(const b of buffers){raw.set(b,at);at+=b.length;}
+    const buffers=chunks.flatMap(x=>x.packets).sort((a,b)=>{const x=new DataView(a.buffer,a.byteOffset,a.byteLength).getUint32(4,true),y=new DataView(b.buffer,b.byteOffset,b.byteLength).getUint32(4,true);return x-y;});const bytes=buffers.reduce((n,x)=>n+x.length,0);raw=new Uint8Array(bytes);let at=0;for(const b of buffers){raw.set(b,at);at+=b.length;}
     files.push(['raw_400hz_ble_frames.bin',raw]);meta.savedParts=chunks.length;meta.savedBytes=bytes;
   }else{files.push(['replay_raw_400hz.csv',csv([['index','sequence','time_ms','AX_g','AY_g','AZ_g','GX_dps','GY_dps','GZ_dps'],...ref.raw.map(p=>[p.index,p.sequence,p.time_ms,...AXES.map(k=>p[k])])])]);}
   files[0][1]=JSON.stringify(meta,null,2)+'\n';const blob=zip(files);contactSaveBlob(`GAZELA_V65_SESSION_${ref.id}.zip`,blob);say('Eksport ZIP utworzony. Zachowaj kopię poza przeglądarką.','ok');
@@ -5194,8 +5306,8 @@ async function references(){try{await window.GazelaReferenceLibrary?.ready();con
  catch(e){ui.referenceStatus.textContent='Błąd biblioteki: '+e.message;}}
 ui.start.onclick=()=>void start();ui.stop.onclick=()=>void stop();ui.exp.onclick=()=>void exportSession();if(ui.recover)ui.recover.onclick=()=>void recover();
 ui.markC.onclick=()=>pressLabel('CONTACT');ui.markG.onclick=()=>pressLabel('GEST');ui.undo.onclick=()=>{if(s?.manual?.length){s.manual.pop();if(s.mode==='ble400')saveManifest(s);render(true);}};
-ui.import.onchange=chooseFile;ui.mode.onchange=()=>{say(ui.mode.value==='ble400'?'LIVE RAW 400 Hz — wymaga V29 na Arduino, BLE RAW characteristic 0004.':'REPLAY RAW400 z CSV','info');controls();};
+ui.import.onchange=chooseFile;ui.mode.onchange=()=>{say(ui.mode.value==='ble400'?'LIVE RAW 400 Hz — wymaga V29.1 na Arduino, BLE RAW characteristic 0004.':'REPLAY RAW400 z CSV','info');controls();};
 window.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&s?.state==='recording'){void stop('PAGE_HIDDEN');say('Aplikacja ukryta. Zatrzymano sesję, by nie ukrywać braków pomiaru.','warn');}});
-window.GazelaSessionV65=Object.freeze({version:'V65_STAGE_B',onRawPacket,onConnectionChanged:controls,onStreamStopped:msg=>{if(s){s.diagnostics.push({kind:'FIRMWARE_STOP_STATUS',message:msg});s.stopResolver?.('ACK_OK');}},onBLEDisconnect:()=>{if(s?.mode==='ble400'&&s.state==='recording')void stop('BLE_DISCONNECTED');},state:()=>s?{state:s.state,mode:s.mode,samples:s.samples,gaps:s.gaps,missing:s.missingSamples,crc:s.crcErrors,events:s.events.length,manual:s.manual.length}:null});
-void references();say('V65: wybierz LIVE RAW400, połącz BLE z firmware V29 i uruchom sesję.','info');render(true);
+window.GazelaSessionV65=Object.freeze({version:'V65.1_RETRANSMIT_TEST',onRawPacket,onStreamMessage,onConnectionChanged:controls,onStreamStopped:msg=>{if(s){s.firmwareStop=msg;const fields=msg.split(',');const end=Number(fields[9]);if(Number.isSafeInteger(end)&&end>0)s.finalExpectedSeq=end;s.diagnostics.push({kind:'FIRMWARE_STOP_STATUS',message:msg});s.stopResolver?.('ACK_OK');}},onBLEDisconnect:()=>{if(s?.mode==='ble400'&&s.state==='recording')void stop('BLE_DISCONNECTED');},state:()=>s?{state:s.state,mode:s.mode,samples:s.samples,gaps:s.gaps,missing:s.missingSamples,crc:s.crcErrors,events:s.events.length,manual:s.manual.length}:null});
+void references();say('V65.1: wybierz LIVE RAW400, połącz BLE z firmware V29 i uruchom sesję.','info');render(true);
 })();
