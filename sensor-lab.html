@@ -16,13 +16,13 @@
 
   <meta name="description" content="Gazela Spiner Sensor Lab — podgląd danych sensora, rejestracja gestów i diagnostyka połączenia.">
 
-  <title>Gazela Spiner Sensor Lab V63</title>
+  <title>Gazela Spiner Sensor Lab V65</title>
 
   <link
 
     rel="stylesheet"
 
-    href="css/style.css?v=62"
+    href="css/style.css?v=64"
 
   >
 
@@ -79,6 +79,48 @@
     </div>
 
   </section>
+
+<!-- =====================================================
+       V64 — SESSION MODE / EXPERIMENTAL STAGE A
+       ===================================================== -->
+<section class="card v64-session" id="v64SessionMode" aria-labelledby="v64Title">
+  <div class="v64-title-row"><div><h2 id="v64Title">GAZELA SESSION — V65</h2><p>LIVE RAW 400 Hz • DUAL CLASSIFIER • LOCAL STORAGE</p></div><span class="v64-prototype">PROTOTYPE</span></div>
+  <p class="v64-warning"><strong>Wersja eksperymentalna:</strong> LIVE RAW400 wymaga firmware V29 i połączenia BLE. Detektory działają na pełnych próbkach 400 Hz w Chrome na Androidzie. Zapisujemy pakiety lokalnie w IndexedDB; brak gwarancji braku utraty danych podczas rozłączenia lub działania w tle.</p>
+  <div class="v64-top-settings">
+    <label>TRYB SESJI<select id="v64Mode"><option value="ble400">LIVE BLE RAW 400 Hz + AUTO CONTACT/GEST</option><option value="replay">REPLAY RAW 400 Hz • CSV</option></select></label>
+    <label>WZORZEC GESTU<select id="v64Reference"><option value="">DOUBLE TAP • reguła par impulsów</option></select></label>
+    <label>PLIK RAW 400 Hz<input id="v64Import" type="file" accept=".csv,text/csv"></label>
+    <label>SZYBKOŚĆ REPLAY<select id="v64Rate"><option value="1">1× (czas rzeczywisty)</option><option value="2">2×</option><option value="4">4×</option></select></label>
+  </div>
+  <div id="v64ReferenceStatus" class="v64-caption">Wzorce z biblioteki Gesture Learning.</div>
+  <div id="v64FileStatus" class="v64-caption">Dla LIVE użyj BLE. CSV potrzebny tylko do REPLAY.</div><div id="v65Storage" class="v64-caption">Local storage: IndexedDB (zapis pakietów co około 2 sekundy).</div>
+  <div class="v64-session-actions"><button id="v64Start" type="button" class="start" disabled>START SESSION / REPLAY</button><button id="v64Stop" type="button" class="stop" disabled>STOP SESSION</button><button id="v64Export" type="button" class="secondary" disabled>EXPORT SESSION ZIP</button><button id="v65Recover" type="button" class="secondary">ODZYSKAJ OSTATNIĄ SESJĘ</button></div>
+  <div id="v64Status" class="v64-status" role="status" aria-live="polite">Inicjalizacja sesji…</div>
+  <div class="v64-stats">
+    <div><small>CZAS SESJI</small><strong id="v64Time">00:00.000</strong></div>
+    <div><small>ODEBRANE PRÓBKI / RAMKI</small><strong id="v64Samples">0</strong></div>
+    <div><small>INTEGRITY</small><strong id="v64Integrity">—</strong></div>
+  </div>
+  <progress id="v64Progress" max="100" value="0" aria-label="Postęp replay"></progress>
+  <div class="v64-dual-stats">
+    <div class="v64-auto"><h3>AUTOMATYCZNIE</h3><p>CONTACT CANDIDATE <strong id="v64AutoContact">0</strong></p><p>GESTURE CANDIDATE <strong id="v64AutoGesture">0</strong></p></div>
+    <div class="v64-manual"><h3>RĘCZNIE</h3><p>CONTACT <strong id="v64ManualContact">0</strong></p><p>GEST <strong id="v64ManualGesture">0</strong></p></div>
+  </div>
+  <div class="v64-touch-panel">
+    <h3>OZNACZ RZECZYWISTE ZDARZENIE</h3>
+    <div class="v64-annotation-buttons">
+      <button id="v64MarkContact" class="v64-big-contact" type="button" disabled aria-label="Oznacz CONTACT ręcznie">● CONTACT</button>
+      <button id="v64MarkGesture" class="v64-big-gesture" type="button" disabled aria-label="Oznacz GEST ręcznie">◆ GEST</button>
+    </div>
+    <div class="v64-touch-footer"><label><input id="v64Sound" type="checkbox" checked> Dźwięki AUTO (różne dla kontaktu i gestu)</label><button id="v64Undo" type="button" class="secondary" disabled>COFNIJ OSTATNIĄ ETYKIETĘ</button></div>
+  </div>
+  <div id="v64Notes" class="v64-caption"></div>
+  <div class="v64-event-grid">
+    <div><h3>AUTO • WSPÓLNA OŚ CZASU</h3><div id="v64EventList" class="v64-event-list"></div></div>
+    <div><h3>MANUAL • TWOJE ETYKIETY</h3><div id="v64LabelList" class="v64-event-list"></div></div>
+  </div>
+  <p class="v64-footer-note">Naciśnięcie przycisku i rzeczywiste zdarzenie to dwa różne momenty. Po STOP można powiązać ręczną etykietę z wykryciem lub ręcznie skorygować czas. Automatyczne wyniki są hipotezami, nie zmieniają Twoich oznaczeń. W trybie LIVE dane są zapisywane partiami w IndexedDB. Po STOP pobierz ZIP jako kopię niezależną od przeglądarki. Zdarzenia AUTO to kandydaci i wymagają kalibracji; brak gwarantowanej kompletności do czasu testów telefonu.</p>
+</section>
 
 <!-- =====================================================
 
@@ -1524,7 +1566,7 @@ USER MODE: połączenie treningowe z sensorem przez Bluetooth LE.
 
 </footer>
 
-<script src="js/app.js?v=62"></script>
+<script src="js/app.js?v=65"></script>
 
 </body>
 
