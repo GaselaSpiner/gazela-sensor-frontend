@@ -2004,3 +2004,7 @@ footer {
 
 /* V65.1 transport-only diagnostic toggle */
 .v651-transport-only{display:flex;align-items:center;gap:10px;padding:12px 10px;font-size:14px;font-weight:600;color:var(--text,#273445);border:1px solid #cbd5e1;border-radius:10px;margin-top:10px}.v651-transport-only input{width:20px;height:20px;flex:none;accent-color:#0369a1}
+
+/* V65.2 — STOP CONTROL hotfix (no changes to older components) */
+.v652-stop-explainer{margin:6px 0 10px;font-size:12px;line-height:1.5;color:#475569}
+.v64-session button.v652-stopping{background:#b91c1c!important;color:#fff!important;border:2px solid #7f1d1d!important;opacity:1!important;font-weight:800}
