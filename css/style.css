@@ -1998,7 +1998,7 @@ footer {
 @media(max-width:700px){
  .v64-session{padding:12px!important;margin:12px 0!important}
  .v64-top-settings,.v64-event-grid{grid-template-columns:1fr}
- .v64-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+.v64-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
  .v64-stats>div:first-child{grid-column:1/-1}
  .v64-session .v64-annotation-buttons button{height:112px;min-height:112px;font-size:31px}
  .v64-touch-panel{padding:9px}
@@ -2026,3 +2026,15 @@ footer {
 .v656-diag summary {cursor:pointer;font-weight:650;font-size:.9rem;line-height:1.4;}
 .v656-diag .v651-transport-only {display:block;margin:12px 0 0;}
 #v656PulseSummary,#v656V2Summary {padding:8px 12px;line-height:1.5;overflow-wrap:anywhere;}
+/* V65.6.2 — MULTICLASS SHADOW diagnostics; existing module styles untouched */
+.v6562-shadow-panel{margin:12px 0 16px;border:1px solid #b6cadb;border-radius:12px;padding:14px;background:#f7fbff;min-width:0}
+.v6562-shadow-panel h3{font-size:14px;margin:0 0 8px;color:#1d4ed8}
+.v6562-shadow-panel p{line-height:1.5}
+.v6562-shadow-panel details{margin-top:11px}
+.v6562-shadow-panel summary{font-size:12px;font-weight:700;cursor:pointer;padding:8px 0;color:#334155}
+.v6562-shadow-recent{margin-top:8px;max-height:220px;overflow:auto;background:#fff;border:1px solid #dbe5ef;border-radius:8px;padding:8px}
+.v6562-shadow-row{font:12px/1.5 Consolas,Monaco,monospace;overflow-wrap:anywhere;border-bottom:1px solid #e2e8f0;padding:7px 3px}
+.v6562-shadow-row:last-child{border-bottom:0}
+.v6562-shadow-row[data-class="GESTURE_COMPONENT"]{color:#1d4ed8}
+.v6562-shadow-row[data-class="CONTACT_CANDIDATE_SHADOW"]{color:#15803d}
+.v6562-shadow-row[data-class="OTHER_UNKNOWN"]{color:#475569}
