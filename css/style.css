@@ -2008,3 +2008,12 @@ footer {
 /* V65.2 — STOP CONTROL hotfix (no changes to older components) */
 .v652-stop-explainer{margin:6px 0 10px;font-size:12px;line-height:1.5;color:#475569}
 .v64-session button.v652-stopping{background:#b91c1c!important;color:#fff!important;border:2px solid #7f1d1d!important;opacity:1!important;font-weight:800}
+
+/* V65.5: mobile-first sound preview and volume control */
+.v655-audio-panel{margin-top:12px;background:#f6fafc;border:1px solid #c6d6e3;border-radius:12px;padding:12px;display:grid;gap:9px}
+.v655-audio-panel>label{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;font-weight:800;color:#243b53}
+.v655-audio-panel input[type=range]{width:100%;height:32px;accent-color:#0284c7;touch-action:pan-x}
+.v655-audio-tests{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.v64-session .v655-audio-tests button{font-size:12px;font-weight:800;min-height:44px;padding:8px;border-radius:9px}
+.v655-audio-panel p{font-size:11px;line-height:1.45;color:#526578;margin:0}
+@media(max-width:450px){.v655-audio-tests{grid-template-columns:1fr}}
