@@ -4987,14 +4987,84 @@ function gazelaReferenceTransaction(db,mode,action){
 // END STAGE 8.9
 
 // ================================================================
-// GAZELA V65.5 — SAFE STOP & DRAIN + LOUD AUDIO + GESTURE JACKPOT
+// ================================================================
+// V65.6 — GESTURE SIGNATURE V2 / EXPERIMENTAL SHADOW SCORER
+// Uses the SAME ordered 400 Hz samples and the existing confirmed V1
+// reference profile, but NEVER changes the existing V1 accept/reject gate.
+// A score is a descriptive similarity index (0..100), NOT a probability.
+// Signed axes are not imposed as fixed thresholds: norms of 3-axis
+// baseline-corrected ACC and GYRO are compared across 57 samples per tap.
+// ================================================================
+const GAZELA_GESTURE_V2_VERSION = 'GAZELA_GESTURE_SHADOW_V2_400HZ';
+function gazelaGestureV2Clamp(x){return Math.max(0,Math.min(1,x));}
+function gazelaGestureV2Cosine(a,b){
+ if(!Array.isArray(a)||a.length!==b.length||!a.length)return null;
+ let dot=0,x=0,y=0;
+ for(let i=0;i<a.length;i++){dot+=a[i]*b[i];x+=a[i]*a[i];y+=b[i]*b[i];}
+ return x>1e-12&&y>1e-12?gazelaGestureV2Clamp(dot/Math.sqrt(x*y)):null;
+}
+function gazelaGestureV2RatioSimilarity(observed,reference,tolerance){
+ if(!Number.isFinite(observed)||observed<=0||!Number.isFinite(reference)||reference<=0)return null;
+ return gazelaGestureV2Clamp(Math.exp(-Math.abs(Math.log(observed/reference))/tolerance));
+}
+function gazelaGestureV2Score(history,first,second,ref){
+ const profile=ref?.profile;
+ if(!profile?.medianWaveforms?.tap1||!profile?.medianWaveforms?.tap2||!profile?.statistics)
+   return {version:GAZELA_GESTURE_V2_VERSION,status:'NO_PROFILE',score:null};
+ if(!Array.isArray(history)||history.length<100)return {version:GAZELA_GESTURE_V2_VERSION,status:'WINDOW_NOT_READY',score:null};
+ const start=history[0].index;
+ const a=first.index-start,b=second.index-start;
+ // Ensure that both 57-sample windows and 40-sample baselines exist.
+ if(a<40||b<40||a+40>=history.length||b+40>=history.length)
+   return {version:GAZELA_GESTURE_V2_VERSION,status:'WINDOW_UNAVAILABLE',score:null};
+ try{
+  const taps=[gazelaSignatureTap(history,a),gazelaSignatureTap(history,b)];
+  const signatures=[profile.medianWaveforms.tap1,profile.medianWaveforms.tap2];
+  const scoreAxes=(key)=>{
+    const scores=[];
+    for(let t=0;t<2;t++){
+      const obs=taps[t].waveform.map(w=>Math.hypot(...w[key]));
+      const reference=signatures[t].map(w=>Math.hypot(...w[key]));
+      const n=gazelaGestureV2Cosine(obs,reference);
+      if(n!==null)scores.push(n);
+    }
+    return scores.length===2?(scores[0]+scores[1])/2:null;
+  };
+  const accShape=scoreAxes('acc'),gyroShape=scoreAxes('gyro');
+  const terms=[];
+  for(let k=0;k<2;k++)for(const feature of ['accPeakG','deltaPeakG','e20G','gyroChangePeakDps']){
+    const name=(k?'tap2.':'tap1.')+feature;
+    const median=profile.statistics[name]?.median;
+    const rel=gazelaGestureV2RatioSimilarity(taps[k].features[feature],median,1.0);
+    if(rel!==null)terms.push(rel);
+  }
+  const dynamics=terms.length===8?terms.reduce((x,y)=>x+y,0)/terms.length:null;
+  const gapMs=second.timeMs-first.timeMs,medGap=profile.statistics['pair.gapMs']?.median;
+  const timing=Number.isFinite(medGap)?Math.exp(-0.5*Math.pow((gapMs-medGap)/75,2)):null;
+  const ratio=taps[0].features.deltaPeakG>0?taps[1].features.deltaPeakG/taps[0].features.deltaPeakG:null;
+  const ratioScore=gazelaGestureV2RatioSimilarity(ratio,profile.statistics['pair.deltaPeakRatio']?.median,0.95);
+  const components={timing,accShape,gyroShape,dynamics,deltaRatio:ratioScore};
+  const weights={timing:.24,accShape:.25,gyroShape:.20,dynamics:.21,deltaRatio:.10};
+  let num=0,den=0;
+  for(const [key,weight] of Object.entries(weights))if(components[key]!==null){num+=components[key]*weight;den+=weight;}
+  const score=den>0?Math.round(1000*num/den)/10:null;
+  return {version:GAZELA_GESTURE_V2_VERSION,status:'SHADOW_NOT_VALIDATED',score,
+      components:Object.fromEntries(Object.entries(components).map(([k,v])=>[k,v===null?null:Math.round(1000*v)/1000])),
+      gapMs,deltaPeakRatio:ratio,referenceId:ref.id,profileRecordCount:profile.recordCount,
+      sixAxesUsed:true,orientationInvariantMagnitude:true,
+      note:'Descriptive similarity only: NOT probability, NOT classifier acceptance; no independently validated threshold.'};
+ }catch(e){return {version:GAZELA_GESTURE_V2_VERSION,status:'FEATURE_ERROR',score:null,error:String(e?.message||e)};}
+}
+// END V65.6 EXPERIMENTAL SHADOW SCORER
+
+// GAZELA V65.6 — SAFE STOP & DRAIN + LOUD AUDIO + GESTURE JACKPOT + V2 SHADOW
 // Uses the existing V63/V64 contact detector and gesture model.
 // Experimental detector output != confirmed ball impact or verified gesture.
 // ================================================================
 (function gazelaV65SessionEngine(){
 "use strict";
 const $=id=>document.getElementById(id);
-const ui={mode:$('v64Mode'),import:$('v64Import'),file:$('v64FileStatus'),start:$('v64Start'),stop:$('v64Stop'),exp:$('v64Export'),recover:$('v65Recover'),storage:$('v65Storage'),transportOnly:$('v651TransportOnly'),retransmission:$('v653Retransmission'),packetMode:$('v654RawPacketMode'),status:$('v64Status'),clock:$('v64Time'),samples:$('v64Samples'),integrity:$('v64Integrity'),bar:$('v64Progress'),ac:$('v64AutoContact'),ag:$('v64AutoGesture'),mc:$('v64ManualContact'),mg:$('v64ManualGesture'),markC:$('v64MarkContact'),markG:$('v64MarkGesture'),undo:$('v64Undo'),sound:$('v64Sound'),soundVolume:$('v655SoundVolume'),soundPct:$('v655SoundPct'),soundContactTest:$('v655TestContact'),soundGestureTest:$('v655TestGesture'),events:$('v64EventList'),marks:$('v64LabelList'),reference:$('v64Reference'),referenceStatus:$('v64ReferenceStatus'),rate:$('v64Rate'),notes:$('v64Notes')};
+const ui={v2Summary:$('v656V2Summary'),pulseSummary:$('v656PulseSummary'),mode:$('v64Mode'),import:$('v64Import'),file:$('v64FileStatus'),start:$('v64Start'),stop:$('v64Stop'),exp:$('v64Export'),recover:$('v65Recover'),storage:$('v65Storage'),transportOnly:$('v651TransportOnly'),retransmission:$('v653Retransmission'),packetMode:$('v654RawPacketMode'),status:$('v64Status'),clock:$('v64Time'),samples:$('v64Samples'),integrity:$('v64Integrity'),bar:$('v64Progress'),ac:$('v64AutoContact'),ag:$('v64AutoGesture'),mc:$('v64ManualContact'),mg:$('v64ManualGesture'),mf:$('v6561ManualFalse'),markC:$('v64MarkContact'),markG:$('v64MarkGesture'),markF:$('v6561MarkFalse'),falseStatus:$('v6561FalseStatus'),undo:$('v64Undo'),sound:$('v64Sound'),soundVolume:$('v655SoundVolume'),soundPct:$('v655SoundPct'),soundContactTest:$('v655TestContact'),soundGestureTest:$('v655TestGesture'),events:$('v64EventList'),marks:$('v64LabelList'),reference:$('v64Reference'),referenceStatus:$('v64ReferenceStatus'),rate:$('v64Rate'),notes:$('v64Notes')};
 if(!ui.start)return;
 const UUID='7a1e0004-5a9a-4c71-9b3a-47415a5a0001';
 const PERIOD_MS=2.5, MAX_IMPORT_BYTES=16000000, MAX_REPLAY=120000;
@@ -5027,7 +5097,7 @@ async function verifyRaw12Mtu(){
 const text=(tag,cl,t)=>{const x=document.createElement(tag);if(cl)x.className=cl;x.textContent=t;return x;};
 const clock=t=>{if(!Number.isFinite(t))return '—';const n=Math.max(0,Math.round(t));return String(Math.floor(n/60000)).padStart(2,'0')+':'+String(Math.floor(n%60000/1000)).padStart(2,'0')+'.'+String(n%1000).padStart(3,'0');};
 const say=(msg,type='info')=>{ui.status.textContent=msg;ui.status.dataset.state=type;};
-const id=()=>`GZ655-${Date.now()}-${Math.floor(Math.random()*1e6)}`;
+const id=()=>`GZ656-${Date.now()}-${Math.floor(Math.random()*1e6)}`;
 const csv=rows=>rows.map(r=>r.map(v=>{const v0=String(v??'');return /[",\r\n]/.test(v0)?'"'+v0.replace(/"/g,'""')+'"':v0;}).join(',')).join('\r\n')+'\r\n';
 function crc16(b,len=b.length){let crc=65535;for(let i=0;i<len;i++){crc^=b[i]<<8;for(let k=0;k<8;k++)crc=((crc<<1)^((crc&32768)?0x1021:0))&65535;}return crc;}
 // The complete GATT notification is an atomic packet, not a serial byte stream.
@@ -5048,7 +5118,7 @@ async function dbGet(store,key){const db=await dbOpen();return new Promise((reso
 async function dbAll(store){const db=await dbOpen();return new Promise((resolve,reject)=>{const tx=db.transaction(store,'readonly'),r=tx.objectStore(store).getAll();r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});}
 function queueWrite(work){if(!s)return;const ref=s;
  ref.writeTail=(ref.writeTail||Promise.resolve()).then(work).catch(e=>{ref.storageError=String(e);ref.diagnostics.push({kind:'STORAGE_ERROR',error:String(e),at:new Date().toISOString()});say('BŁĄD ZAPISU LOKALNEGO. Zatrzymano sesję: '+e.message,'error');if(ref.state==='recording')void stop('STORAGE_ERROR');});}
-function smallManifest(ref){return {id:ref.id,schema:'gazela.continuous.v65',version:'V65.5_SAFE_STOP_AUDIO',rawSamplesPerFrame:ref.rawSamplesPerFrame||8,mtuProbe:ref.mtuProbe||null,mode:ref.mode,state:ref.state,startedAt:ref.startedAt,endedAt:ref.endedAt,stopReason:ref.stopReason,source:ref.sourceName,firstSeq:ref.firstSeq,lastSeq:ref.lastSeq,sampleCount:ref.samples,frames:ref.frames,parts:ref.parts,gaps:ref.gaps,missingSamples:ref.missingSamples,crcErrors:ref.crcErrors,decoderErrors:ref.decoderErrors,referenceId:ref.referenceId,referenceName:ref.referenceName,events:ref.events,manual:ref.manual,diagnostics:ref.diagnostics.slice(-400),storageError:ref.storageError,retransmissionEnabled:!!ref.retransmissionEnabled,replayRequests:ref.replayRequests||0,recoveredFrames:ref.recoveredFrames||0,duplicates:ref.duplicates||0,receiverFrames:ref.rxFrames||0,transportOnly:!!ref.transportOnly,firmwareStop:ref.firmwareStop||null,drainStatus:ref.drainStatus||null,stopIntegrity:ref.stopIntegrity||null,startSequence:ref.startSequence??null,finalExpectedSeq:ref.finalExpectedSeq??null,stopCommandAcknowledged:!!ref.stopAckSeen,stopButtonPressedAt:ref.stopButtonPressedAt||null,stopAcknowledgementTimedOut:!!ref.stopAckTimedOut,emergencyStop:!!ref.emergencyStop,quantization:'ACC 0.001g, GYRO 0.1deg/s; nominal 2.5ms; not hardware SensorTime'};}
+function smallManifest(ref){return {id:ref.id,schema:'gazela.continuous.v65',version:'V65.6.1_FALSE_MARKER',gestureDetectorV2:{version:GAZELA_GESTURE_V2_VERSION,mode:'SHADOW_NO_ACCEPT_GATE',thresholdValidated:false},contactDetectorV2:{mode:'IMPULSE_ROLE_DIAGNOSTICS',ballContactClassification:'NOT_VALIDATED'},rawSamplesPerFrame:ref.rawSamplesPerFrame||8,mtuProbe:ref.mtuProbe||null,mode:ref.mode,state:ref.state,startedAt:ref.startedAt,endedAt:ref.endedAt,stopReason:ref.stopReason,source:ref.sourceName,firstSeq:ref.firstSeq,lastSeq:ref.lastSeq,sampleCount:ref.samples,frames:ref.frames,parts:ref.parts,gaps:ref.gaps,missingSamples:ref.missingSamples,crcErrors:ref.crcErrors,decoderErrors:ref.decoderErrors,referenceId:ref.referenceId,referenceName:ref.referenceName,events:ref.events,manual:ref.manual,diagnostics:ref.diagnostics.slice(-400),storageError:ref.storageError,retransmissionEnabled:!!ref.retransmissionEnabled,replayRequests:ref.replayRequests||0,recoveredFrames:ref.recoveredFrames||0,duplicates:ref.duplicates||0,receiverFrames:ref.rxFrames||0,transportOnly:!!ref.transportOnly,firmwareStop:ref.firmwareStop||null,drainStatus:ref.drainStatus||null,stopIntegrity:ref.stopIntegrity||null,startSequence:ref.startSequence??null,finalExpectedSeq:ref.finalExpectedSeq??null,stopCommandAcknowledged:!!ref.stopAckSeen,stopButtonPressedAt:ref.stopButtonPressedAt||null,stopAcknowledgementTimedOut:!!ref.stopAckTimedOut,emergencyStop:!!ref.emergencyStop,quantization:'ACC 0.001g, GYRO 0.1deg/s; nominal 2.5ms; not hardware SensorTime'};}
 function saveManifest(ref){if(ref.mode!=='ble400')return;queueWrite(()=>dbPut('sessions',smallManifest(ref)));}
 function flushPackets(ref){if(ref.mode!=='ble400'||!ref.pending.length)return;const packets=ref.pending;ref.pending=[];const part=ref.parts++;
  queueWrite(async()=>{await dbPut('chunks',{sessionId:ref.id,part,packets});await dbPut('sessions',smallManifest(ref));});}
@@ -5072,9 +5142,9 @@ function initSessionAudio(){
  return true;
 }
 function sound(type,preview=false){
- if(!preview&&!ui.sound.checked)return;
+ if(!preview&&!ui.sound.checked)return false;
  try{
-   if(!initSessionAudio())return;
+   if(!initSessionAudio())return false;
    const now=audioCtx.currentTime+.014;
    const note=(frequency,delay,length,amplitude,wave='sine')=>{
      const osc=audioCtx.createOscillator(),gain=audioCtx.createGain();
@@ -5103,7 +5173,8 @@ function sound(type,preview=false){
      note(1110,.008,.10,.26,'sine');
      note(1480,.017,.075,.12,'sine');
    }
- }catch(e){console.warn('GAZELA V65.5 AUDIO',e);}
+   return true;
+ }catch(e){console.warn('GAZELA V65.5 AUDIO',e);return false;}
 }
 function updateAudioVolume(){
  const level=Math.max(0,Math.min(100,Number(ui.soundVolume?.value??100)));
@@ -5116,13 +5187,24 @@ function controls(){const run=s?.state==='recording',stopping=s?.state==='stoppi
  // The second press is an explicit emergency STOP, never a disabled control.
  ui.stop.disabled=!busy;ui.stop.textContent=stopping?'AWARYJNY STOP / ROZŁĄCZ BLE':'STOP SESSION';
  ui.stop.classList.toggle('v652-stopping',!!stopping);
- ui.markC.disabled=!run;ui.markG.disabled=!run;ui.undo.disabled=!s?.manual?.length;
+ ui.markC.disabled=!run;ui.markG.disabled=!run;if(ui.markF)ui.markF.disabled=!run;ui.undo.disabled=!s?.manual?.length;
  ui.exp.disabled=!s||busy;ui.mode.disabled=run;ui.import.disabled=run;ui.reference.disabled=run;ui.rate.disabled=run;if(ui.transportOnly)ui.transportOnly.disabled=run;if(ui.retransmission)ui.retransmission.disabled=busy;if(ui.packetMode)ui.packetMode.disabled=busy||rawPreflightBusy;
  if(ui.recover)ui.recover.disabled=run;
 }
 function newSession(mode){const ref=window.GazelaReferenceLibrary?.get(ui.reference.value)||null;
- return {id:id(),mode,state:'recording',rawSamplesPerFrame:Number(ui.packetMode?.value||8),mtuProbe:null,startedAt:new Date().toISOString(),endedAt:null,stopReason:null,sourceName:source?.name||null,firstSeq:null,lastSeq:null,samples:0,frames:0,rxFrames:0,replayRequests:0,recoveredFrames:0,duplicates:0,transportOnly:!!ui.transportOnly?.checked,retransmissionEnabled:!!ui.retransmission?.checked,firmwareStop:null,drainStatus:null,stopIntegrity:null,startSequence:null,finalExpectedSeq:null,parts:0,gaps:0,missingSamples:0,crcErrors:0,decoderErrors:0,storageError:null,packetBuffer:new Map(),nextSeq:null,gapStartedAt:0,lastRecoveryAt:0,attemptedSeq:null,recoveryAttempts:0,recoveryFailed:new Set(),replayRequested:new Set(),pending:[],writeTail:Promise.resolve(),raw:[],events:[],manual:[],diagnostics:[],history:[],candidates:[],lastCandidate:-1e12,gesture:new GazelaGestureStreamRecognizerV1(),perfStart:performance.now(),lastPacketPerf:performance.now(),firstPacketPerf:null,lastSampleTime:0,ref,referenceId:ref?.id||null,referenceName:ref?.name||null,stopButtonPressedAt:null,stopRequestedPerf:null,stopFrozenSamples:null,stopFrozenTime:null,stopAckSeen:false,stopAckTimedOut:false,emergencyStop:false,stopFinalizePromise:null,stopResolver:null};}
-function addEvent(type,base,extra){const item={id:'E'+(s.events.length+1),kind:'AUTO',type,index:base?.index??null,sequence:base?.sequence??null,time_ms:base?.time_ms??null,detector:type.startsWith('GESTURE')?'V65_DOUBLE_TAP_PAIR_V1':GAZELA_OFFLINE_DETECTOR_VERSION,algorithmUnvalidated:true,detectedAt:new Date().toISOString(),...extra};s.events.push(item);sound(type);return item;}
+ return {id:id(),mode,state:'recording',rawSamplesPerFrame:Number(ui.packetMode?.value||8),mtuProbe:null,startedAt:new Date().toISOString(),endedAt:null,stopReason:null,sourceName:source?.name||null,firstSeq:null,lastSeq:null,samples:0,frames:0,rxFrames:0,replayRequests:0,recoveredFrames:0,duplicates:0,transportOnly:!!ui.transportOnly?.checked,retransmissionEnabled:!!ui.retransmission?.checked,firmwareStop:null,drainStatus:null,stopIntegrity:null,startSequence:null,finalExpectedSeq:null,parts:0,gaps:0,missingSamples:0,crcErrors:0,decoderErrors:0,storageError:null,packetBuffer:new Map(),nextSeq:null,gapStartedAt:0,lastRecoveryAt:0,attemptedSeq:null,recoveryAttempts:0,recoveryFailed:new Set(),replayRequested:new Set(),pending:[],writeTail:Promise.resolve(),raw:[],events:[],manual:[],lastAutoCue:null,diagnostics:[],history:[],candidates:[],lastCandidate:-1e12,gesture:new GazelaGestureStreamRecognizerV1(),perfStart:performance.now(),lastPacketPerf:performance.now(),firstPacketPerf:null,lastSampleTime:0,ref,referenceId:ref?.id||null,referenceName:ref?.name||null,stopButtonPressedAt:null,stopRequestedPerf:null,stopFrozenSamples:null,stopFrozenTime:null,stopAckSeen:false,stopAckTimedOut:false,emergencyStop:false,stopFinalizePromise:null,stopResolver:null};}
+// Track which automatic event actually scheduled an audible cue. FALSE is a human
+// assessment, never an automatic reassignment of this candidate to false truth.
+function addEvent(type,base,extra){
+ const item={id:'E'+(s.events.length+1),kind:'AUTO',type,index:base?.index??null,sequence:base?.sequence??null,time_ms:base?.time_ms??null,detector:type.startsWith('GESTURE')?'V65_DOUBLE_TAP_PAIR_V1':GAZELA_OFFLINE_DETECTOR_VERSION,algorithmUnvalidated:true,detectedAt:new Date().toISOString(),...extra};
+ s.events.push(item);
+ if(sound(type)){
+   item.audioCuePlayed=true;
+   item.audioCuePerfMs=performance.now();
+   s.lastAutoCue={eventId:item.id,eventType:item.type,sequence:item.sequence,time_ms:item.time_ms,perf:item.audioCuePerfMs};
+ }
+ return item;
+}
 function ingest(raw){if(!s||(s.state!=='recording'&&s.state!=='stopping'))return;const seq=raw.sequence;
  if(s.firstSeq===null)s.firstSeq=seq;
  const index=(seq-s.firstSeq)>>>0;const prev=s.lastSeq;
@@ -5148,14 +5230,21 @@ function ingest(raw){if(!s||(s.state!=='recording'&&s.state!=='stopping'))return
  for(const item of result.candidates){const c={...item,index:item.index+offset,peakIndex:item.peakIndex+offset,oppositeIndex:item.oppositeIndex+offset,eIndex:item.eIndex+offset};
   if(c.peakIndex>index-40||c.peakIndex<index-250||c.index<=s.lastCandidate+32)continue;
   s.lastCandidate=c.index;
-  addEvent('CONTACT_CANDIDATE',{index:c.index,sequence:c.sequence,time_ms:c.timeMs},{score:c.score,deltaAccG:c.deltaAccG,e20G:c.e20G,contactBallConfirmed:false});
+  const impulse=addEvent('CONTACT_CANDIDATE',{index:c.index,sequence:c.sequence,time_ms:c.timeMs},{score:c.score,deltaAccG:c.deltaAccG,e20G:c.e20G,contactBallConfirmed:false,impulseRole:'UNCLASSIFIED_IMPULSE'});
   let matchedV1=false;try{const old=s.gesture.gestures.length;s.gesture.pushCandidate(c);matchedV1=s.gesture.gestures.length>old;}catch(e){s.diagnostics.push({kind:'GESTURE_RULE_ERROR',error:String(e)});}
   const previous=s.candidates.at(-1), gap=previous?c.timeMs-previous.timeMs:null, st=s.ref?.profile?.statistics?.['pair.gapMs'];
   const base=s.ref?.record?.description?.pair?.gapMs;
   const low=Number.isFinite(st?.p10)?Math.max(120,st.p10-40):Number.isFinite(base)?Math.max(120,base-70):180;
   const high=Number.isFinite(st?.p90)?st.p90+40:Number.isFinite(base)?base+70:350;
-  if(previous&&!previous.used&&gap>=low&&gap<=high){previous.used=true;addEvent('GESTURE_CANDIDATE_DOUBLE_TAP',{index:c.index,sequence:c.sequence,time_ms:c.timeMs},{tap1_seq:previous.sequence,tap2_seq:c.sequence,gap_ms:gap,referenceId:s.referenceId,v1_rule:matchedV1,matched:true,validated:false});}
-  s.candidates.push({...c,used:false});if(s.candidates.length>10)s.candidates.shift();
+  if(previous&&!previous.used&&gap>=low&&gap<=high){
+   previous.used=true;
+   const v2=gazelaGestureV2Score(s.history,previous,c,s.ref);
+   const gestureEvent=addEvent('GESTURE_CANDIDATE_DOUBLE_TAP',{index:c.index,sequence:c.sequence,time_ms:c.timeMs},{tap1_seq:previous.sequence,tap2_seq:c.sequence,gap_ms:gap,referenceId:s.referenceId,v1_rule:matchedV1,matched:true,validated:false,signatureV2:v2});
+   // Explicitly mark these two impulses as components, not confirmed ball hits.
+   if(previous.impulseEvent){previous.impulseEvent.impulseRole='GESTURE_COMPONENT';previous.impulseEvent.gestureEventId=gestureEvent.id;}
+   impulse.impulseRole='GESTURE_COMPONENT';impulse.gestureEventId=gestureEvent.id;
+  }
+  s.candidates.push({...c,used:false,impulseEvent:impulse});if(s.candidates.length>10)s.candidates.shift();
  }
 }
 // V65.1: receive out-of-order retransmissions, but feed classifiers ONLY in
@@ -5282,6 +5371,19 @@ function onStreamMessage(msg){
   if(s.nextSeq===seq)drainOrdered(s);
  }
 }
+function pressFalse(){
+ if(!s||s.state!=='recording')return;
+ const perf=performance.now();
+ const allCues=s.events.filter(e=>e.audioCuePlayed&&Number.isFinite(e.audioCuePerfMs)&&perf-e.audioCuePerfMs>=0&&perf-e.audioCuePerfMs<=5000);
+ const cue=allCues.at(-1)||null;
+ const age=cue?Math.round(perf-cue.audioCuePerfMs):null;
+ const mark={id:'M'+(s.manual.length+1),type:'FALSE',verdict:'FALSE_POSITIVE',pressedAt:new Date().toISOString(),pressMonotonicMs:perf,pressStreamTimeMs:perf-(s.mode==='ble400'&&s.firstPacketPerf!==null?s.firstPacketPerf:s.perfStart),nearestReceivedSequence:s.lastSeq,nearestReceivedRawTimeMs:s.lastSampleTime,eventTimeMs:null,eventSequence:null,linkedEventId:null,status:cue?'SUGGESTED':'UNLINKED',suggestedEventId:cue?.id||null,suggestedEventType:cue?.type||null,suggestedEventSequence:cue?.sequence??null,suggestedEventTimeMs:cue?.time_ms??null,suggestedCueAgeMs:age,nearbyCueEventIds:allCues.map(e=>e.id),note:'HUMAN FALSE-POSITIVE VERDICT: latest audible AUTO is a tentative suggestion ONLY. Linking to a specific event requires post-STOP confirmation. PRESS != EVENT TIME.'};
+ s.manual.push(mark);
+ if(ui.falseStatus){ui.falseStatus.textContent=cue?`FALSE zapisany. Ostatni sygnał: ${cue.type} (${cue.id}, około ${age} ms temu). Powiązanie jest tylko sugestią — zweryfikuj po STOP.`:'FALSE zapisany. Brak ostatniego sygnału AUTO z ostatnich 5 s — po STOP wskaż zdarzenie ręcznie.';}
+ if(navigator.vibrate)navigator.vibrate(40);
+ if(s.mode==='ble400')saveManifest(s);
+ render(true);
+}
 function pressLabel(type){if(!s||s.state!=='recording')return;const perf=performance.now();const mark={id:'M'+(s.manual.length+1),type,pressedAt:new Date().toISOString(),pressMonotonicMs:perf,pressStreamTimeMs:perf-(s.mode==='ble400'&&s.firstPacketPerf!==null?s.firstPacketPerf:s.perfStart),nearestReceivedSequence:s.lastSeq,nearestReceivedRawTimeMs:s.lastSampleTime,eventTimeMs:null,eventSequence:null,linkedEventId:null,status:'UNLINKED',note:'PRESS TIME != PHYSICAL EVENT TIME; sync uncertainty includes BLE latency'};
  s.manual.push(mark);if(navigator.vibrate)navigator.vibrate(25);if(s.mode==='ble400')saveManifest(s);render(true);}
 async function start(){const mode=ui.mode.value;
@@ -5297,7 +5399,7 @@ async function start(){const mode=ui.mode.value;
    catch(e){say('Nie uruchomiono RAW12: '+String(e.message||e),'error');return;}
    finally{rawPreflightBusy=false;controls();}
  }
- const ref=s=newSession(mode);ref.mtuProbe=preflightInfo;controls();render(true);
+ const ref=s=newSession(mode);ref.mtuProbe=preflightInfo;if(ui.falseStatus)ui.falseStatus.textContent='FALSE: oznacz ostatni błędny dźwięk AUTO (CONTACT albo GEST); po STOP sprawdź sugerowane powiązanie.';controls();render(true);
  if(navigator.wakeLock?.request){void navigator.wakeLock.request('screen').then(lock=>{if(s&&s.state==='recording')s.wakeLock=lock;else void lock.release();}).catch(e=>{console.info('V65 wake lock unavailable',e);});}
  if(mode==='ble400'){
   try{if(!('indexedDB'in window))throw Error('IndexedDB niedostępne');await dbOpen();if(navigator.storage?.persist)void navigator.storage.persist();
@@ -5482,17 +5584,22 @@ function parseCSV(src,name){const lines=src.replace(/^\uFEFF/,'').trim().split(/
 function chooseFile(){const f=ui.import.files?.[0];if(!f)return;if(f.size>MAX_IMPORT_BYTES){say('CSV >16 MB; zmniejsz test.','error');return;}
  f.text().then(t=>{source=parseCSV(t,f.name);ui.file.textContent=`${f.name}: ${source.samples.length} próbek RAW400`;say('Wczytano — wybierz REPLAY i START.','ok');controls();}).catch(e=>say('CSV: '+e.message,'error')).finally(()=>{ui.import.value='';});}
 function correctLabel(mark,field,value){if(!s||s.state==='recording')return;
- if(field==='event'){const e=s.events.find(x=>x.id===value);mark.linkedEventId=e?.id||null;mark.eventTimeMs=e?.time_ms??null;mark.eventSequence=e?.sequence??null;mark.status=e?'LINKED':'UNLINKED';}
+ if(field==='event'){const e=s.events.find(x=>x.id===value);mark.linkedEventId=e?.id||null;mark.eventTimeMs=e?.time_ms??null;mark.eventSequence=e?.sequence??null;mark.status=e?'LINKED':'UNLINKED';if(mark.type==='FALSE')mark.note=e?'HUMAN FALSE-POSITIVE VERDICT, linked after STOP to explicit AUTO event.':'HUMAN FALSE-POSITIVE VERDICT; not linked to specific AUTO event.';}
  else{const t=Number(value);if(!Number.isFinite(t)||t<0||t>s.lastSampleTime)return;mark.eventTimeMs=t;mark.eventSequence=s.firstSeq!==null?(s.firstSeq+Math.round(t/2.5))>>>0:null;mark.status='ALIGNED';mark.linkedEventId=null;}
  if(s.mode==='ble400')saveManifest(s);render(true);}
 function showEvents(){ui.events.replaceChildren();if(!s?.events?.length){ui.events.append(text('p','v64-empty','Brak wykryć AUTO'));return;}
- for(const e of s.events.slice(-14).reverse()){ui.events.append(text('div','v64-event '+(e.type.startsWith('GESTURE')?'v64-gesture-event':'v64-candidate'),`${clock(e.time_ms)} • ${e.type} • SEQ ${e.sequence}`));}}
+ for(const e of s.events.slice(-14).reverse()){
+  const linkedFalse=s.manual.some(m=>m.type==='FALSE'&&m.linkedEventId===e.id);
+  const suffix=(e.type.startsWith('GESTURE')?(e.signatureV2?.score!==null&&Number.isFinite(e.signatureV2?.score)?' • V2 podobieństwo '+e.signatureV2.score.toFixed(1)+'/100 (badawcze)':' • V2: brak ocenionego profilu'):(e.impulseRole==='GESTURE_COMPONENT'?' • składnik gestu':' • impuls — kontakt piłki niepotwierdzony'))+(linkedFalse?' • FALSE (ocena ręczna)':'');
+  ui.events.append(text('div','v64-event '+(e.type.startsWith('GESTURE')?'v64-gesture-event':'v64-candidate'),`${clock(e.time_ms)} • ${e.type} • SEQ ${e.sequence}${suffix}`));
+ }}
 function showMarks(){ui.marks.replaceChildren();if(!s?.manual?.length){ui.marks.append(text('p','v64-empty','Brak oznaczeń ręcznych'));return;}
  for(const mark of s.manual.slice(-14).reverse()){
   const el=text('div','v64-label-row',''),head=text('div','v64-label-head',`${clock(mark.pressStreamTimeMs)} • ${mark.type} • ${mark.status}`);el.append(head);
+  if(mark.type==='FALSE')el.append(text('span','v6561-false-note',mark.linkedEventId?`Powiązany z ${mark.linkedEventId} — decyzja: FALSE`:(mark.suggestedEventId?`Sugerowany AUTO: ${mark.suggestedEventId} (${mark.suggestedEventType}); wymaga powiązania po STOP`:'Brak sugerowanego AUTO; wybierz zdarzenie po STOP')));
   if(s.state!=='recording'&&s.state!=='stopping'){
    const controls=text('div','v64-label-edit',''),select=document.createElement('select');select.setAttribute('aria-label','Połącz znacznik z AUTO');select.add(new Option('Bez powiązania',''));
-   for(const e of s.events.filter(x=>Math.abs(x.time_ms-mark.nearestReceivedRawTimeMs)<2500))select.add(new Option(`${clock(e.time_ms)} • ${e.type}`,e.id));
+   for(const e of s.events.filter(x=>Math.abs(x.time_ms-mark.nearestReceivedRawTimeMs)<(mark.type==='FALSE'?6500:2500)))select.add(new Option(`${clock(e.time_ms)} • ${e.type}${e.id===mark.suggestedEventId?' • sugerowany':''}`,e.id));
    select.value=mark.linkedEventId||'';select.onchange=()=>correctLabel(mark,'event',select.value);
    const inp=document.createElement('input');inp.type='number';inp.min=0;inp.step=2.5;inp.max=s.lastSampleTime;inp.placeholder='czas RAW ms';inp.value=mark.eventTimeMs??'';inp.onchange=()=>correctLabel(mark,'time',inp.value);
    controls.append(select,inp);el.append(controls);
@@ -5501,7 +5608,11 @@ function showMarks(){ui.marks.replaceChildren();if(!s?.manual?.length){ui.marks.
 function render(force=false){const ref=s;ui.clock.textContent=ref?clock(ref.state==='stopping'?ref.stopFrozenTime:ref.state==='recording'&&ref.mode==='replay'?ref.lastSampleTime:ref.state==='recording'?performance.now()-(ref.mode==='ble400'&&ref.firstPacketPerf!==null?ref.firstPacketPerf:ref.perfStart):ref.lastSampleTime):'00:00.000';
  ui.samples.textContent=ref?(ref.state==='stopping'?ref.stopFrozenSamples:ref.samples).toLocaleString('pl-PL'):'0';ui.integrity.textContent=ref?`SEQ gaps: ${ref.gaps} • missing: ${ref.missingSamples} • recovered: ${ref.recoveredFrames||0} • pending: ${ref.packetBuffer?.size||0} • CRC: ${ref.crcErrors} • BLE: ${ref.frames} frames`:'—';
  ui.ac.textContent=ref?ref.events.filter(e=>e.type==='CONTACT_CANDIDATE').length:0;ui.ag.textContent=ref?ref.events.filter(e=>e.type.startsWith('GESTURE')).length:0;
- ui.mc.textContent=ref?ref.manual.filter(e=>e.type==='CONTACT').length:0;ui.mg.textContent=ref?ref.manual.filter(e=>e.type==='GEST').length:0;
+ if(ui.pulseSummary){const pulses=ref?.events.filter(e=>e.type==='CONTACT_CANDIDATE')||[];const paired=pulses.filter(e=>e.impulseRole==='GESTURE_COMPONENT').length;
+   ui.pulseSummary.textContent=`IMPULSY: ${pulses.length} • składniki gestów: ${paired} • poza rozpoznanymi gestami: ${pulses.length-paired}. Żaden z nich nie jest automatycznym potwierdzeniem uderzenia piłki.`;}
+ if(ui.v2Summary){const all=ref?.events.filter(e=>e.type.startsWith('GESTURE'))||[];const scored=all.filter(e=>Number.isFinite(e.signatureV2?.score));const mean=scored.length?scored.reduce((n,e)=>n+e.signatureV2.score,0)/scored.length:null;
+   ui.v2Summary.textContent=`GESTURE V2 SHADOW: ${scored.length}/${all.length} ocenionych • średni indeks podobieństwa: ${mean===null?'brak profilu':mean.toFixed(1)+'/100'} • nie jest to prawdopodobieństwo ani próg ACCEPT.`;}
+ ui.mc.textContent=ref?ref.manual.filter(e=>e.type==='CONTACT').length:0;ui.mg.textContent=ref?ref.manual.filter(e=>e.type==='GEST').length:0;if(ui.mf)ui.mf.textContent=ref?ref.manual.filter(e=>e.type==='FALSE').length:0;
  ui.bar.value=ref?.mode==='replay'&&source?(100*replayIndex/source.samples.length):0;
  ui.notes.textContent=ref?.mode==='ble400'?`LIVE RAW${ref.rawSamplesPerFrame||8} • retransmisja: ${ref.retransmissionEnabled?'ON':'OFF'} • ${ref.samples} próbek • odzyskane ramki: ${ref.recoveredFrames||0} • zapis IndexedDB: ${ref.parts} fragmentów. Kontakt i DOUBLE TAP są hipotezami; czas dotknięcia przycisku NIE jest czasem uderzenia.`:'Detektory działają na pełnych danych 400 Hz. Wyniki AUTO pozostają niezależne od etykiet ręcznych.';
  if(force||ref?.events?.length!==Number(ui.events.dataset.count)){showEvents();ui.events.dataset.count=String(ref?.events?.length||0);}
@@ -5525,7 +5636,10 @@ function zip(files){
 }
 async function exportSession(){if(!s||s.state==='recording'||s.state==='stopping')return;const ref=s;ui.exp.disabled=true;
  try{if(ref.writeTail)await ref.writeTail;let raw=null,meta=smallManifest(ref);
-  const files=[['session.json',JSON.stringify(meta,null,2)+'\n'],['auto_events.json',JSON.stringify(ref.events,null,2)+'\n'],['manual_labels.json',JSON.stringify(ref.manual,null,2)+'\n'],['manual_labels.csv',csv([['id','type','pressedAt','pressStreamTimeMs','nearestReceivedSequence','nearestReceivedRawTimeMs','eventTimeMs','eventSequence','linkedEventId','status'],...ref.manual.map(m=>[m.id,m.type,m.pressedAt,m.pressStreamTimeMs,m.nearestReceivedSequence,m.nearestReceivedRawTimeMs,m.eventTimeMs,m.eventSequence,m.linkedEventId,m.status])])],['README.txt','GAZELA V65.5 SAFE STOP + AUDIO: Sequenced live RAW frames sorted by SEQ in export; MTU probe required for RAW12; R<SEQ> retransmission is OFF by default (session.json retransmissionEnabled records the actual setting); gaps refer to missing samples. LIVE RAW 400 Hz packets; each frame has magic GZ, version, N, SEQ, nominal time, 6x int16 per sample, CRC16. Full session raw is concatenated binary GATT frames. No claim of BMI270 hardware timestamps. Detector predictions are hypotheses, NOT confirmed contact/gesture. Manual press latency is unknown. Check missing SEQ / CRC / storage errors.\n']];
+  const files=[['session.json',JSON.stringify(meta,null,2)+'\n'],['auto_events.json',JSON.stringify(ref.events,null,2)+'\n'],['manual_labels.json',JSON.stringify(ref.manual,null,2)+'\n'],['manual_labels.csv',csv([['id','type','pressedAt','pressStreamTimeMs','nearestReceivedSequence','nearestReceivedRawTimeMs','eventTimeMs','eventSequence','linkedEventId','status','verdict','suggestedEventId','suggestedEventType','suggestedEventSequence','suggestedEventTimeMs','suggestedCueAgeMs','nearbyCueEventIds'],...ref.manual.map(m=>[m.id,m.type,m.pressedAt,m.pressStreamTimeMs,m.nearestReceivedSequence,m.nearestReceivedRawTimeMs,m.eventTimeMs,m.eventSequence,m.linkedEventId,m.status,m.verdict,m.suggestedEventId,m.suggestedEventType,m.suggestedEventSequence,m.suggestedEventTimeMs,m.suggestedCueAgeMs,(m.nearbyCueEventIds||[]).join('|')])])],
+     ['gesture_v2_scores.csv',csv([['eventId','time_ms','tap1_seq','tap2_seq','referenceId','timeGap_ms','score_0_100','timing','accShape','gyroShape','dynamics','deltaRatio','status'],...ref.events.filter(e=>e.type.startsWith('GESTURE')).map(e=>[e.id,e.time_ms,e.tap1_seq,e.tap2_seq,e.referenceId,e.gap_ms,e.signatureV2?.score,e.signatureV2?.components?.timing,e.signatureV2?.components?.accShape,e.signatureV2?.components?.gyroShape,e.signatureV2?.components?.dynamics,e.signatureV2?.components?.deltaRatio,e.signatureV2?.status])])],
+     ['impulse_roles.csv',csv([['eventId','time_ms','sequence','impulseRole','gestureEventId','ballContactConfirmed','deltaAccG','e20G'],...ref.events.filter(e=>e.type==='CONTACT_CANDIDATE').map(e=>[e.id,e.time_ms,e.sequence,e.impulseRole,e.gestureEventId,false,e.deltaAccG,e.e20G])])],
+     ['README.txt','GAZELA V65.6.1 DETECTOR V2 SHADOW + ONE FALSE BUTTON: Human FALSE marks are stored in manual_labels.json/csv as type FALSE, verdict FALSE_POSITIVE. A suggested recent audible AUTO event is NOT a confirmed link; confirm the link after STOP, or keep UNLINKED. Existing CONTACT and GEST confirmations are unchanged.  Sequenced live RAW frames sorted by SEQ in export; MTU probe required for RAW12; R<SEQ> retransmission is OFF by default (session.json retransmissionEnabled records the actual setting); gaps refer to missing samples. LIVE RAW 400 Hz packets; each frame has magic GZ, version, N, SEQ, nominal time, 6x int16 per sample, CRC16. Full session raw is concatenated binary GATT frames. No claim of BMI270 hardware timestamps. Detector predictions are hypotheses, NOT confirmed contact/gesture. Manual press latency is unknown. Check missing SEQ / CRC / storage errors.\n']];
   if(ref.mode==='ble400'){const chunks=(await dbAll('chunks')).filter(x=>x.sessionId===ref.id).sort((a,b)=>a.part-b.part);
     const buffers=chunks.flatMap(x=>x.packets).sort((a,b)=>{const x=new DataView(a.buffer,a.byteOffset,a.byteLength).getUint32(4,true),y=new DataView(b.buffer,b.byteOffset,b.byteLength).getUint32(4,true);return x-y;});const bytes=buffers.reduce((n,x)=>n+x.length,0);raw=new Uint8Array(bytes);let at=0;for(const b of buffers){raw.set(b,at);at+=b.length;}
     files.push(['raw_400hz_ble_frames.bin',raw]);meta.savedParts=chunks.length;meta.savedBytes=bytes;
@@ -5543,10 +5657,10 @@ async function references(){try{await window.GazelaReferenceLibrary?.ready();con
   for(const item of list)ui.reference.add(new Option(`${item.name} (${item.recordCount})`,item.id));ui.referenceStatus.textContent=`Profile dostępne: ${list.length}. Aktualnie dopasowanie orientacyjnie niezależne, NIE zwalidowany podpis.`;}
  catch(e){ui.referenceStatus.textContent='Błąd biblioteki: '+e.message;}}
 ui.start.onclick=()=>void start();ui.stop.onclick=()=>void stop();ui.exp.onclick=()=>void exportSession();if(ui.recover)ui.recover.onclick=()=>void recover();
-ui.markC.onclick=()=>pressLabel('CONTACT');ui.markG.onclick=()=>pressLabel('GEST');ui.undo.onclick=()=>{if(s?.manual?.length){s.manual.pop();if(s.mode==='ble400')saveManifest(s);render(true);}};
+ui.markC.onclick=()=>pressLabel('CONTACT');ui.markG.onclick=()=>pressLabel('GEST');if(ui.markF)ui.markF.onclick=pressFalse;ui.undo.onclick=()=>{if(s?.manual?.length){s.manual.pop();if(s.mode==='ble400')saveManifest(s);render(true);}};
 ui.import.onchange=chooseFile;ui.mode.onchange=()=>{say(ui.mode.value==='ble400'?'LIVE RAW 400 Hz — zalecany firmware V29.2.8, BLE RAW characteristic 0004.':'REPLAY RAW400 z CSV','info');controls();};
 window.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&s?.state==='recording'){void stop('PAGE_HIDDEN');say('Aplikacja ukryta. Zatrzymano sesję, by nie ukrywać braków pomiaru.','warn');}});
-window.GazelaSessionV65=Object.freeze({version:'V65.5_SAFE_STOP_AUDIO',onRawPacket,onStreamMessage,onConnectionChanged:controls,onStreamStopped:msg=>{if(s&&s.mode==='ble400'&&s.state==='stopping'){s.firmwareStop=msg;s.stopAckSeen=true;const fields=msg.split(',');const end=Number(fields[9]);if(Number.isSafeInteger(end)&&end>0)s.finalExpectedSeq=end;s.drainStatus={...(s.drainStatus||{}),state:'finished',pendingAtAck:Number(fields[6]),sentSamples:Number(fields[2])};s.diagnostics.push({kind:'FIRMWARE_STOP_STATUS',message:msg});s.stopResolver?.('ACK_OK');}},onBLEDisconnect:()=>{if(s?.mode==='ble400'&&s.state==='recording')void stop('BLE_DISCONNECTED');},state:()=>s?{state:s.state,mode:s.mode,samples:s.samples,gaps:s.gaps,missing:s.missingSamples,crc:s.crcErrors,events:s.events.length,manual:s.manual.length}:null});
+window.GazelaSessionV65=Object.freeze({version:'V65.6.1_FALSE_MARKER',onRawPacket,onStreamMessage,onConnectionChanged:controls,onStreamStopped:msg=>{if(s&&s.mode==='ble400'&&s.state==='stopping'){s.firmwareStop=msg;s.stopAckSeen=true;const fields=msg.split(',');const end=Number(fields[9]);if(Number.isSafeInteger(end)&&end>0)s.finalExpectedSeq=end;s.drainStatus={...(s.drainStatus||{}),state:'finished',pendingAtAck:Number(fields[6]),sentSamples:Number(fields[2])};s.diagnostics.push({kind:'FIRMWARE_STOP_STATUS',message:msg});s.stopResolver?.('ACK_OK');}},onBLEDisconnect:()=>{if(s?.mode==='ble400'&&s.state==='recording')void stop('BLE_DISCONNECTED');},state:()=>s?{state:s.state,mode:s.mode,samples:s.samples,gaps:s.gaps,missing:s.missingSamples,crc:s.crcErrors,events:s.events.length,manual:s.manual.length}:null});
 if(ui.soundVolume){
  try{const saved=Number(localStorage.getItem('gazela_v655_audio_level'));
    ui.soundVolume.value=Number.isFinite(saved)&&saved>=0&&saved<=100?String(saved):'100';
@@ -5557,5 +5671,5 @@ if(ui.soundContactTest)ui.soundContactTest.addEventListener('click',()=>sound('C
 if(ui.soundGestureTest)ui.soundGestureTest.addEventListener('click',()=>sound('GESTURE_CANDIDATE',true));
 if(ui.retransmission)ui.retransmission.checked=false; // Enforce OFF even if Chrome restores form state after reload.
 if(ui.packetMode)ui.packetMode.value='12'; // RAW12 passed 120-second continuity test; MTU probe still mandatory.
-void references();say('V65.5: RAW12 400 Hz • SAFE STOP & DRAIN • głośniejszy CONTACT i dźwięk jackpot GEST.','info');render(true);
+void references();say('V65.6.1: RAW12 SAFE STOP + GESTURE V2 SHADOW + jeden przycisk FALSE dla obu dźwięków AUTO.','info');render(true);
 })();
