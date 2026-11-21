@@ -16,13 +16,13 @@
 
   <meta name="description" content="Gazela Spiner Sensor Lab — podgląd danych sensora, rejestracja gestów i diagnostyka połączenia.">
 
-  <title>Gazela Spiner Sensor Lab V65.5</title>
+  <title>Gazela Spiner Sensor Lab V65.6.1</title>
 
   <link
 
     rel="stylesheet"
 
-    href="css/style.css?v=65.5"
+    href="css/style.css?v=65.6.1"
 
   >
 
@@ -84,23 +84,26 @@
        V64 — SESSION MODE / EXPERIMENTAL STAGE A
        ===================================================== -->
 <section class="card v64-session" id="v64SessionMode" aria-labelledby="v64Title">
-  <div class="v64-title-row"><div><h2 id="v64Title">GAZELA SESSION — V65.5</h2><p>LIVE RAW 400 Hz • DUAL CLASSIFIER • LOCAL STORAGE</p></div><span class="v64-prototype">PROTOTYPE</span></div>
-  <p class="v64-warning"><strong>Wersja eksperymentalna:</strong> LIVE RAW400 współpracuje z firmware V29.2.8 przez BLE. W tej wersji retransmisja ramek jest domyślnie wyłączona do testu transportu; można ją włączyć poniżej do porównania. Kompletność musi być zweryfikowana. Detektory działają na pełnych próbkach 400 Hz w Chrome na Androidzie. Zapisujemy pakiety lokalnie w IndexedDB; brak gwarancji braku utraty danych podczas rozłączenia lub działania w tle.</p>
+  <div class="v64-title-row"><div><h2 id="v64Title">GAZELA SESSION — V65.6.1</h2><p>LIVE RAW 400 Hz • GESTURE V2 SHADOW • CONTACT IMPULSE LAYER • LOCAL STORAGE</p></div><span class="v64-prototype">PROTOTYPE</span></div>
+  <p class="v64-warning"><strong>Wersja eksperymentalna:</strong> LIVE RAW400 współpracuje z firmware V29.2.8 przez BLE. Retransmisja jest domyślnie wyłączona. Nowe oceny V2 to wyłącznie diagnostyka, a nie potwierdzone rozpoznanie ruchu. Kompletność musi być zweryfikowana. Detektory działają na pełnych próbkach 400 Hz w Chrome na Androidzie. Zapisujemy pakiety lokalnie w IndexedDB; brak gwarancji braku utraty danych podczas rozłączenia lub działania w tle.</p>
   <div class="v64-top-settings">
     <label>TRYB SESJI<select id="v64Mode"><option value="ble400">LIVE BLE RAW 400 Hz + AUTO CONTACT/GEST</option><option value="replay">REPLAY RAW 400 Hz • CSV</option></select></label>
     <label>WZORZEC GESTU<select id="v64Reference"><option value="">DOUBLE TAP • reguła par impulsów</option></select></label>
     <label>PLIK RAW 400 Hz<input id="v64Import" type="file" accept=".csv,text/csv"></label>
     <label>SZYBKOŚĆ REPLAY<select id="v64Rate"><option value="1">1× (czas rzeczywisty)</option><option value="2">2×</option><option value="4">4×</option></select></label>
   </div>
-  <label class="v651-transport-only"><input type="checkbox" id="v651TransportOnly"> TEST TRANSPORTU: wyłącz klasyfikatory CONTACT/GEST, zachowaj zapis RAW400</label>
   <label class="v651-transport-only">ROZMIAR RAMKI RAW400
     <select id="v654RawPacketMode" style="display:block;width:100%;margin-top:8px;padding:10px;border-radius:8px;">
       <option value="8">RAW8 — 8 próbek / 110 B (tryb kontrolny)</option>
       <option value="12">RAW12 — 12 próbek / 158 B (test MTU przed START)</option>
     </select>
   </label>
-  <label class="v651-transport-only"><input type="checkbox" id="v653Retransmission"> RETRANSMISJA R&lt;SEQ&gt;: WŁĄCZ (domyślnie WYŁĄCZONA — test izolacji BLE)</label>
-  <p class="v64-caption">V65.5: zalecany RAW12 (158 B), test MTU przed START, retransmisja domyślnie OFF. STOP dosyła całą kolejkę wraz z ostatnią niepełną ramką i weryfikuje końcowe SEQ.</p>
+  <details class="v656-diag">
+    <summary>DEVELOPER / DIAGNOSTICS — dodatkowe testy transportu BLE</summary>
+    <label class="v651-transport-only"><input type="checkbox" id="v651TransportOnly"> TEST TRANSPORTU: wyłącz klasyfikatory CONTACT/GEST, zachowaj zapis RAW400</label>
+    <label class="v651-transport-only"><input type="checkbox" id="v653Retransmission"> RETRANSMISJA R&lt;SEQ&gt; — wyłącznie test diagnostyczny (OFF domyślnie)</label>
+  </details>
+  <p class="v64-caption">V65.6.1: zalecany RAW12 (158 B), test MTU przed START, retransmisja domyślnie OFF. STOP dosyła całą kolejkę wraz z ostatnią niepełną ramką i weryfikuje końcowe SEQ.</p>
   <div id="v64ReferenceStatus" class="v64-caption">Wzorce z biblioteki Gesture Learning.</div>
   <div id="v64FileStatus" class="v64-caption">Dla LIVE użyj BLE. CSV potrzebny tylko do REPLAY.</div><div id="v65Storage" class="v64-caption">Local storage: IndexedDB (zapis pakietów co około 2 sekundy).</div>
   <div class="v64-session-actions"><button id="v64Start" type="button" class="start" disabled>START SESSION / REPLAY</button><button id="v64Stop" type="button" class="stop" disabled>STOP SESSION</button><button id="v64Export" type="button" class="secondary" disabled>EXPORT SESSION ZIP</button><button id="v65Recover" type="button" class="secondary">ODZYSKAJ OSTATNIĄ SESJĘ</button></div>
@@ -113,15 +116,19 @@
   </div>
   <progress id="v64Progress" max="100" value="0" aria-label="Postęp replay"></progress>
   <div class="v64-dual-stats">
-    <div class="v64-auto"><h3>AUTOMATYCZNIE</h3><p>CONTACT CANDIDATE <strong id="v64AutoContact">0</strong></p><p>GESTURE CANDIDATE <strong id="v64AutoGesture">0</strong></p></div>
-    <div class="v64-manual"><h3>RĘCZNIE</h3><p>CONTACT <strong id="v64ManualContact">0</strong></p><p>GEST <strong id="v64ManualGesture">0</strong></p></div>
+    <div class="v64-auto"><h3>AUTOMATYCZNIE</h3><p>IMPULSE / CONTACT CANDIDATE <strong id="v64AutoContact">0</strong></p><p>GESTURE CANDIDATE <strong id="v64AutoGesture">0</strong></p></div>
+    <div class="v64-manual"><h3>RĘCZNIE</h3><p>CONTACT <strong id="v64ManualContact">0</strong></p><p>GEST <strong id="v64ManualGesture">0</strong></p><p>FALSE <strong id="v6561ManualFalse">0</strong></p></div>
   </div>
+  <div id="v656PulseSummary" class="v64-caption" role="status">IMPULSY: —</div>
+  <div id="v656V2Summary" class="v64-caption" role="status">GESTURE V2 SHADOW: —</div>
   <div class="v64-touch-panel">
-    <h3>OZNACZ RZECZYWISTE ZDARZENIE</h3>
+    <h3>OZNACZ ZDARZENIE / OCENĘ DETEKTORA</h3>
     <div class="v64-annotation-buttons">
       <button id="v64MarkContact" class="v64-big-contact" type="button" disabled aria-label="Oznacz CONTACT ręcznie">● CONTACT</button>
       <button id="v64MarkGesture" class="v64-big-gesture" type="button" disabled aria-label="Oznacz GEST ręcznie">◆ GEST</button>
+      <button id="v6561MarkFalse" class="v6561-big-false" type="button" disabled aria-label="Oznacz fałszywe wykrycie automatyczne niezależnie od typu">✕ FALSE</button>
     </div>
+    <p id="v6561FalseStatus" class="v64-caption" role="status">FALSE oznacza ostatni błędny sygnał AUTO — CONTACT lub GEST. Typ rozpozna aplikacja. Powiązanie z AUTO wymaga weryfikacji po STOP.</p>
     <div class="v64-touch-footer"><label><input id="v64Sound" type="checkbox" checked> Dźwięki AUTO — głośny CONTACT i radosny GEST</label><button id="v64Undo" type="button" class="secondary" disabled>COFNIJ OSTATNIĄ ETYKIETĘ</button></div>
     <div class="v655-audio-panel" aria-label="Głośność i test dźwięków sesji">
       <label for="v655SoundVolume">GŁOŚNOŚĆ DŹWIĘKÓW <strong id="v655SoundPct">100%</strong></label>
@@ -135,7 +142,7 @@
     <div><h3>AUTO • WSPÓLNA OŚ CZASU</h3><div id="v64EventList" class="v64-event-list"></div></div>
     <div><h3>MANUAL • TWOJE ETYKIETY</h3><div id="v64LabelList" class="v64-event-list"></div></div>
   </div>
-  <p class="v64-footer-note">Naciśnięcie przycisku i rzeczywiste zdarzenie to dwa różne momenty. Po STOP można powiązać ręczną etykietę z wykryciem lub ręcznie skorygować czas. Automatyczne wyniki są hipotezami, nie zmieniają Twoich oznaczeń. W trybie LIVE dane są zapisywane partiami w IndexedDB. Po STOP pobierz ZIP jako kopię niezależną od przeglądarki. Zdarzenia AUTO to kandydaci i wymagają kalibracji; brak gwarantowanej kompletności do czasu testów telefonu.</p>
+  <p class="v64-footer-note">Przycisk FALSE oznacza błędne wykrycie AUTO niezależnie od rodzaju dźwięku. Sugestia powiązania z ostatnim sygnałem nie jest ostatecznym powiązaniem z konkretnym zdarzeniem. Naciśnięcie przycisku i rzeczywiste zdarzenie to dwa różne momenty. Po STOP można powiązać ręczną etykietę z wykryciem lub ręcznie skorygować czas. Automatyczne wyniki są hipotezami, nie zmieniają Twoich oznaczeń. W trybie LIVE dane są zapisywane partiami w IndexedDB. Po STOP pobierz ZIP jako kopię niezależną od przeglądarki. Zdarzenia AUTO to kandydaci i wymagają kalibracji; brak gwarantowanej kompletności do czasu testów telefonu.</p>
 </section>
 
 <!-- =====================================================
@@ -1582,7 +1589,7 @@ USER MODE: połączenie treningowe z sensorem przez Bluetooth LE.
 
 </footer>
 
-<script src="js/app.js?v=65.5"></script>
+<script src="js/app.js?v=65.6.1"></script>
 
 </body>
 
