@@ -1977,6 +1977,9 @@ footer {
 .v64-session .v64-annotation-buttons button:not(:disabled):active{transform:scale(.985);filter:brightness(.92)}
 .v64-session .v64-big-contact{background:#b91c1c}
 .v64-session .v64-big-gesture{background:#1d4ed8}
+.v64-session .v6561-big-false{background:#475569}
+.v64-session .v6561-big-false:focus-visible{outline:4px solid #f59e0b;outline-offset:3px}
+.v6561-false-note{display:block;font-size:11px;color:#475569;margin-top:5px}
 .v64-touch-footer{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-top:11px}
 .v64-touch-footer label{font-size:12px;font-weight:600;display:flex;gap:6px;align-items:center}
 .v64-touch-footer button{font-size:11px;min-height:40px}
@@ -2017,3 +2020,9 @@ footer {
 .v64-session .v655-audio-tests button{font-size:12px;font-weight:800;min-height:44px;padding:8px;border-radius:9px}
 .v655-audio-panel p{font-size:11px;line-height:1.45;color:#526578;margin:0}
 @media(max-width:450px){.v655-audio-tests{grid-template-columns:1fr}}
+
+/* V65.6: advanced transport switches are hidden during normal training. */
+.v656-diag {margin:12px 0;padding:12px;border:1px solid var(--border-color,#d0d9df);border-radius:10px;}
+.v656-diag summary {cursor:pointer;font-weight:650;font-size:.9rem;line-height:1.4;}
+.v656-diag .v651-transport-only {display:block;margin:12px 0 0;}
+#v656PulseSummary,#v656V2Summary {padding:8px 12px;line-height:1.5;overflow-wrap:anywhere;}
