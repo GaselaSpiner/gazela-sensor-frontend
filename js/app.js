@@ -1,4 +1,4 @@
-// app.js — GAZELA SENSOR LAB V65.4 (RAW8/RAW12; MTU test; recovery OFF by default) / STAGE 8.11 HR400 ORIENTATION-INVARIANT COMPARATOR / V28.1 HR400
+// app.js — GAZELA SENSOR LAB V65.5 (RAW12 SAFE STOP & DRAIN; LOUD AUDIO JACKPOT) / STAGE 8.11 HR400 ORIENTATION-INVARIANT COMPARATOR / V28.1 HR400
 // V63: comparator uses one common fitted Y rotation for ACC+GYRO and both taps.
 // V62: serialize BLE command writes; start packet timeout only after write completion;
 //      prevent outdated queued N requests; reduce UI work in all HR400 modules.
@@ -1309,7 +1309,7 @@ class WebBluetoothTransport
             this.raw400Characteristic = await this.sensorService.getCharacteristic(BLE_RAW400_CHARACTERISTIC_UUID);
             this.raw400Characteristic.addEventListener('characteristicvaluechanged', this.boundRaw400Handler);
             await this.raw400Characteristic.startNotifications();
-            addSerialLine('V65.4: RAW400 notifications subscribed (RAW8 110 B / RAW12 158 B)', 'serial-info');
+            addSerialLine('V65.5: RAW400 notifications subscribed (RAW8 110 B / RAW12 158 B)', 'serial-info');
         } catch (rawError) {
             this.raw400Characteristic = null;
             addSerialLine('V65: RAW400 unavailable; V29 firmware required: '+rawError.message, 'serial-info');
@@ -4987,19 +4987,19 @@ function gazelaReferenceTransaction(db,mode,action){
 // END STAGE 8.9
 
 // ================================================================
-// GAZELA V65.4 — RAW8/RAW12 PACKET MODE / ATT MTU PROBE
+// GAZELA V65.5 — SAFE STOP & DRAIN + LOUD AUDIO + GESTURE JACKPOT
 // Uses the existing V63/V64 contact detector and gesture model.
 // Experimental detector output != confirmed ball impact or verified gesture.
 // ================================================================
 (function gazelaV65SessionEngine(){
 "use strict";
 const $=id=>document.getElementById(id);
-const ui={mode:$('v64Mode'),import:$('v64Import'),file:$('v64FileStatus'),start:$('v64Start'),stop:$('v64Stop'),exp:$('v64Export'),recover:$('v65Recover'),storage:$('v65Storage'),transportOnly:$('v651TransportOnly'),retransmission:$('v653Retransmission'),packetMode:$('v654RawPacketMode'),status:$('v64Status'),clock:$('v64Time'),samples:$('v64Samples'),integrity:$('v64Integrity'),bar:$('v64Progress'),ac:$('v64AutoContact'),ag:$('v64AutoGesture'),mc:$('v64ManualContact'),mg:$('v64ManualGesture'),markC:$('v64MarkContact'),markG:$('v64MarkGesture'),undo:$('v64Undo'),sound:$('v64Sound'),events:$('v64EventList'),marks:$('v64LabelList'),reference:$('v64Reference'),referenceStatus:$('v64ReferenceStatus'),rate:$('v64Rate'),notes:$('v64Notes')};
+const ui={mode:$('v64Mode'),import:$('v64Import'),file:$('v64FileStatus'),start:$('v64Start'),stop:$('v64Stop'),exp:$('v64Export'),recover:$('v65Recover'),storage:$('v65Storage'),transportOnly:$('v651TransportOnly'),retransmission:$('v653Retransmission'),packetMode:$('v654RawPacketMode'),status:$('v64Status'),clock:$('v64Time'),samples:$('v64Samples'),integrity:$('v64Integrity'),bar:$('v64Progress'),ac:$('v64AutoContact'),ag:$('v64AutoGesture'),mc:$('v64ManualContact'),mg:$('v64ManualGesture'),markC:$('v64MarkContact'),markG:$('v64MarkGesture'),undo:$('v64Undo'),sound:$('v64Sound'),soundVolume:$('v655SoundVolume'),soundPct:$('v655SoundPct'),soundContactTest:$('v655TestContact'),soundGestureTest:$('v655TestGesture'),events:$('v64EventList'),marks:$('v64LabelList'),reference:$('v64Reference'),referenceStatus:$('v64ReferenceStatus'),rate:$('v64Rate'),notes:$('v64Notes')};
 if(!ui.start)return;
 const UUID='7a1e0004-5a9a-4c71-9b3a-47415a5a0001';
 const PERIOD_MS=2.5, MAX_IMPORT_BYTES=16000000, MAX_REPLAY=120000;
 const AXES=['AX','AY','AZ','GX','GY','GZ'];
-let s=null, source=null, timer=null, audioCtx=null, writer=null, renderAt=0, replayAt=0, replayIndex=0, statusAt=0, dbPromise=null;
+let s=null, source=null, timer=null, audioCtx=null, audioMaster=null, writer=null, renderAt=0, replayAt=0, replayIndex=0, statusAt=0, dbPromise=null;
 let rawPreflightBusy=false, pendingMtuProbe=null;
 // P12 probe is a non-sensor packet with GZ, version 0x7F, N=12, length=158.
 // Check length, deterministic bytes and CRC; never record it in the session.
@@ -5027,7 +5027,7 @@ async function verifyRaw12Mtu(){
 const text=(tag,cl,t)=>{const x=document.createElement(tag);if(cl)x.className=cl;x.textContent=t;return x;};
 const clock=t=>{if(!Number.isFinite(t))return '—';const n=Math.max(0,Math.round(t));return String(Math.floor(n/60000)).padStart(2,'0')+':'+String(Math.floor(n%60000/1000)).padStart(2,'0')+'.'+String(n%1000).padStart(3,'0');};
 const say=(msg,type='info')=>{ui.status.textContent=msg;ui.status.dataset.state=type;};
-const id=()=>`GZ654-${Date.now()}-${Math.floor(Math.random()*1e6)}`;
+const id=()=>`GZ655-${Date.now()}-${Math.floor(Math.random()*1e6)}`;
 const csv=rows=>rows.map(r=>r.map(v=>{const v0=String(v??'');return /[",\r\n]/.test(v0)?'"'+v0.replace(/"/g,'""')+'"':v0;}).join(',')).join('\r\n')+'\r\n';
 function crc16(b,len=b.length){let crc=65535;for(let i=0;i<len;i++){crc^=b[i]<<8;for(let k=0;k<8;k++)crc=((crc<<1)^((crc&32768)?0x1021:0))&65535;}return crc;}
 // The complete GATT notification is an atomic packet, not a serial byte stream.
@@ -5048,13 +5048,69 @@ async function dbGet(store,key){const db=await dbOpen();return new Promise((reso
 async function dbAll(store){const db=await dbOpen();return new Promise((resolve,reject)=>{const tx=db.transaction(store,'readonly'),r=tx.objectStore(store).getAll();r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});}
 function queueWrite(work){if(!s)return;const ref=s;
  ref.writeTail=(ref.writeTail||Promise.resolve()).then(work).catch(e=>{ref.storageError=String(e);ref.diagnostics.push({kind:'STORAGE_ERROR',error:String(e),at:new Date().toISOString()});say('BŁĄD ZAPISU LOKALNEGO. Zatrzymano sesję: '+e.message,'error');if(ref.state==='recording')void stop('STORAGE_ERROR');});}
-function smallManifest(ref){return {id:ref.id,schema:'gazela.continuous.v65',version:'V65.4_RAW8_RAW12',rawSamplesPerFrame:ref.rawSamplesPerFrame||8,mtuProbe:ref.mtuProbe||null,mode:ref.mode,state:ref.state,startedAt:ref.startedAt,endedAt:ref.endedAt,stopReason:ref.stopReason,source:ref.sourceName,firstSeq:ref.firstSeq,lastSeq:ref.lastSeq,sampleCount:ref.samples,frames:ref.frames,parts:ref.parts,gaps:ref.gaps,missingSamples:ref.missingSamples,crcErrors:ref.crcErrors,decoderErrors:ref.decoderErrors,referenceId:ref.referenceId,referenceName:ref.referenceName,events:ref.events,manual:ref.manual,diagnostics:ref.diagnostics.slice(-400),storageError:ref.storageError,retransmissionEnabled:!!ref.retransmissionEnabled,replayRequests:ref.replayRequests||0,recoveredFrames:ref.recoveredFrames||0,duplicates:ref.duplicates||0,receiverFrames:ref.rxFrames||0,transportOnly:!!ref.transportOnly,firmwareStop:ref.firmwareStop||null,startSequence:ref.startSequence??null,finalExpectedSeq:ref.finalExpectedSeq??null,stopCommandAcknowledged:!!ref.stopAckSeen,stopButtonPressedAt:ref.stopButtonPressedAt||null,stopAcknowledgementTimedOut:!!ref.stopAckTimedOut,emergencyStop:!!ref.emergencyStop,quantization:'ACC 0.001g, GYRO 0.1deg/s; nominal 2.5ms; not hardware SensorTime'};}
+function smallManifest(ref){return {id:ref.id,schema:'gazela.continuous.v65',version:'V65.5_SAFE_STOP_AUDIO',rawSamplesPerFrame:ref.rawSamplesPerFrame||8,mtuProbe:ref.mtuProbe||null,mode:ref.mode,state:ref.state,startedAt:ref.startedAt,endedAt:ref.endedAt,stopReason:ref.stopReason,source:ref.sourceName,firstSeq:ref.firstSeq,lastSeq:ref.lastSeq,sampleCount:ref.samples,frames:ref.frames,parts:ref.parts,gaps:ref.gaps,missingSamples:ref.missingSamples,crcErrors:ref.crcErrors,decoderErrors:ref.decoderErrors,referenceId:ref.referenceId,referenceName:ref.referenceName,events:ref.events,manual:ref.manual,diagnostics:ref.diagnostics.slice(-400),storageError:ref.storageError,retransmissionEnabled:!!ref.retransmissionEnabled,replayRequests:ref.replayRequests||0,recoveredFrames:ref.recoveredFrames||0,duplicates:ref.duplicates||0,receiverFrames:ref.rxFrames||0,transportOnly:!!ref.transportOnly,firmwareStop:ref.firmwareStop||null,drainStatus:ref.drainStatus||null,stopIntegrity:ref.stopIntegrity||null,startSequence:ref.startSequence??null,finalExpectedSeq:ref.finalExpectedSeq??null,stopCommandAcknowledged:!!ref.stopAckSeen,stopButtonPressedAt:ref.stopButtonPressedAt||null,stopAcknowledgementTimedOut:!!ref.stopAckTimedOut,emergencyStop:!!ref.emergencyStop,quantization:'ACC 0.001g, GYRO 0.1deg/s; nominal 2.5ms; not hardware SensorTime'};}
 function saveManifest(ref){if(ref.mode!=='ble400')return;queueWrite(()=>dbPut('sessions',smallManifest(ref)));}
 function flushPackets(ref){if(ref.mode!=='ble400'||!ref.pending.length)return;const packets=ref.pending;ref.pending=[];const part=ref.parts++;
  queueWrite(async()=>{await dbPut('chunks',{sessionId:ref.id,part,packets});await dbPut('sessions',smallManifest(ref));});}
-function sound(type){if(!ui.sound.checked)return;try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;if(!audioCtx)audioCtx=new AC();if(audioCtx.state==='suspended')void audioCtx.resume();const now=audioCtx.currentTime+.01;
- const beep=(hz,delay,length)=>{const osc=audioCtx.createOscillator(),gain=audioCtx.createGain();osc.frequency.value=hz;gain.gain.setValueAtTime(.0001,now+delay);gain.gain.exponentialRampToValueAtTime(.13,now+delay+.006);gain.gain.exponentialRampToValueAtTime(.0001,now+delay+length);osc.connect(gain);gain.connect(audioCtx.destination);osc.start(now+delay);osc.stop(now+delay+length+.02);};
- if(type.startsWith('GESTURE')){beep(720,0,.08);beep(1050,.11,.11);}else beep(370,0,.12);}catch(e){console.warn('GAZELA V65 AUDIO',e);}}
+// V65.5 sound design: small-phone-speaker friendly, original synthesised cues.
+// A shared compressor limits peaks; higher perceived loudness comes from
+// harmonics, attack shape and duration, NOT an unsafe gain > 1.
+function initSessionAudio(){
+ const AC=window.AudioContext||window.webkitAudioContext;
+ if(!AC)return false;
+ if(!audioCtx||audioCtx.state==='closed'){audioCtx=new AC();audioMaster=null;}
+ if(!audioMaster){
+   const master=audioCtx.createGain(),limiter=audioCtx.createDynamicsCompressor();
+   limiter.threshold.value=-20;limiter.knee.value=10;
+   limiter.ratio.value=6;limiter.attack.value=.003;limiter.release.value=.16;
+   master.connect(limiter);limiter.connect(audioCtx.destination);
+   audioMaster=master;
+ }
+ const volume=Math.max(0,Math.min(100,Number(ui.soundVolume?.value??100)))/100;
+ audioMaster.gain.setTargetAtTime(.92*Math.pow(volume,1.05),audioCtx.currentTime,.012);
+ if(audioCtx.state==='suspended')void audioCtx.resume().catch(e=>console.warn('GAZELA audio unlock',e));
+ return true;
+}
+function sound(type,preview=false){
+ if(!preview&&!ui.sound.checked)return;
+ try{
+   if(!initSessionAudio())return;
+   const now=audioCtx.currentTime+.014;
+   const note=(frequency,delay,length,amplitude,wave='sine')=>{
+     const osc=audioCtx.createOscillator(),gain=audioCtx.createGain();
+     const start=now+delay,end=start+length;
+     osc.type=wave;osc.frequency.setValueAtTime(frequency,start);
+     gain.gain.setValueAtTime(.0001,start);
+     gain.gain.linearRampToValueAtTime(amplitude,start+.012);
+     gain.gain.setValueAtTime(amplitude*.82,Math.max(start+.014,end-.075));
+     gain.gain.exponentialRampToValueAtTime(.0001,end);
+     osc.connect(gain);gain.connect(audioMaster);osc.start(start);osc.stop(end+.015);
+   };
+   if(type.startsWith('GESTURE')||type==='GEST'){
+     // Happy "JACKPOT" confirmation: rising original fanfare with a bright
+     // major chord and sparkle; entirely distinct from the contact click.
+     note(659.25,0,.17,.28,'triangle'); // E5
+     note(830.61,.13,.17,.28,'triangle'); // G#5
+     note(987.77,.26,.18,.30,'triangle'); // B5
+     note(1318.51,.39,.37,.31,'sine'); // E6
+     note(659.25,.39,.39,.18,'triangle');
+     note(987.77,.39,.39,.19,'sine');
+     note(1567.98,.65,.18,.15,'sine'); // final sparkle
+     note(1760,.72,.15,.10,'sine');
+   }else{
+     // Distinct crisp and audible CONTACT click on phone speakers.
+     note(740,0,.14,.36,'triangle');
+     note(1110,.008,.10,.26,'sine');
+     note(1480,.017,.075,.12,'sine');
+   }
+ }catch(e){console.warn('GAZELA V65.5 AUDIO',e);}
+}
+function updateAudioVolume(){
+ const level=Math.max(0,Math.min(100,Number(ui.soundVolume?.value??100)));
+ if(ui.soundPct)ui.soundPct.textContent=level+'%';
+ if(audioCtx&&audioMaster)initSessionAudio();
+ try{localStorage.setItem('gazela_v655_audio_level',String(level));}catch(e){}
+}
 function controls(){const run=s?.state==='recording',stopping=s?.state==='stopping',busy=run||stopping||rawPreflightBusy,connected=!!(bleTransport?.running&&bleTransport.raw400Characteristic);
  ui.start.disabled=busy||(ui.mode.value==='ble400'&&!connected)||(ui.mode.value==='replay'&&!source);
  // The second press is an explicit emergency STOP, never a disabled control.
@@ -5065,7 +5121,7 @@ function controls(){const run=s?.state==='recording',stopping=s?.state==='stoppi
  if(ui.recover)ui.recover.disabled=run;
 }
 function newSession(mode){const ref=window.GazelaReferenceLibrary?.get(ui.reference.value)||null;
- return {id:id(),mode,state:'recording',rawSamplesPerFrame:Number(ui.packetMode?.value||8),mtuProbe:null,startedAt:new Date().toISOString(),endedAt:null,stopReason:null,sourceName:source?.name||null,firstSeq:null,lastSeq:null,samples:0,frames:0,rxFrames:0,replayRequests:0,recoveredFrames:0,duplicates:0,transportOnly:!!ui.transportOnly?.checked,retransmissionEnabled:!!ui.retransmission?.checked,firmwareStop:null,startSequence:null,finalExpectedSeq:null,parts:0,gaps:0,missingSamples:0,crcErrors:0,decoderErrors:0,storageError:null,packetBuffer:new Map(),nextSeq:null,gapStartedAt:0,lastRecoveryAt:0,attemptedSeq:null,recoveryAttempts:0,recoveryFailed:new Set(),replayRequested:new Set(),pending:[],writeTail:Promise.resolve(),raw:[],events:[],manual:[],diagnostics:[],history:[],candidates:[],lastCandidate:-1e12,gesture:new GazelaGestureStreamRecognizerV1(),perfStart:performance.now(),lastPacketPerf:performance.now(),firstPacketPerf:null,lastSampleTime:0,ref,referenceId:ref?.id||null,referenceName:ref?.name||null,stopButtonPressedAt:null,stopRequestedPerf:null,stopFrozenSamples:null,stopFrozenTime:null,stopAckSeen:false,stopAckTimedOut:false,emergencyStop:false,stopFinalizePromise:null,stopResolver:null};}
+ return {id:id(),mode,state:'recording',rawSamplesPerFrame:Number(ui.packetMode?.value||8),mtuProbe:null,startedAt:new Date().toISOString(),endedAt:null,stopReason:null,sourceName:source?.name||null,firstSeq:null,lastSeq:null,samples:0,frames:0,rxFrames:0,replayRequests:0,recoveredFrames:0,duplicates:0,transportOnly:!!ui.transportOnly?.checked,retransmissionEnabled:!!ui.retransmission?.checked,firmwareStop:null,drainStatus:null,stopIntegrity:null,startSequence:null,finalExpectedSeq:null,parts:0,gaps:0,missingSamples:0,crcErrors:0,decoderErrors:0,storageError:null,packetBuffer:new Map(),nextSeq:null,gapStartedAt:0,lastRecoveryAt:0,attemptedSeq:null,recoveryAttempts:0,recoveryFailed:new Set(),replayRequested:new Set(),pending:[],writeTail:Promise.resolve(),raw:[],events:[],manual:[],diagnostics:[],history:[],candidates:[],lastCandidate:-1e12,gesture:new GazelaGestureStreamRecognizerV1(),perfStart:performance.now(),lastPacketPerf:performance.now(),firstPacketPerf:null,lastSampleTime:0,ref,referenceId:ref?.id||null,referenceName:ref?.name||null,stopButtonPressedAt:null,stopRequestedPerf:null,stopFrozenSamples:null,stopFrozenTime:null,stopAckSeen:false,stopAckTimedOut:false,emergencyStop:false,stopFinalizePromise:null,stopResolver:null};}
 function addEvent(type,base,extra){const item={id:'E'+(s.events.length+1),kind:'AUTO',type,index:base?.index??null,sequence:base?.sequence??null,time_ms:base?.time_ms??null,detector:type.startsWith('GESTURE')?'V65_DOUBLE_TAP_PAIR_V1':GAZELA_OFFLINE_DETECTOR_VERSION,algorithmUnvalidated:true,detectedAt:new Date().toISOString(),...extra};s.events.push(item);sound(type);return item;}
 function ingest(raw){if(!s||(s.state!=='recording'&&s.state!=='stopping'))return;const seq=raw.sequence;
  if(s.firstSeq===null)s.firstSeq=seq;
@@ -5207,6 +5263,18 @@ function onStreamMessage(msg){
      say('Niezgodny tryb RAW w firmware: '+n+' próbek, oczekiwano '+s.rawSamplesPerFrame,'error');
    }
  }
+ if(msg.startsWith('STREAM,DRAINING,')){
+   const fields=msg.split(',');
+   const expected=Number(fields[2]);
+   if(Number.isSafeInteger(expected)&&expected>0)s.finalExpectedSeq=expected;
+   s.drainStatus={state:'draining',finalExpectedSeq:expected,pendingAtRequest:Number(fields[3])};
+   s.diagnostics.push({kind:'FIRMWARE_DRAINING',message:msg});
+   if(s.state==='stopping')say(`STOP: Arduino dosyła końcowe próbki (${fields[3]||'?'} w kolejce).`,'warn');
+ }
+ if(msg.startsWith('STREAM,DRAIN_TIMEOUT')){
+   s.diagnostics.push({kind:'FIRMWARE_DRAIN_TIMEOUT',message:msg});
+   if(s.state==='stopping')say('STOP: przekroczono czas opróżniania kolejki. Zapis może być niepełny.','error');
+ }
  if(msg.startsWith('STREAM,REPLAY_MISS,')){
   const seq=Number(msg.split(',')[2]);
   s.diagnostics.push({kind:'FIRMWARE_REPLAY_CACHE_MISS',sequence:seq});
@@ -5217,10 +5285,10 @@ function onStreamMessage(msg){
 function pressLabel(type){if(!s||s.state!=='recording')return;const perf=performance.now();const mark={id:'M'+(s.manual.length+1),type,pressedAt:new Date().toISOString(),pressMonotonicMs:perf,pressStreamTimeMs:perf-(s.mode==='ble400'&&s.firstPacketPerf!==null?s.firstPacketPerf:s.perfStart),nearestReceivedSequence:s.lastSeq,nearestReceivedRawTimeMs:s.lastSampleTime,eventTimeMs:null,eventSequence:null,linkedEventId:null,status:'UNLINKED',note:'PRESS TIME != PHYSICAL EVENT TIME; sync uncertainty includes BLE latency'};
  s.manual.push(mark);if(navigator.vibrate)navigator.vibrate(25);if(s.mode==='ble400')saveManifest(s);render(true);}
 async function start(){const mode=ui.mode.value;
- if(mode==='ble400'&&!(bleTransport?.raw400Characteristic&&bleTransport.running)){say('Połącz Arduino V29.2.7 przez BLE. Wymagana charakterystyka RAW400 (0004).','error');return;}
+ if(mode==='ble400'&&!(bleTransport?.raw400Characteristic&&bleTransport.running)){say('Połącz Arduino V29.2.8 przez BLE. Wymagana charakterystyka RAW400 (0004).','error');return;}
  if(mode==='replay'&&!source){say('Wczytaj prawdziwy CSV 400 Hz.','error');return;}
  if(s?.state==='recording'||rawPreflightBusy)return;
- if(ui.sound.checked){try{const AC=window.AudioContext||window.webkitAudioContext;if(AC){audioCtx=audioCtx||new AC();void audioCtx.resume();}}catch(e){console.warn(e);}}
+ if(ui.sound.checked)try{initSessionAudio();}catch(e){console.warn(e);}
  let preflightInfo=null;
  if(mode==='ble400'&&Number(ui.packetMode?.value)===12){
    rawPreflightBusy=true;ui.start.disabled=true;ui.packetMode.disabled=true;
@@ -5256,7 +5324,7 @@ function replayTick(){if(!s||s.state!=='recording'||!source)return;
  if(performance.now()-renderAt>175){renderAt=performance.now();render();}
 }
 // STOP is a bounded user action, not an indefinite GATT write / recovery loop.
-const STOP_ATTEMPT_MS=1450, STOP_SETTLE_MS=1100;
+const STOP_ATTEMPT_MS=6500, STOP_SETTLE_MS=3000;
 const delayMs=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 async function stopFirmwareAttempt(ref){
  if(!bleTransport?.running)return 'BLE_NOT_CONNECTED';
@@ -5315,6 +5383,19 @@ async function finalizeStop(ref){
    stopDrainBounded(ref);
    flushPackets(ref);
    ref.endedAt=new Date().toISOString();ref.state='stopped';
+   // After STOPPED the browser verifies the exact captured SEQ boundary,
+   // not just the presence of a GATT control acknowledgement.
+   const fields=(ref.firmwareStop||'').split(',');
+   const firmwarePending=Number(fields[6]);
+   const firmwareLost=Number(fields[3]);
+   const complete=!!ref.stopAckSeen&&ref.finalExpectedSeq!==null&&
+     ref.nextSeq===ref.finalExpectedSeq&&ref.missingSamples===0&&
+     ref.crcErrors===0&&ref.decoderErrors===0&&ref.storageError===null&&
+     firmwarePending===0&&firmwareLost===0;
+   ref.stopIntegrity={complete,finalExpectedSeq:ref.finalExpectedSeq,
+     nextReceivedSeq:ref.nextSeq,missingSamples:ref.missingSamples,
+     firmwarePending,firmwareLost,crcErrors:ref.crcErrors,
+     decoderErrors:ref.decoderErrors};
    saveManifest(ref);
    // Most writes finish quickly; do not claim success on an IndexedDB error.
    // On a stalled write show a warning and allow the user to recover/export.
@@ -5327,7 +5408,8 @@ async function finalizeStop(ref){
    else if(!saved){say('Sesja zakończona; zapisy IndexedDB nadal oczekują. Sprawdź eksport i odzyskiwanie.','warn');}
    else if(ref.emergencyStop){say('AWARYJNY STOP: zamknięto sesję i rozłączono BLE. Eksport jest dostępny.','warn');}
    else if(ref.stopAckTimedOut){say('Zapis zakończony, ale brak STOP ACK z Arduino. BLE rozłączono dla bezpieczeństwa; połącz ponownie przed kolejną próbą.','warn');}
-   else say('Sesja zatrzymana i utrwalona lokalnie. Możesz wyeksportować ZIP.','ok');
+   else if(!ref.stopIntegrity?.complete){say('Sesja zapisana, ale niekompletna: sprawdź SEQ i STOP/DRAIN w eksporcie ZIP.','warn');}
+   else say('STOP & DRAIN PASS — pełne RAW 400 Hz zapisane bez luk. Możesz wyeksportować ZIP.','ok');
    render(true);
  })();
  return ref.stopFinalizePromise;
@@ -5443,7 +5525,7 @@ function zip(files){
 }
 async function exportSession(){if(!s||s.state==='recording'||s.state==='stopping')return;const ref=s;ui.exp.disabled=true;
  try{if(ref.writeTail)await ref.writeTail;let raw=null,meta=smallManifest(ref);
-  const files=[['session.json',JSON.stringify(meta,null,2)+'\n'],['auto_events.json',JSON.stringify(ref.events,null,2)+'\n'],['manual_labels.json',JSON.stringify(ref.manual,null,2)+'\n'],['manual_labels.csv',csv([['id','type','pressedAt','pressStreamTimeMs','nearestReceivedSequence','nearestReceivedRawTimeMs','eventTimeMs','eventSequence','linkedEventId','status'],...ref.manual.map(m=>[m.id,m.type,m.pressedAt,m.pressStreamTimeMs,m.nearestReceivedSequence,m.nearestReceivedRawTimeMs,m.eventTimeMs,m.eventSequence,m.linkedEventId,m.status])])],['README.txt','GAZELA V65.4 RAW8/RAW12: Sequenced live RAW frames sorted by SEQ in export; MTU probe required for RAW12; R<SEQ> retransmission is OFF by default (session.json retransmissionEnabled records the actual setting); gaps refer to missing samples. LIVE RAW 400 Hz packets; each frame has magic GZ, version, N, SEQ, nominal time, 6x int16 per sample, CRC16. Full session raw is concatenated binary GATT frames. No claim of BMI270 hardware timestamps. Detector predictions are hypotheses, NOT confirmed contact/gesture. Manual press latency is unknown. Check missing SEQ / CRC / storage errors.\n']];
+  const files=[['session.json',JSON.stringify(meta,null,2)+'\n'],['auto_events.json',JSON.stringify(ref.events,null,2)+'\n'],['manual_labels.json',JSON.stringify(ref.manual,null,2)+'\n'],['manual_labels.csv',csv([['id','type','pressedAt','pressStreamTimeMs','nearestReceivedSequence','nearestReceivedRawTimeMs','eventTimeMs','eventSequence','linkedEventId','status'],...ref.manual.map(m=>[m.id,m.type,m.pressedAt,m.pressStreamTimeMs,m.nearestReceivedSequence,m.nearestReceivedRawTimeMs,m.eventTimeMs,m.eventSequence,m.linkedEventId,m.status])])],['README.txt','GAZELA V65.5 SAFE STOP + AUDIO: Sequenced live RAW frames sorted by SEQ in export; MTU probe required for RAW12; R<SEQ> retransmission is OFF by default (session.json retransmissionEnabled records the actual setting); gaps refer to missing samples. LIVE RAW 400 Hz packets; each frame has magic GZ, version, N, SEQ, nominal time, 6x int16 per sample, CRC16. Full session raw is concatenated binary GATT frames. No claim of BMI270 hardware timestamps. Detector predictions are hypotheses, NOT confirmed contact/gesture. Manual press latency is unknown. Check missing SEQ / CRC / storage errors.\n']];
   if(ref.mode==='ble400'){const chunks=(await dbAll('chunks')).filter(x=>x.sessionId===ref.id).sort((a,b)=>a.part-b.part);
     const buffers=chunks.flatMap(x=>x.packets).sort((a,b)=>{const x=new DataView(a.buffer,a.byteOffset,a.byteLength).getUint32(4,true),y=new DataView(b.buffer,b.byteOffset,b.byteLength).getUint32(4,true);return x-y;});const bytes=buffers.reduce((n,x)=>n+x.length,0);raw=new Uint8Array(bytes);let at=0;for(const b of buffers){raw.set(b,at);at+=b.length;}
     files.push(['raw_400hz_ble_frames.bin',raw]);meta.savedParts=chunks.length;meta.savedBytes=bytes;
@@ -5462,10 +5544,18 @@ async function references(){try{await window.GazelaReferenceLibrary?.ready();con
  catch(e){ui.referenceStatus.textContent='Błąd biblioteki: '+e.message;}}
 ui.start.onclick=()=>void start();ui.stop.onclick=()=>void stop();ui.exp.onclick=()=>void exportSession();if(ui.recover)ui.recover.onclick=()=>void recover();
 ui.markC.onclick=()=>pressLabel('CONTACT');ui.markG.onclick=()=>pressLabel('GEST');ui.undo.onclick=()=>{if(s?.manual?.length){s.manual.pop();if(s.mode==='ble400')saveManifest(s);render(true);}};
-ui.import.onchange=chooseFile;ui.mode.onchange=()=>{say(ui.mode.value==='ble400'?'LIVE RAW 400 Hz — zalecany firmware V29.2.7, BLE RAW characteristic 0004.':'REPLAY RAW400 z CSV','info');controls();};
+ui.import.onchange=chooseFile;ui.mode.onchange=()=>{say(ui.mode.value==='ble400'?'LIVE RAW 400 Hz — zalecany firmware V29.2.8, BLE RAW characteristic 0004.':'REPLAY RAW400 z CSV','info');controls();};
 window.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&s?.state==='recording'){void stop('PAGE_HIDDEN');say('Aplikacja ukryta. Zatrzymano sesję, by nie ukrywać braków pomiaru.','warn');}});
-window.GazelaSessionV65=Object.freeze({version:'V65.4_RAW8_RAW12',onRawPacket,onStreamMessage,onConnectionChanged:controls,onStreamStopped:msg=>{if(s&&s.mode==='ble400'&&s.state==='stopping'){s.firmwareStop=msg;s.stopAckSeen=true;const fields=msg.split(',');const end=Number(fields[9]);if(Number.isSafeInteger(end)&&end>0)s.finalExpectedSeq=end;s.diagnostics.push({kind:'FIRMWARE_STOP_STATUS',message:msg});s.stopResolver?.('ACK_OK');}},onBLEDisconnect:()=>{if(s?.mode==='ble400'&&s.state==='recording')void stop('BLE_DISCONNECTED');},state:()=>s?{state:s.state,mode:s.mode,samples:s.samples,gaps:s.gaps,missing:s.missingSamples,crc:s.crcErrors,events:s.events.length,manual:s.manual.length}:null});
+window.GazelaSessionV65=Object.freeze({version:'V65.5_SAFE_STOP_AUDIO',onRawPacket,onStreamMessage,onConnectionChanged:controls,onStreamStopped:msg=>{if(s&&s.mode==='ble400'&&s.state==='stopping'){s.firmwareStop=msg;s.stopAckSeen=true;const fields=msg.split(',');const end=Number(fields[9]);if(Number.isSafeInteger(end)&&end>0)s.finalExpectedSeq=end;s.drainStatus={...(s.drainStatus||{}),state:'finished',pendingAtAck:Number(fields[6]),sentSamples:Number(fields[2])};s.diagnostics.push({kind:'FIRMWARE_STOP_STATUS',message:msg});s.stopResolver?.('ACK_OK');}},onBLEDisconnect:()=>{if(s?.mode==='ble400'&&s.state==='recording')void stop('BLE_DISCONNECTED');},state:()=>s?{state:s.state,mode:s.mode,samples:s.samples,gaps:s.gaps,missing:s.missingSamples,crc:s.crcErrors,events:s.events.length,manual:s.manual.length}:null});
+if(ui.soundVolume){
+ try{const saved=Number(localStorage.getItem('gazela_v655_audio_level'));
+   ui.soundVolume.value=Number.isFinite(saved)&&saved>=0&&saved<=100?String(saved):'100';
+ }catch(e){ui.soundVolume.value='100';}
+ ui.soundVolume.addEventListener('input',updateAudioVolume);updateAudioVolume();
+}
+if(ui.soundContactTest)ui.soundContactTest.addEventListener('click',()=>sound('CONTACT',true));
+if(ui.soundGestureTest)ui.soundGestureTest.addEventListener('click',()=>sound('GESTURE_CANDIDATE',true));
 if(ui.retransmission)ui.retransmission.checked=false; // Enforce OFF even if Chrome restores form state after reload.
-if(ui.packetMode)ui.packetMode.value='8'; // Safe default: proven 110-byte profile.
-void references();say('V65.4: RAW8/RAW12; RAW12 wymaga testu MTU 158 B przed sesją. STOP i eksport ZIP bez zmian.','info');render(true);
+if(ui.packetMode)ui.packetMode.value='12'; // RAW12 passed 120-second continuity test; MTU probe still mandatory.
+void references();say('V65.5: RAW12 400 Hz • SAFE STOP & DRAIN • głośniejszy CONTACT i dźwięk jackpot GEST.','info');render(true);
 })();
