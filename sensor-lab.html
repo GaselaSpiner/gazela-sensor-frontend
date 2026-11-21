@@ -16,13 +16,13 @@
 
   <meta name="description" content="Gazela Spiner Sensor Lab — podgląd danych sensora, rejestracja gestów i diagnostyka połączenia.">
 
-  <title>Gazela Spiner Sensor Lab V65.4</title>
+  <title>Gazela Spiner Sensor Lab V65.5</title>
 
   <link
 
     rel="stylesheet"
 
-    href="css/style.css?v=65.4"
+    href="css/style.css?v=65.5"
 
   >
 
@@ -84,8 +84,8 @@
        V64 — SESSION MODE / EXPERIMENTAL STAGE A
        ===================================================== -->
 <section class="card v64-session" id="v64SessionMode" aria-labelledby="v64Title">
-  <div class="v64-title-row"><div><h2 id="v64Title">GAZELA SESSION — V65.4</h2><p>LIVE RAW 400 Hz • DUAL CLASSIFIER • LOCAL STORAGE</p></div><span class="v64-prototype">PROTOTYPE</span></div>
-  <p class="v64-warning"><strong>Wersja eksperymentalna:</strong> LIVE RAW400 współpracuje z firmware V29.2.7 przez BLE. W tej wersji retransmisja ramek jest domyślnie wyłączona do testu transportu; można ją włączyć poniżej do porównania. Kompletność musi być zweryfikowana. Detektory działają na pełnych próbkach 400 Hz w Chrome na Androidzie. Zapisujemy pakiety lokalnie w IndexedDB; brak gwarancji braku utraty danych podczas rozłączenia lub działania w tle.</p>
+  <div class="v64-title-row"><div><h2 id="v64Title">GAZELA SESSION — V65.5</h2><p>LIVE RAW 400 Hz • DUAL CLASSIFIER • LOCAL STORAGE</p></div><span class="v64-prototype">PROTOTYPE</span></div>
+  <p class="v64-warning"><strong>Wersja eksperymentalna:</strong> LIVE RAW400 współpracuje z firmware V29.2.8 przez BLE. W tej wersji retransmisja ramek jest domyślnie wyłączona do testu transportu; można ją włączyć poniżej do porównania. Kompletność musi być zweryfikowana. Detektory działają na pełnych próbkach 400 Hz w Chrome na Androidzie. Zapisujemy pakiety lokalnie w IndexedDB; brak gwarancji braku utraty danych podczas rozłączenia lub działania w tle.</p>
   <div class="v64-top-settings">
     <label>TRYB SESJI<select id="v64Mode"><option value="ble400">LIVE BLE RAW 400 Hz + AUTO CONTACT/GEST</option><option value="replay">REPLAY RAW 400 Hz • CSV</option></select></label>
     <label>WZORZEC GESTU<select id="v64Reference"><option value="">DOUBLE TAP • reguła par impulsów</option></select></label>
@@ -100,11 +100,11 @@
     </select>
   </label>
   <label class="v651-transport-only"><input type="checkbox" id="v653Retransmission"> RETRANSMISJA R&lt;SEQ&gt;: WŁĄCZ (domyślnie WYŁĄCZONA — test izolacji BLE)</label>
-  <p class="v64-caption">V65.4: porównaj RAW8 i RAW12 w osobnych sesjach. RAW12 wymaga pełnej próby 158 B; gdy próba MTU nie przejdzie, sesja NIE ruszy. Retransmisja OFF, STOP U0 bez DRAIN.</p>
+  <p class="v64-caption">V65.5: zalecany RAW12 (158 B), test MTU przed START, retransmisja domyślnie OFF. STOP dosyła całą kolejkę wraz z ostatnią niepełną ramką i weryfikuje końcowe SEQ.</p>
   <div id="v64ReferenceStatus" class="v64-caption">Wzorce z biblioteki Gesture Learning.</div>
   <div id="v64FileStatus" class="v64-caption">Dla LIVE użyj BLE. CSV potrzebny tylko do REPLAY.</div><div id="v65Storage" class="v64-caption">Local storage: IndexedDB (zapis pakietów co około 2 sekundy).</div>
   <div class="v64-session-actions"><button id="v64Start" type="button" class="start" disabled>START SESSION / REPLAY</button><button id="v64Stop" type="button" class="stop" disabled>STOP SESSION</button><button id="v64Export" type="button" class="secondary" disabled>EXPORT SESSION ZIP</button><button id="v65Recover" type="button" class="secondary">ODZYSKAJ OSTATNIĄ SESJĘ</button></div>
-  <p class="v652-stop-explainer">STOP zatrzymuje licznik natychmiast; Arduino może jeszcze dosłać pakiety podczas domykania. Gdy pojawi się AWARYJNY STOP, ponowne naciśnięcie rozłączy BLE i zakończy sesję.</p>
+  <p class="v652-stop-explainer">STOP zatrzymuje nagrywanie w Arduino, ale kończy sesję w telefonie dopiero po przesłaniu końca kolejki i kontroli SEQ. Podczas opróżniania dostępny jest AWARYJNY STOP (rozłącza BLE; nagranie może być niepełne).</p>
   <div id="v64Status" class="v64-status" role="status" aria-live="polite">Inicjalizacja sesji…</div>
   <div class="v64-stats">
     <div><small>CZAS SESJI</small><strong id="v64Time">00:00.000</strong></div>
@@ -122,7 +122,13 @@
       <button id="v64MarkContact" class="v64-big-contact" type="button" disabled aria-label="Oznacz CONTACT ręcznie">● CONTACT</button>
       <button id="v64MarkGesture" class="v64-big-gesture" type="button" disabled aria-label="Oznacz GEST ręcznie">◆ GEST</button>
     </div>
-    <div class="v64-touch-footer"><label><input id="v64Sound" type="checkbox" checked> Dźwięki AUTO (różne dla kontaktu i gestu)</label><button id="v64Undo" type="button" class="secondary" disabled>COFNIJ OSTATNIĄ ETYKIETĘ</button></div>
+    <div class="v64-touch-footer"><label><input id="v64Sound" type="checkbox" checked> Dźwięki AUTO — głośny CONTACT i radosny GEST</label><button id="v64Undo" type="button" class="secondary" disabled>COFNIJ OSTATNIĄ ETYKIETĘ</button></div>
+    <div class="v655-audio-panel" aria-label="Głośność i test dźwięków sesji">
+      <label for="v655SoundVolume">GŁOŚNOŚĆ DŹWIĘKÓW <strong id="v655SoundPct">100%</strong></label>
+      <input id="v655SoundVolume" type="range" min="0" max="100" value="100" step="5" aria-label="Głośność sygnałów sesji">
+      <div class="v655-audio-tests"><button id="v655TestContact" type="button" class="secondary">ODSŁUCH CONTACT</button><button id="v655TestGesture" type="button" class="secondary">ODSŁUCH GEST — JACKPOT</button></div>
+      <p>Przyciski odsłuchu odblokowują dźwięk w Chrome. Głośność maksymalna nadal zależy od telefonu i jego ustawień multimediów.</p>
+    </div>
   </div>
   <div id="v64Notes" class="v64-caption"></div>
   <div class="v64-event-grid">
@@ -1576,7 +1582,7 @@ USER MODE: połączenie treningowe z sensorem przez Bluetooth LE.
 
 </footer>
 
-<script src="js/app.js?v=65.4"></script>
+<script src="js/app.js?v=65.5"></script>
 
 </body>
 
