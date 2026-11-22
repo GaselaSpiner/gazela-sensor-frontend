@@ -2038,3 +2038,11 @@ footer {
 .v6562-shadow-row[data-class="GESTURE_COMPONENT"]{color:#1d4ed8}
 .v6562-shadow-row[data-class="CONTACT_CANDIDATE_SHADOW"]{color:#15803d}
 .v6562-shadow-row[data-class="OTHER_UNKNOWN"]{color:#475569}
+
+/* V65.6.4: diagnostic class pipeline inside the EXISTING MULTICLASS panel. */
+.v6564-pipeline{margin:12px 0;padding:12px;border:1px solid var(--border,rgba(127,138,157,.33));border-radius:10px;background:rgba(100,116,139,.055)}
+.v6564-pipeline h4{margin:0 0 7px;font-size:.95rem}
+.v6564-pipeline details{margin-top:8px}
+.v6564-pipeline summary{cursor:pointer;font-weight:600}
+.v6564-pipeline .v6562-shadow-recent{overflow-wrap:anywhere}
+
