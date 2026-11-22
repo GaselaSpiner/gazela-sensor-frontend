@@ -1,4 +1,4 @@
-// app.js — GAZELA SENSOR LAB V65.6.4 CLASS PIPELINE + MULTICLASS V2 (V65.6.1 SAFE STOP & DRAIN RETAINED; no firmware change)
+// app.js — GAZELA SENSOR LAB V65.6.5 CLASS PIPELINE + MULTICLASS V2 (V65.6.1 SAFE STOP & DRAIN RETAINED; no firmware change)
 // V63: comparator uses one common fitted Y rotation for ACC+GYRO and both taps.
 // V62: serialize BLE command writes; start packet timeout only after write completion;
 //      prevent outdated queued N requests; reduce UI work in all HR400 modules.
@@ -5118,7 +5118,7 @@ async function dbGet(store,key){const db=await dbOpen();return new Promise((reso
 async function dbAll(store){const db=await dbOpen();return new Promise((resolve,reject)=>{const tx=db.transaction(store,'readonly'),r=tx.objectStore(store).getAll();r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});}
 function queueWrite(work){if(!s)return;const ref=s;
  ref.writeTail=(ref.writeTail||Promise.resolve()).then(work).catch(e=>{ref.storageError=String(e);ref.diagnostics.push({kind:'STORAGE_ERROR',error:String(e),at:new Date().toISOString()});say('BŁĄD ZAPISU LOKALNEGO. Zatrzymano sesję: '+e.message,'error');if(ref.state==='recording')void stop('STORAGE_ERROR');});}
-function smallManifest(ref){return {id:ref.id,schema:'gazela.continuous.v65',version:'V65.6.4_CLASS_PIPELINE',classPipeline:{...GAZELA_CLASS_PIPELINE_POLICY,version:GAZELA_CLASS_PIPELINE_VERSION},doubleTapAudioGate:{version:GAZELA_DOUBLE_TAP_AUDIO_GATE_VERSION,enabled:true,validated:false,configuration:GAZELA_MULTICLASS_PILOT},multiclassShadow:{...(ref.multiclass?.summary(ref.events)||ref.multiclassShadow||{version:GAZELA_MULTICLASS_SHADOW_VERSION,validated:false}),pairs:ref.multiclass?.pairs||ref.multiclassShadow?.pairs||[],thresholds:GAZELA_MULTICLASS_PILOT},gestureDetectorV2:{version:GAZELA_GESTURE_V2_VERSION,mode:'REFERENCE_SCORE_USED_BY_EXPERIMENTAL_AUDIO_GATE_NO_ACCEPT',thresholdValidated:false},contactDetectorV2:{mode:'IMPULSE_ROLE_DIAGNOSTICS',ballContactClassification:'NOT_VALIDATED'},rawSamplesPerFrame:ref.rawSamplesPerFrame||8,mtuProbe:ref.mtuProbe||null,mode:ref.mode,state:ref.state,startedAt:ref.startedAt,endedAt:ref.endedAt,stopReason:ref.stopReason,source:ref.sourceName,firstSeq:ref.firstSeq,lastSeq:ref.lastSeq,sampleCount:ref.samples,frames:ref.frames,parts:ref.parts,gaps:ref.gaps,missingSamples:ref.missingSamples,crcErrors:ref.crcErrors,decoderErrors:ref.decoderErrors,referenceId:ref.referenceId,referenceName:ref.referenceName,events:ref.multiclass?.cleanupForExport(ref.events)||ref.events,manual:ref.manual,diagnostics:ref.diagnostics.slice(-400),storageError:ref.storageError,retransmissionEnabled:!!ref.retransmissionEnabled,replayRequests:ref.replayRequests||0,recoveredFrames:ref.recoveredFrames||0,duplicates:ref.duplicates||0,receiverFrames:ref.rxFrames||0,transportOnly:!!ref.transportOnly,firmwareStop:ref.firmwareStop||null,drainStatus:ref.drainStatus||null,stopIntegrity:ref.stopIntegrity||null,startSequence:ref.startSequence??null,finalExpectedSeq:ref.finalExpectedSeq??null,stopCommandAcknowledged:!!ref.stopAckSeen,stopButtonPressedAt:ref.stopButtonPressedAt||null,stopAcknowledgementTimedOut:!!ref.stopAckTimedOut,emergencyStop:!!ref.emergencyStop,quantization:'ACC 0.001g, GYRO 0.1deg/s; nominal 2.5ms; not hardware SensorTime'};}
+function smallManifest(ref){return {id:ref.id,schema:'gazela.continuous.v65',version:'V65.6.5_CLASS_PIPELINE',classPipeline:{...GAZELA_CLASS_PIPELINE_POLICY,version:GAZELA_CLASS_PIPELINE_VERSION},doubleTapAudioGate:{version:GAZELA_DOUBLE_TAP_AUDIO_GATE_VERSION,enabled:true,validated:false,configuration:GAZELA_MULTICLASS_PILOT},multiclassShadow:{...(ref.multiclass?.summary(ref.events)||ref.multiclassShadow||{version:GAZELA_MULTICLASS_SHADOW_VERSION,validated:false}),pairs:ref.multiclass?.pairs||ref.multiclassShadow?.pairs||[],thresholds:GAZELA_MULTICLASS_PILOT},gestureDetectorV2:{version:GAZELA_GESTURE_V2_VERSION,mode:'REFERENCE_SCORE_USED_BY_EXPERIMENTAL_AUDIO_GATE_NO_ACCEPT',thresholdValidated:false},contactDetectorV2:{mode:'IMPULSE_ROLE_DIAGNOSTICS',ballContactClassification:'NOT_VALIDATED'},rawSamplesPerFrame:ref.rawSamplesPerFrame||8,mtuProbe:ref.mtuProbe||null,mode:ref.mode,state:ref.state,startedAt:ref.startedAt,endedAt:ref.endedAt,stopReason:ref.stopReason,source:ref.sourceName,firstSeq:ref.firstSeq,lastSeq:ref.lastSeq,sampleCount:ref.samples,frames:ref.frames,parts:ref.parts,gaps:ref.gaps,missingSamples:ref.missingSamples,crcErrors:ref.crcErrors,decoderErrors:ref.decoderErrors,referenceId:ref.referenceId,referenceName:ref.referenceName,events:ref.multiclass?.cleanupForExport(ref.events)||ref.events,manual:ref.manual,diagnostics:ref.diagnostics.slice(-400),storageError:ref.storageError,retransmissionEnabled:!!ref.retransmissionEnabled,replayRequests:ref.replayRequests||0,recoveredFrames:ref.recoveredFrames||0,duplicates:ref.duplicates||0,receiverFrames:ref.rxFrames||0,transportOnly:!!ref.transportOnly,firmwareStop:ref.firmwareStop||null,drainStatus:ref.drainStatus||null,stopIntegrity:ref.stopIntegrity||null,startSequence:ref.startSequence??null,finalExpectedSeq:ref.finalExpectedSeq??null,stopCommandAcknowledged:!!ref.stopAckSeen,stopButtonPressedAt:ref.stopButtonPressedAt||null,stopAcknowledgementTimedOut:!!ref.stopAckTimedOut,emergencyStop:!!ref.emergencyStop,quantization:'ACC 0.001g, GYRO 0.1deg/s; nominal 2.5ms; not hardware SensorTime'};}
 function saveManifest(ref){if(ref.mode!=='ble400')return;queueWrite(()=>dbPut('sessions',smallManifest(ref)));}
 function flushPackets(ref){if(ref.mode!=='ble400'||!ref.pending.length)return;const packets=ref.pending;ref.pending=[];const part=ref.parts++;
  queueWrite(async()=>{await dbPut('chunks',{sessionId:ref.id,part,packets});await dbPut('sessions',smallManifest(ref));});}
@@ -5191,7 +5191,7 @@ function controls(){const run=s?.state==='recording',stopping=s?.state==='stoppi
  ui.exp.disabled=!s||busy;ui.mode.disabled=run;ui.import.disabled=run;ui.reference.disabled=run;ui.rate.disabled=run;if(ui.transportOnly)ui.transportOnly.disabled=run;if(ui.retransmission)ui.retransmission.disabled=busy;if(ui.packetMode)ui.packetMode.disabled=busy||rawPreflightBusy;
  if(ui.recover)ui.recover.disabled=run;
 }
-// BEGIN V65.6.4 — DOUBLE TAP AUDIO GATE V1 + MULTICLASS V2
+// BEGIN V65.6.5 — DOUBLE TAP AUDIO GATE V1 + MULTICLASS V2
 // CONTACT = the original impulse candidate detector, unchanged.
 // GESTURE = a validated-format reference pair passing provisional, NOT
 // independently validated, temporal + signed 6-axis + V2 similarity gates.
@@ -5200,15 +5200,27 @@ function controls(){const run=s?.state==='recording',stopping=s?.state==='stoppi
 // This changes SESSION audio only; firmware and Shot Capture are untouched.
 const GAZELA_MULTICLASS_SHADOW_VERSION = 'GAZELA_MULTICLASS_V2_AUDIO_GATE_V1_400HZ';
 const GAZELA_DOUBLE_TAP_AUDIO_GATE_VERSION = 'GAZELA_DOUBLE_TAP_AUDIO_GATE_V1';
+// V65.6.5: Close CONTACT as soon as the 300 ms gesture window is
+// provably complete *at the output of the unchanged impulse detector*.
+// It holds a peak for 40 samples, processes every 12, and the selected
+// event onset may precede that peak by 24 samples. Add 4 samples margin.
+// 40 + 12 + 24 + 4 = 80 samples = 200 ms (instead of 260 / 650 ms).
+// This is pipeline lookahead, NOT an extension of the gesture's 300 ms.
+// Do not set it to zero: a TAP2 at 300 ms may be reported later than 300 ms.
+const GAZELA_IMPULSE_REPORT_LATENCY = Object.freeze({
+  stablePeakSamples:40, scanStrideSamples:12,
+  onsetBackSamples:GAZELA_DETECTOR_CONFIG.onsetBackSamples,
+  safetySamples:4
+});
 const GAZELA_MULTICLASS_PILOT = Object.freeze({
   pre:16, post:40, firstTapAcc:0.50,
   pairAcc:0.30, pairGyro:0.60, gestureV2MinScore:78.0,
   pairGapMinMs:120, pairGapMaxMs:300,
-  detectorLatencyGuardSamples:260,
+  detectorLatencyGuardSamples:Object.values(GAZELA_IMPULSE_REPORT_LATENCY).reduce((a,b)=>a+b,0),
   otherRulesEnabled:false,
   independentlyValidated:false
 });
-// V65.6.4 — classification responsibilities; no new class thresholds.
+// V65.6.5 — classification responsibilities; no new class thresholds.
 // One base impulse detector is the only candidate generator.
 // CONTACT is the default label for a base impulse. GESTURE/OTHER are
 // positive differentiating rules; arbiter owns the FINAL decision.
@@ -5301,7 +5313,7 @@ function gazelaCreateMulticlassShadow(reference){
     return Number.isFinite(acc)&&Number.isFinite(gyro)?{acc,gyro}:null;
   }
   function compact(m){return m?{acc:Math.round(m.acc*1e5)/1e5,gyro:Math.round(m.gyro*1e5)/1e5}:null;}
-  function finish(item,{suppressAudio=false,aborted=false}={}){
+  function finish(item,{suppressAudio=false,aborted=false,streamIndex=null}={}){
     if(item.done)return;
     item.done=true;
     const ev=item.ev;
@@ -5314,6 +5326,12 @@ function gazelaCreateMulticlassShadow(reference){
     // No E20 >= 20 secondary threshold; OTHER awaits positive rules.
     const other=gazelaEvaluateOtherRules(item.candidate,null,reference);
     gazelaApplyClassDecision(ev,gazelaArbitrateClass({other:other.matched,referenceAvailable:valid}));
+    // Preserve laboratory evidence of when the pair window was settled.
+    ev.classDecision.pairWindowMaxMs=cfg.pairGapMaxMs;
+    ev.classDecision.detectorGuardMs=cfg.detectorLatencyGuardSamples*PERIOD_MS;
+    ev.classDecision.resolvedAtStreamMs=Number.isFinite(streamIndex)?streamIndex*PERIOD_MS:null;
+    ev.classDecision.resolutionAgeMs=Number.isFinite(streamIndex)?
+      Math.round((streamIndex-ev.index)*PERIOD_MS*10)/10:null;
     ev.audioGateDecision=suppressAudio?'CONTACT_RESOLVED_NO_CUE_STOP':
                                        'CONTACT_RELEASED_AFTER_PAIR_WINDOW';
     if(!suppressAudio){
@@ -5374,12 +5392,14 @@ function gazelaCreateMulticlassShadow(reference){
       referenceId:reference?.id||null,validated:false,audioGate:'GESTURE_ONLY'});
   }
   function advance(streamIndex,force=false,{suppressAudio=false,aborted=false}={}){
-    // A late arriving 2nd IMPULSE_CANDIDATE must still have time to traverse
-    // the unchanged offline detector. This deliberately delays CONTACT audio.
+    // 300 ms is the actual gesture window. The extra 80 samples only
+    // ensure that all eligible TAP2 candidates have traversed the *unchanged*
+    // base detector before CONTACT is finalized. Approx. 500-530 ms from
+    // estimated onset in 400 Hz stream time (not a wall-clock guarantee).
     const safeAge=Math.ceil(cfg.pairGapMaxMs/PERIOD_MS)+cfg.detectorLatencyGuardSamples;
     for(const item of active){
       if(item.done||(!force&&streamIndex-item.ev.index<=safeAge))continue;
-      finish(item,{suppressAudio,aborted});
+      finish(item,{suppressAudio,aborted,streamIndex});
     }
     for(let i=active.length-1;i>=0;i--)if(active[i].done)active.splice(i,1);
   }
@@ -5433,7 +5453,7 @@ function gazelaCreateMulticlassShadow(reference){
   }
   return {onImpulse,advance,pairs,summary,cleanupForExport,referenceAvailable:valid};
 }
-// END V65.6.4 — DOUBLE TAP AUDIO GATE V1 + MULTICLASS V2
+// END V65.6.5 — DOUBLE TAP AUDIO GATE V1 + MULTICLASS V2
 
 function newSession(mode){const ref=window.GazelaReferenceLibrary?.get(ui.reference.value)||null;
  return {id:id(),mode,state:'recording',rawSamplesPerFrame:Number(ui.packetMode?.value||8),mtuProbe:null,startedAt:new Date().toISOString(),endedAt:null,stopReason:null,sourceName:source?.name||null,firstSeq:null,lastSeq:null,samples:0,frames:0,rxFrames:0,replayRequests:0,recoveredFrames:0,duplicates:0,transportOnly:!!ui.transportOnly?.checked,retransmissionEnabled:!!ui.retransmission?.checked,firmwareStop:null,drainStatus:null,stopIntegrity:null,startSequence:null,finalExpectedSeq:null,parts:0,gaps:0,missingSamples:0,crcErrors:0,decoderErrors:0,storageError:null,packetBuffer:new Map(),nextSeq:null,gapStartedAt:0,lastRecoveryAt:0,attemptedSeq:null,recoveryAttempts:0,recoveryFailed:new Set(),replayRequested:new Set(),pending:[],writeTail:Promise.resolve(),raw:[],events:[],manual:[],lastAutoCue:null,diagnostics:[],history:[],lastCandidate:-1e12,multiclass:gazelaCreateMulticlassShadow(ref),perfStart:performance.now(),lastPacketPerf:performance.now(),firstPacketPerf:null,lastSampleTime:0,ref,referenceId:ref?.id||null,referenceName:ref?.name||null,stopButtonPressedAt:null,stopRequestedPerf:null,stopFrozenSamples:null,stopFrozenTime:null,stopAckSeen:false,stopAckTimedOut:false,emergencyStop:false,stopFinalizePromise:null,stopResolver:null};}
@@ -5495,7 +5515,7 @@ function ingest(raw){if(!s||(s.state!=='recording'&&s.state!=='stopping'))return
   if(c.peakIndex>index-40||c.peakIndex<index-250||c.index<=s.lastCandidate+32)continue;
   s.lastCandidate=c.index;
   const impulse=addEvent('CONTACT_CANDIDATE',{index:c.index,sequence:c.sequence,time_ms:c.timeMs},{score:c.score,deltaAccG:c.deltaAccG,e20G:c.e20G,contactBallConfirmed:false,impulseRole:'UNCLASSIFIED_IMPULSE'});
-  // V65.6.4: live classification is owned ONLY by MULTICLASS.
+  // V65.6.5: live classification is owned ONLY by MULTICLASS.
   // The legacy V1 stream recognizer remains in the source for offline
   // Replay/Gesture Recorder comparisons, but cannot emit LIVE GESTURE.
   // The base CONTACT impulse is preserved. Its sound waits for GESTURE
@@ -5940,8 +5960,8 @@ async function exportSession(){if(!s||s.state==='recording'||s.state==='stopping
      ['impulse_roles.csv',csv([['eventId','time_ms','sequence','impulseRole','gestureEventId','ballContactConfirmed','deltaAccG','e20G'],...ref.events.filter(e=>e.type==='CONTACT_CANDIDATE').map(e=>[e.id,e.time_ms,e.sequence,e.impulseRole,e.gestureEventId,false,e.deltaAccG,e.e20G])])],
      ['multiclass_shadow_events.csv',csv([['eventId','time_ms','sequence','e20G','shadowClass','subrole','pairId','pairedEventId','tap1AccCorr','tap1GyroCorr','tap2AccCorr','tap2GyroCorr','pilotValidated','audioGateDecision','audioCuePlayed','audioCueType'],...ref.events.filter(e=>e.type==='CONTACT_CANDIDATE').map(e=>[e.id,e.time_ms,e.sequence,e.e20G,e.shadow?.class||'',e.shadow?.subrole||'',e.shadow?.pairId||'',e.shadow?.pairedEventId||'',e.shadow?.tap1?.acc??'',e.shadow?.tap1?.gyro??'',e.shadow?.tap2?.acc??'',e.shadow?.tap2?.gyro??'',false,e.audioGateDecision||'',!!e.audioCuePlayed,e.audioCueType||''])])],
      ['multiclass_shadow_pairs.json',JSON.stringify(ref.multiclass?.pairs||ref.multiclassShadow?.pairs||[],null,2)+'\n'],
-     ['class_decisions.csv',csv([['eventId','type','time_ms','sequence','baseClass','finalClass','phase','decisionReason','pairId','audioGateDecision','audioCueType','audioCuePlayed'],...ref.events.filter(e=>e.classDecision).map(e=>[e.id,e.type,e.time_ms,e.sequence,e.classDecision.baseClass,e.classDecision.finalClass,e.classDecision.phase,e.classDecision.reason,e.classDecision.pairId||'',e.audioGateDecision||'',e.audioCueType||'',!!e.audioCuePlayed])])],
-     ['README.txt','GAZELA V65.6.4 CLASS PIPELINE: One base impulse detector + GESTURE positive rules + OTHER placeholder + explicit single arbiter and classified audio. No legacy V1 stream recognizer in LIVE session; standalone replay tools retained. New class_decisions.csv + classPipeline in session.json. Original DOUBLE TAP thresholds and base detector unchanged.\n\nGAZELA V65.6.4 DOUBLE TAP AUDIO GATE: CONTACT_CANDIDATE_SHADOW uses the UNCHANGED original base impulse detector rules; DOUBLE TAP requires signed 6-axis reference comparison, paired timing and Gesture V2 similarity. TAP1 and TAP2 stay silent when accepted as gesture; exactly ONE gesture cue is requested. Unpaired base candidates receive delayed CONTACT cue (up to about 950 ms in stream time). OTHER has NO positive rules yet and is NOT assigned by an E20 threshold. Audio control is experimental, NOT independently validated. No firmware, physical contact confirmation, ACCEPT or Shot Capture changes. No contact/gesture audio is played for pending events discarded on a SEQ GAP or finalized after STOP. Reference profile must be selected. Manual labels are independent.\n\nGAZELA V65.6.1 DETECTOR V2 SHADOW + ONE FALSE BUTTON: Human FALSE marks are stored in manual_labels.json/csv as type FALSE, verdict FALSE_POSITIVE. A suggested recent audible AUTO event is NOT a confirmed link; confirm the link after STOP, or keep UNLINKED. Existing CONTACT and GEST confirmations are unchanged.  Sequenced live RAW frames sorted by SEQ in export; MTU probe required for RAW12; R<SEQ> retransmission is OFF by default (session.json retransmissionEnabled records the actual setting); gaps refer to missing samples. LIVE RAW 400 Hz packets; each frame has magic GZ, version, N, SEQ, nominal time, 6x int16 per sample, CRC16. Full session raw is concatenated binary GATT frames. No claim of BMI270 hardware timestamps. Detector predictions are hypotheses, NOT confirmed contact/gesture. Manual press latency is unknown. Check missing SEQ / CRC / storage errors.\n']];
+     ['class_decisions.csv',csv([['eventId','type','time_ms','sequence','baseClass','finalClass','phase','decisionReason','pairId','audioGateDecision','audioCueType','audioCuePlayed','pairWindowMaxMs','detectorGuardMs','resolutionAgeMs','resolvedAtStreamMs'],...ref.events.filter(e=>e.classDecision).map(e=>[e.id,e.type,e.time_ms,e.sequence,e.classDecision.baseClass,e.classDecision.finalClass,e.classDecision.phase,e.classDecision.reason,e.classDecision.pairId||'',e.audioGateDecision||'',e.audioCueType||'',!!e.audioCuePlayed,e.classDecision.pairWindowMaxMs??'',e.classDecision.detectorGuardMs??'',e.classDecision.resolutionAgeMs??'',e.classDecision.resolvedAtStreamMs??''])])],
+     ['README.txt','GAZELA V65.6.5 FAST CONTACT RESOLUTION: Gesture window 120-300 ms UNCHANGED; detector pipeline guard reduced 260 to 80 samples (650 to 200 ms). CONTACT is released after about 500-530 ms estimated stream onset, not immediately at exactly 300 ms wall-clock; no double audio for TAP2 at 300 ms. Extra class_decisions.csv timing columns (pairWindowMaxMs/detectorGuardMs/resolutionAgeMs/resolvedAtStreamMs). No base detector, GESTURE score, firmware, Shot Capture or ACCEPT changes.\n\nGAZELA V65.6.5 CLASS PIPELINE: One base impulse detector + GESTURE positive rules + OTHER placeholder + explicit single arbiter and classified audio. No legacy V1 stream recognizer in LIVE session; standalone replay tools retained. New class_decisions.csv + classPipeline in session.json. Original DOUBLE TAP thresholds and base detector unchanged.\n\nGAZELA V65.6.5 DOUBLE TAP AUDIO GATE: CONTACT_CANDIDATE_SHADOW uses the UNCHANGED original base impulse detector rules; DOUBLE TAP requires signed 6-axis reference comparison, paired timing and Gesture V2 similarity. TAP1 and TAP2 stay silent when accepted as gesture; exactly ONE gesture cue is requested. Unpaired base candidates receive delayed CONTACT cue (approximately 500-530 ms after estimated event onset in stream time, with 300 ms pairing window + 200 ms detector pipeline lookahead). OTHER has NO positive rules yet and is NOT assigned by an E20 threshold. Audio control is experimental, NOT independently validated. No firmware, physical contact confirmation, ACCEPT or Shot Capture changes. No contact/gesture audio is played for pending events discarded on a SEQ GAP or finalized after STOP. Reference profile must be selected. Manual labels are independent.\n\nGAZELA V65.6.1 DETECTOR V2 SHADOW + ONE FALSE BUTTON: Human FALSE marks are stored in manual_labels.json/csv as type FALSE, verdict FALSE_POSITIVE. A suggested recent audible AUTO event is NOT a confirmed link; confirm the link after STOP, or keep UNLINKED. Existing CONTACT and GEST confirmations are unchanged.  Sequenced live RAW frames sorted by SEQ in export; MTU probe required for RAW12; R<SEQ> retransmission is OFF by default (session.json retransmissionEnabled records the actual setting); gaps refer to missing samples. LIVE RAW 400 Hz packets; each frame has magic GZ, version, N, SEQ, nominal time, 6x int16 per sample, CRC16. Full session raw is concatenated binary GATT frames. No claim of BMI270 hardware timestamps. Detector predictions are hypotheses, NOT confirmed contact/gesture. Manual press latency is unknown. Check missing SEQ / CRC / storage errors.\n']];
   if(ref.mode==='ble400'){const chunks=(await dbAll('chunks')).filter(x=>x.sessionId===ref.id).sort((a,b)=>a.part-b.part);
     const buffers=chunks.flatMap(x=>x.packets).sort((a,b)=>{const x=new DataView(a.buffer,a.byteOffset,a.byteLength).getUint32(4,true),y=new DataView(b.buffer,b.byteOffset,b.byteLength).getUint32(4,true);return x-y;});const bytes=buffers.reduce((n,x)=>n+x.length,0);raw=new Uint8Array(bytes);let at=0;for(const b of buffers){raw.set(b,at);at+=b.length;}
     files.push(['raw_400hz_ble_frames.bin',raw]);meta.savedParts=chunks.length;meta.savedBytes=bytes;
@@ -5966,7 +5986,7 @@ ui.start.onclick=()=>void start();ui.stop.onclick=()=>void stop();ui.exp.onclick
 ui.markC.onclick=()=>pressLabel('CONTACT');ui.markG.onclick=()=>pressLabel('GEST');if(ui.markF)ui.markF.onclick=pressFalse;ui.undo.onclick=()=>{if(s?.manual?.length){s.manual.pop();if(s.mode==='ble400')saveManifest(s);render(true);}};
 ui.import.onchange=chooseFile;ui.mode.onchange=()=>{say(ui.mode.value==='ble400'?'LIVE RAW 400 Hz — zalecany firmware V29.2.8, BLE RAW characteristic 0004.':'REPLAY RAW400 z CSV','info');controls();};
 window.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&s?.state==='recording'){void stop('PAGE_HIDDEN');say('Aplikacja ukryta. Zatrzymano sesję, by nie ukrywać braków pomiaru.','warn');}});
-window.GazelaSessionV65=Object.freeze({version:'V65.6.4_DOUBLE_TAP_AUDIO_GATE',onRawPacket,onStreamMessage,onConnectionChanged:controls,onStreamStopped:msg=>{if(s&&s.mode==='ble400'&&s.state==='stopping'){s.firmwareStop=msg;s.stopAckSeen=true;const fields=msg.split(',');const end=Number(fields[9]);if(Number.isSafeInteger(end)&&end>0)s.finalExpectedSeq=end;s.drainStatus={...(s.drainStatus||{}),state:'finished',pendingAtAck:Number(fields[6]),sentSamples:Number(fields[2])};s.diagnostics.push({kind:'FIRMWARE_STOP_STATUS',message:msg});s.stopResolver?.('ACK_OK');}},onBLEDisconnect:()=>{if(s?.mode==='ble400'&&s.state==='recording')void stop('BLE_DISCONNECTED');},state:()=>s?{state:s.state,mode:s.mode,samples:s.samples,gaps:s.gaps,missing:s.missingSamples,crc:s.crcErrors,events:s.events.length,manual:s.manual.length}:null});
+window.GazelaSessionV65=Object.freeze({version:'V65.6.5_DOUBLE_TAP_AUDIO_GATE',onRawPacket,onStreamMessage,onConnectionChanged:controls,onStreamStopped:msg=>{if(s&&s.mode==='ble400'&&s.state==='stopping'){s.firmwareStop=msg;s.stopAckSeen=true;const fields=msg.split(',');const end=Number(fields[9]);if(Number.isSafeInteger(end)&&end>0)s.finalExpectedSeq=end;s.drainStatus={...(s.drainStatus||{}),state:'finished',pendingAtAck:Number(fields[6]),sentSamples:Number(fields[2])};s.diagnostics.push({kind:'FIRMWARE_STOP_STATUS',message:msg});s.stopResolver?.('ACK_OK');}},onBLEDisconnect:()=>{if(s?.mode==='ble400'&&s.state==='recording')void stop('BLE_DISCONNECTED');},state:()=>s?{state:s.state,mode:s.mode,samples:s.samples,gaps:s.gaps,missing:s.missingSamples,crc:s.crcErrors,events:s.events.length,manual:s.manual.length}:null});
 if(ui.soundVolume){
  try{const saved=Number(localStorage.getItem('gazela_v655_audio_level'));
    ui.soundVolume.value=Number.isFinite(saved)&&saved>=0&&saved<=100?String(saved):'100';
@@ -5977,6 +5997,6 @@ if(ui.soundContactTest)ui.soundContactTest.addEventListener('click',()=>sound('C
 if(ui.soundGestureTest)ui.soundGestureTest.addEventListener('click',()=>sound('GESTURE_CANDIDATE',true));
 if(ui.retransmission)ui.retransmission.checked=false; // Enforce OFF even if Chrome restores form state after reload.
 if(ui.packetMode)ui.packetMode.value='12'; // RAW12 passed 120-second continuity test; MTU probe still mandatory.
-void references();say('V65.6.4: CLASS PIPELINE + RAW12 + DOUBLE TAP AUDIO GATE. CONTACT odroczony, JACKPOT tylko dla gestu zgodnego z wzorcem. ACCEPT bez zmian.','info');render(true);
+void references();say('V65.6.5: FAST CONTACT RESOLUTION. Okno gestu 300 ms + 200 ms niezbędnego lookahead detektora; CONTACT szybszy. JACKPOT i ACCEPT bez zmian.','info');render(true);
 })();
 
