@@ -16,13 +16,13 @@
 
   <meta name="description" content="Gazela Spiner Sensor Lab — podgląd danych sensora, rejestracja gestów i diagnostyka połączenia.">
 
-  <title>Gazela Spiner Sensor Lab V65.6.4</title>
+  <title>Gazela Spiner Sensor Lab V65.6.5</title>
 
   <link
 
     rel="stylesheet"
 
-    href="css/style.css?v=65.6.4"
+    href="css/style.css?v=65.6.5"
 
   >
 
@@ -84,7 +84,7 @@
        V64 — SESSION MODE / EXPERIMENTAL STAGE A
        ===================================================== -->
 <section class="card v64-session" id="v64SessionMode" aria-labelledby="v64Title">
-  <div class="v64-title-row"><div><h2 id="v64Title">GAZELA SESSION — V65.6.4</h2><p>LIVE RAW 400 Hz • MULTICLASS V2 • CLASS PIPELINE V1 • AUDIO GATE • LOCAL STORAGE</p></div><span class="v64-prototype">PROTOTYPE</span></div>
+  <div class="v64-title-row"><div><h2 id="v64Title">GAZELA SESSION — V65.6.5</h2><p>LIVE RAW 400 Hz • MULTICLASS V2 • CLASS PIPELINE V1 • FAST CONTACT AUDIO • LOCAL STORAGE</p></div><span class="v64-prototype">PROTOTYPE</span></div>
   <p class="v64-warning"><strong>Wersja eksperymentalna:</strong> LIVE RAW400 współpracuje z firmware V29.2.8 przez BLE. Retransmisja jest domyślnie wyłączona. Nowe oceny V2 to wyłącznie diagnostyka, a nie potwierdzone rozpoznanie ruchu. Kompletność musi być zweryfikowana. Detektory działają na pełnych próbkach 400 Hz w Chrome na Androidzie. Zapisujemy pakiety lokalnie w IndexedDB; brak gwarancji braku utraty danych podczas rozłączenia lub działania w tle.</p>
   <div class="v64-top-settings">
     <label>TRYB SESJI<select id="v64Mode"><option value="ble400">LIVE BLE RAW 400 Hz + AUTO CONTACT/GEST</option><option value="replay">REPLAY RAW 400 Hz • CSV</option></select></label>
@@ -103,7 +103,7 @@
     <label class="v651-transport-only"><input type="checkbox" id="v651TransportOnly"> TEST TRANSPORTU: wyłącz klasyfikatory CONTACT/GEST, zachowaj zapis RAW400</label>
     <label class="v651-transport-only"><input type="checkbox" id="v653Retransmission"> RETRANSMISJA R&lt;SEQ&gt; — wyłącznie test diagnostyczny (OFF domyślnie)</label>
   </details>
-  <p class="v64-caption">V65.6.4: zalecany RAW12 (158 B), test MTU przed START, retransmisja domyślnie OFF. STOP dosyła całą kolejkę wraz z ostatnią niepełną ramką i weryfikuje końcowe SEQ.</p>
+  <p class="v64-caption">V65.6.5: zalecany RAW12 (158 B), test MTU przed START, retransmisja domyślnie OFF. STOP dosyła całą kolejkę wraz z ostatnią niepełną ramką i weryfikuje końcowe SEQ.</p>
   <div id="v64ReferenceStatus" class="v64-caption">Wzorce z biblioteki Gesture Learning.</div>
   <div id="v64FileStatus" class="v64-caption">Dla LIVE użyj BLE. CSV potrzebny tylko do REPLAY.</div><div id="v65Storage" class="v64-caption">Local storage: IndexedDB (zapis pakietów co około 2 sekundy).</div>
   <div class="v64-session-actions"><button id="v64Start" type="button" class="start" disabled>START SESSION / REPLAY</button><button id="v64Stop" type="button" class="stop" disabled>STOP SESSION</button><button id="v64Export" type="button" class="secondary" disabled>EXPORT SESSION ZIP</button><button id="v65Recover" type="button" class="secondary">ODZYSKAJ OSTATNIĄ SESJĘ</button></div>
@@ -121,11 +121,11 @@
   </div>
   <div id="v656PulseSummary" class="v64-caption" role="status">IMPULSY: —</div>
   <div id="v656V2Summary" class="v64-caption" role="status">GESTURE V2 SHADOW: —</div>
-  <!-- V65.6.4: Explicit class pipeline. Existing lab modules are retained; no firmware change. -->
+  <!-- V65.6.5: Explicit class pipeline. Existing lab modules are retained; no firmware change. -->
   <section class="v6562-shadow-panel" aria-labelledby="v6562ShadowTitle">
     <h3 id="v6562ShadowTitle">MULTICLASS V2 + AUDIO GATE — CONTACT / DOUBLE TAP / OTHER</h3>
     <p id="v6562ShadowSummary" class="v64-caption" role="status" aria-live="polite">Wybierz zapisany wzorzec DOUBLE TAP i rozpocznij sesję.</p>
-    <p class="v64-caption">BAZOWY CONTACT = niezmienione reguły detektora impulsów. DOUBLE TAP wymaga odstępu 120–300 ms, porównania 6 osi ze wzorcem TAP1/TAP2 oraz oceny V2. TAP1 i TAP2 nie odtwarzają CONTACT, gdy tworzą przyjętą parę; odtwarzany jest tylko jeden JACKPOT. Pojedynczy CONTACT odtwarza się z opóźnieniem po zamknięciu okna. OTHER nie ma jeszcze zatwierdzonych reguł. Uwaga: podobieństwo do wzorca nie gwarantuje odróżnienia dwóch szybkich kontaktów od DOUBLE TAP — wymagany test negatywny. Wyniki eksperymentalne, bez zmian firmware, ACCEPT i Shot Capture.</p>
+    <p class="v64-caption">BAZOWY CONTACT = niezmienione reguły detektora impulsów. DOUBLE TAP wymaga odstępu 120–300 ms, porównania 6 osi ze wzorcem TAP1/TAP2 oraz oceny V2. TAP1 i TAP2 nie odtwarzają CONTACT, gdy tworzą przyjętą parę; odtwarzany jest tylko jeden JACKPOT. Pojedynczy CONTACT jest rozstrzygany jak najszybciej po zamknięciu 300 ms okna, z wymaganym 200 ms buforem na opóźnioną detekcję TAP2 (łącznie około 500–530 ms czasu strumienia, nie gwarantowany czas głośnika). OTHER nie ma jeszcze zatwierdzonych reguł. Uwaga: podobieństwo do wzorca nie gwarantuje odróżnienia dwóch szybkich kontaktów od DOUBLE TAP — wymagany test negatywny. Wyniki eksperymentalne, bez zmian firmware, ACCEPT i Shot Capture.</p>
     <section class="v6564-pipeline" aria-labelledby="v6564PipelineTitle">
       <h4 id="v6564PipelineTitle">SILNIK KLAS — MONITOR PRZEPŁYWU</h4>
       <p id="v6564PipelineSummary" class="v64-caption" role="status">BASE IMPULSE → GESTURE RULES → CLASS ARBITER → AUDIO.</p>
@@ -1604,7 +1604,7 @@ USER MODE: połączenie treningowe z sensorem przez Bluetooth LE.
 
 </footer>
 
-<script src="js/app.js?v=65.6.4"></script>
+<script src="js/app.js?v=65.6.5"></script>
 
 </body>
 
