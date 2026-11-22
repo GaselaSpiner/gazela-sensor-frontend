@@ -2046,3 +2046,10 @@ footer {
 .v6564-pipeline summary{cursor:pointer;font-weight:600}
 .v6564-pipeline .v6562-shadow-recent{overflow-wrap:anywhere}
 
+/* V65.6.7 — independent SHADOW sound, original audio classes unchanged. */
+.v6567-shadow-audio{margin:12px 0;padding:14px;border:1px solid #87a3c2;border-radius:10px;background:#eff6ff}
+.v6567-shadow-audio h4{margin:0 0 8px;font-size:14px;color:#1d4267}
+.v6567-shadow-audio label{display:flex;align-items:center;gap:9px;margin:0 0 10px;font-size:13px}
+.v6567-shadow-audio button{margin:4px 0 8px}
+.v6567-shadow-audio p{font-size:12px;line-height:1.5;color:#32465a;margin:6px 0}
+.v6567-shadow-event{border-left:3px solid #4f7ec2!important}
