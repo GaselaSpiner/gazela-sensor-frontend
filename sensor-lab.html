@@ -84,7 +84,7 @@
        V64 — SESSION MODE / EXPERIMENTAL STAGE A
        ===================================================== -->
 <section class="card v64-session" id="v64SessionMode" aria-labelledby="v64Title">
-  <div class="v64-title-row"><div><h2 id="v64Title">GAZELA SESSION — V65.6.5</h2><p>LIVE RAW 400 Hz • MULTICLASS V2 • CLASS PIPELINE V1 • FAST CONTACT AUDIO • LOCAL STORAGE</p></div><span class="v64-prototype">PROTOTYPE</span></div>
+  <div class="v64-title-row"><div><h2 id="v64Title">GAZELA SESSION — V65.6.7</h2><p>LIVE RAW 400 Hz • MULTICLASS V2 • V3 SHADOW AUDIO • FAST CONTACT AUDIO • LOCAL STORAGE</p></div><span class="v64-prototype">PROTOTYPE</span></div>
   <p class="v64-warning"><strong>Wersja eksperymentalna:</strong> LIVE RAW400 współpracuje z firmware V29.2.8 przez BLE. Retransmisja jest domyślnie wyłączona. Nowe oceny V2 to wyłącznie diagnostyka, a nie potwierdzone rozpoznanie ruchu. Kompletność musi być zweryfikowana. Detektory działają na pełnych próbkach 400 Hz w Chrome na Androidzie. Zapisujemy pakiety lokalnie w IndexedDB; brak gwarancji braku utraty danych podczas rozłączenia lub działania w tle.</p>
   <div class="v64-top-settings">
     <label>TRYB SESJI<select id="v64Mode"><option value="ble400">LIVE BLE RAW 400 Hz + AUTO CONTACT/GEST</option><option value="replay">REPLAY RAW 400 Hz • CSV</option></select></label>
@@ -143,8 +143,15 @@
       <button id="v64MarkGesture" class="v64-big-gesture" type="button" disabled aria-label="Oznacz GEST ręcznie">◆ GEST</button>
       <button id="v6561MarkFalse" class="v6561-big-false" type="button" disabled aria-label="Oznacz fałszywe wykrycie automatyczne niezależnie od typu">✕ FALSE</button>
     </div>
-    <p id="v6561FalseStatus" class="v64-caption" role="status">FALSE oznacza ostatni błędny sygnał AUTO — CONTACT lub GEST. Typ rozpozna aplikacja. Powiązanie z AUTO wymaga weryfikacji po STOP.</p>
+    <p id="v6561FalseStatus" class="v64-caption" role="status">FALSE oznacza ostatni błędny sygnał AUTO — CONTACT, JACKPOT lub V3 SHADOW. Typ podpowie aplikacja. Powiązanie z AUTO wymaga weryfikacji po STOP.</p>
     <div class="v64-touch-footer"><label><input id="v64Sound" type="checkbox" checked> Dźwięki AUTO — głośny CONTACT i radosny GEST</label><button id="v64Undo" type="button" class="secondary" disabled>COFNIJ OSTATNIĄ ETYKIETĘ</button></div>
+    <div class="v6567-shadow-audio" aria-label="Dźwięk diagnostyczny V3 SHADOW">
+      <h4>V3 SHADOW — TRZECI DŹWIĘK (DIAGNOSTYKA)</h4>
+      <label><input id="v6567V3Audio" type="checkbox" checked> Dźwięk V3 SHADOW przy kandydującej parze DOUBLE TAP (V2 ≥ 78)</label>
+      <button id="v6567V3Test" type="button" class="secondary">ODSŁUCH V3 SHADOW — 3 TONY W DÓŁ</button>
+      <p id="v6567V3Status" role="status" aria-live="polite">V3 SHADOW: oczekiwanie na parę TAP1 + TAP2.</p>
+      <p><strong>To hipoteza, nie potwierdzenie GESTURE.</strong> Oryginalne CONTACT i JACKPOT pozostają. Jeśli obie ścieżki rozpoznają gest, dźwięk V3 nastąpi po JACKPOT. Ręcznie oznacz GEST przy faktycznym DOUBLE TAP; FALSE przy błędnym sygnale. Po STOP potwierdź powiązanie z właściwym zdarzeniem.</p>
+    </div>
     <div class="v655-audio-panel" aria-label="Głośność i test dźwięków sesji">
       <label for="v655SoundVolume">GŁOŚNOŚĆ DŹWIĘKÓW <strong id="v655SoundPct">100%</strong></label>
       <input id="v655SoundVolume" type="range" min="0" max="100" value="100" step="5" aria-label="Głośność sygnałów sesji">
@@ -1609,4 +1616,3 @@ USER MODE: połączenie treningowe z sensorem przez Bluetooth LE.
 </body>
 
 </html>
-
