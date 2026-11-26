@@ -16,13 +16,13 @@
 
   <meta name="description" content="Gazela Spiner Sensor Lab — podgląd danych sensora, rejestracja gestów i diagnostyka połączenia.">
 
-  <title>Gazela Spiner Sensor Lab V65.6.5</title>
+  <title>Gazela Spiner Sensor Lab V65.6.8</title>
 
   <link
 
     rel="stylesheet"
 
-    href="css/style.css?v=65.6.5"
+    href="css/style.css?v=65.6.8"
 
   >
 
@@ -84,7 +84,7 @@
        V64 — SESSION MODE / EXPERIMENTAL STAGE A
        ===================================================== -->
 <section class="card v64-session" id="v64SessionMode" aria-labelledby="v64Title">
-  <div class="v64-title-row"><div><h2 id="v64Title">GAZELA SESSION — V65.6.7</h2><p>LIVE RAW 400 Hz • MULTICLASS V2 • V3 SHADOW AUDIO • FAST CONTACT AUDIO • LOCAL STORAGE</p></div><span class="v64-prototype">PROTOTYPE</span></div>
+  <div class="v64-title-row"><div><h2 id="v64Title">GAZELA SESSION — V65.6.8</h2><p>LIVE RAW 400 Hz • MULTICLASS V2 • V3 SHADOW AUDIO • FAST CONTACT AUDIO • LOCAL STORAGE</p></div><span class="v64-prototype">PROTOTYPE</span></div>
   <p class="v64-warning"><strong>Wersja eksperymentalna:</strong> LIVE RAW400 współpracuje z firmware V29.2.8 przez BLE. Retransmisja jest domyślnie wyłączona. Nowe oceny V2 to wyłącznie diagnostyka, a nie potwierdzone rozpoznanie ruchu. Kompletność musi być zweryfikowana. Detektory działają na pełnych próbkach 400 Hz w Chrome na Androidzie. Zapisujemy pakiety lokalnie w IndexedDB; brak gwarancji braku utraty danych podczas rozłączenia lub działania w tle.</p>
   <div class="v64-top-settings">
     <label>TRYB SESJI<select id="v64Mode"><option value="ble400">LIVE BLE RAW 400 Hz + AUTO CONTACT/GEST</option><option value="replay">REPLAY RAW 400 Hz • CSV</option></select></label>
@@ -1343,6 +1343,20 @@ USER MODE: połączenie treningowe z sensorem przez Bluetooth LE.
 
   </section>
 
+  <section class="card" id="gazelaTxPanel" aria-labelledby="gazelaTxTitle">
+    <h2 id="gazelaTxTitle">BLE TRANSMISSION POWER</h2>
+    <p class="card-description">V65.6.8 • ręczna regulacja aktywnego połączenia BLE. Ustaw przed rozpoczęciem pomiaru. Nie jest to wskaźnik RSSI.</p>
+    <div class="gazela-tx-controls" role="group" aria-label="Moc nadawania BLE">
+      <button type="button" data-tx-level="0" aria-pressed="true" disabled>0 dBm • LOW ENERGY</button>
+      <button type="button" data-tx-level="4" aria-pressed="false" disabled>+4 dBm • BALANCED</button>
+      <button type="button" data-tx-level="8" aria-pressed="false" disabled>+8 dBm • HIGH PERFORMANCE</button>
+      <button type="button" id="gazelaTxRead" class="secondary" disabled>READ TX</button>
+    </div>
+    <div class="gazela-tx-verified"><span>VERIFIED TX POWER</span><strong id="gazelaTxVerified">—</strong></div>
+    <p id="gazelaTxStatus" class="measurement-status" role="status" aria-live="polite">Połącz sensor, następnie odczytaj moc.</p>
+    <p class="card-description">Wymaga V29.2.9. Potwierdzenie oznacza odczyt stanu kontrolera, nie niezależny pomiar mocy RF. Zmiana podczas RAW400 jest zablokowana w tej wersji.</p>
+  </section>
+
   <!-- =====================================================
 
        SESSION
@@ -1611,7 +1625,7 @@ USER MODE: połączenie treningowe z sensorem przez Bluetooth LE.
 
 </footer>
 
-<script src="js/app.js?v=65.6.5"></script>
+<script src="js/app.js?v=65.6.8"></script>
 
 </body>
 
