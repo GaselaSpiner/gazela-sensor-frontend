@@ -1,4 +1,4 @@
-// app.js — GAZELA SENSOR LAB V65.6.5 CLASS PIPELINE + MULTICLASS V2 (V65.6.1 SAFE STOP & DRAIN RETAINED; no firmware change)
+// app.js — GAZELA SENSOR LAB V65.6.8 BLE TX POWER CONTROL (V65.6.7 V3 SHADOW AUDIO retained)
 // V63: comparator uses one common fitted Y rotation for ACC+GYRO and both taps.
 // V62: serialize BLE command writes; start packet timeout only after write completion;
 //      prevent outdated queued N requests; reduce UI work in all HR400 modules.
@@ -96,6 +96,79 @@ let currentMovement = 0;
 let sessionStartTime = null;
 let sessionEndTime = null;
 let sampleCount = 0;
+// V65.6.8 TX POWER UI: verified controller value is NOT an RSSI measurement.
+const gazelaTxUi = { transport:null, pending:null, verified:null, selected:0,
+    nextId:0, timer:null, rawBusy:false, message:'Połącz sensor, następnie odczytaj moc.' };
+function gazelaTxContactBusy(){try{return contactIsBusy();}catch(e){return false;}}
+function gazelaTxBusy(){
+    const state=window.GazelaSessionV65?.state?.();
+    return measuring || gazelaTxUi.rawBusy || ['recording','stopping'].includes(state?.state) ||
+        gazelaTxContactBusy();
+}
+function gazelaTxClearPending(){
+    if(gazelaTxUi.timer!==null)clearTimeout(gazelaTxUi.timer);
+    gazelaTxUi.timer=null;gazelaTxUi.pending=null;
+}
+function gazelaTxRefresh(){
+    const g=gazelaTxUi;
+    const transport=bleTransport?.running&&bleTransport?.device?.gatt?.connected?bleTransport:null;
+    if(transport!==g.transport){
+        gazelaTxClearPending();g.transport=transport;g.verified=null;
+        g.message=transport?'Połączono. Odczytaj aktualną moc TX.':'Sensor rozłączony.';
+    }
+    const locked=!transport||!!g.pending||gazelaTxBusy();
+    for(const el of document.querySelectorAll('#gazelaTxPanel [data-tx-level]')){
+        el.disabled=locked;
+        el.setAttribute('aria-pressed',String(Number(el.dataset.txLevel)===g.selected));
+    }
+    const read=document.getElementById('gazelaTxRead');if(read)read.disabled=locked;
+    const verified=document.getElementById('gazelaTxVerified');
+    if(verified)verified.textContent=g.verified===null?'—':`${g.verified>0?'+':''}${g.verified} dBm`;
+    const info=document.getElementById('gazelaTxStatus');
+    if(info)info.textContent=transport&&gazelaTxBusy()&&!g.pending?'TX zablokowane podczas sesji / transferu.':g.message;
+}
+async function gazelaTxSend(operation){
+    gazelaTxRefresh();const g=gazelaTxUi;
+    if(!g.transport||g.pending||gazelaTxBusy())return;
+    const transport=g.transport;const id=g.nextId=g.nextId%65535+1;
+    const pending={id,operation,transport};g.pending=pending;
+    if(operation!=='?')g.selected=Number(operation);
+    g.verified=null;g.message=operation==='?'?'Odczyt kontrolera…':'Ustawianie i weryfikacja kontrolera…';
+    gazelaTxRefresh();
+    // Start the timeout before queueing; the guard prevents a timed-out queued command.
+    g.timer=setTimeout(()=>{
+        if(g.pending!==pending)return;gazelaTxClearPending();
+        g.verified=null;g.message='Brak potwierdzenia TX. Odczytaj moc ponownie.';gazelaTxRefresh();
+    },6000);
+    try{
+        const command=`TX${operation},${id}`;
+        const sent=await transport.send(command,()=>g.pending===pending&&g.transport===transport&&!gazelaTxBusy());
+        if(sent===false&&g.pending===pending)throw new Error('Komenda pominięta');
+        if(sent)addSerialLine('> '+command,'serial-command');
+    }catch(e){
+        if(g.pending!==pending)return;gazelaTxClearPending();g.verified=null;
+        g.message='Błąd TX: '+e.message;gazelaTxRefresh();
+    }
+}
+function gazelaTxReceive(line){
+    const g=gazelaTxUi;const m=/^TX,(\d{1,5}),(R|OK|E),(-?\d{1,3}|[A-Z_]+)$/.exec(line);
+    if(!m)return;gazelaTxRefresh();if(!g.transport)return;
+    const id=Number(m[1]),status=m[2],value=m[3];
+    if(id===0){ // USB diagnostic result is not a response to an app request.
+        if(g.pending)return;
+    }else{
+        if(!g.pending||g.pending.id!==id||g.pending.transport!==g.transport)return;
+        if(status!=='E'&&(g.pending.operation==='?'?status!=='R':status!=='OK'||Number(value)!==Number(g.pending.operation)))return;
+    }
+    if(id!==0)gazelaTxClearPending();
+    if(status==='E'){g.verified=null;g.message='TX odrzucone: '+value;}
+    else if(/^-?\d+$/.test(value)&&Number(value)>=-127&&Number(value)<=8){
+        g.verified=Number(value);if([0,4,8].includes(g.verified))g.selected=g.verified;
+        g.message=status==='OK'?'Potwierdzone: odczyt natychmiastowy i po 1 s.':'Potwierdzony odczyt kontrolera.';
+    }else{g.verified=null;g.message='Nieprawidłowa odpowiedź kontrolera TX.';}
+    gazelaTxRefresh();
+}
+
 // ========================================================
 // LIVE SEQUENCE TRACKING (V48)
 // ========================================================
@@ -1952,6 +2025,7 @@ function processSerialLine(line, source, messageType) {
     if (!line) {
         return;
     }
+    if (source === "ble" && line.startsWith("TX,")) { gazelaTxReceive(line); addSerialLine(line); return; }
     if (source === "ble" && line.startsWith("CAP,")) { contactReceiveStatus(line); return; }
     // ====================================================
     // SERIAL MONITOR
@@ -2516,6 +2590,7 @@ function syncTransportState(reason = "state-change") {
     if (typeof contactRefresh === "function") contactRefresh();
     // V65: BLE transport ownership is set only after candidate.connect().
     window.GazelaSessionV65?.onConnectionChanged();
+    gazelaTxRefresh();
 }
 async function connectSensor(kind = selectedTransport) {
     if (kind === "usb" && !isServiceModeOpen()) { addSerialLine("USB CONNECT BLOCKED: SERVICE MODE is closed.", "serial-error"); return; }
@@ -2560,6 +2635,7 @@ async function connectSensor(kind = selectedTransport) {
 // START MEASUREMENT
 // ========================================================
 async function startMeasurement() {
+    if (gazelaTxUi.pending) { addSerialLine("TX verification pending.","serial-info"); return; }
     if (contactIsBusy()) { addSerialLine("Measurement blocked: HR400 capture in progress.","serial-info"); return; }
     if (!bleTransport) {
         setStatus(
@@ -3326,6 +3402,7 @@ function contactTransferProgressRefresh() {
 }
 function contactRefresh() {
     gestureTransferRefresh();
+    gazelaTxRefresh();
     const busy = contactIsBusy();
     const active = contactSession.active;
     const trial = contactSelectedTrial();
@@ -5118,7 +5195,7 @@ async function dbGet(store,key){const db=await dbOpen();return new Promise((reso
 async function dbAll(store){const db=await dbOpen();return new Promise((resolve,reject)=>{const tx=db.transaction(store,'readonly'),r=tx.objectStore(store).getAll();r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});}
 function queueWrite(work){if(!s)return;const ref=s;
  ref.writeTail=(ref.writeTail||Promise.resolve()).then(work).catch(e=>{ref.storageError=String(e);ref.diagnostics.push({kind:'STORAGE_ERROR',error:String(e),at:new Date().toISOString()});say('BŁĄD ZAPISU LOKALNEGO. Zatrzymano sesję: '+e.message,'error');if(ref.state==='recording')void stop('STORAGE_ERROR');});}
-function smallManifest(ref){return {id:ref.id,schema:'gazela.continuous.v65',version:'V65.6.7_V3_SHADOW_AUDIO_DIAGNOSTIC',gestureV3Shadow:{...GAZELA_GESTURE_V3_SHADOW,audioEnabled:!!ui.sound?.checked&&!!ui.v3Audio?.checked},classPipeline:{...GAZELA_CLASS_PIPELINE_POLICY,version:GAZELA_CLASS_PIPELINE_VERSION},doubleTapAudioGate:{version:GAZELA_DOUBLE_TAP_AUDIO_GATE_VERSION,enabled:true,validated:false,configuration:GAZELA_MULTICLASS_PILOT},multiclassShadow:{...(ref.multiclass?.summary(ref.events)||ref.multiclassShadow||{version:GAZELA_MULTICLASS_SHADOW_VERSION,validated:false}),pairs:ref.multiclass?.pairs||ref.multiclassShadow?.pairs||[],thresholds:GAZELA_MULTICLASS_PILOT},gestureDetectorV2:{version:GAZELA_GESTURE_V2_VERSION,mode:'REFERENCE_SCORE_USED_BY_EXPERIMENTAL_AUDIO_GATE_NO_ACCEPT',thresholdValidated:false},contactDetectorV2:{mode:'IMPULSE_ROLE_DIAGNOSTICS',ballContactClassification:'NOT_VALIDATED'},rawSamplesPerFrame:ref.rawSamplesPerFrame||8,mtuProbe:ref.mtuProbe||null,mode:ref.mode,state:ref.state,startedAt:ref.startedAt,endedAt:ref.endedAt,stopReason:ref.stopReason,source:ref.sourceName,firstSeq:ref.firstSeq,lastSeq:ref.lastSeq,sampleCount:ref.samples,frames:ref.frames,parts:ref.parts,gaps:ref.gaps,missingSamples:ref.missingSamples,crcErrors:ref.crcErrors,decoderErrors:ref.decoderErrors,referenceId:ref.referenceId,referenceName:ref.referenceName,events:ref.multiclass?.cleanupForExport(ref.events)||ref.events,manual:ref.manual,diagnostics:ref.diagnostics.slice(-400),storageError:ref.storageError,retransmissionEnabled:!!ref.retransmissionEnabled,replayRequests:ref.replayRequests||0,recoveredFrames:ref.recoveredFrames||0,duplicates:ref.duplicates||0,receiverFrames:ref.rxFrames||0,transportOnly:!!ref.transportOnly,firmwareStop:ref.firmwareStop||null,drainStatus:ref.drainStatus||null,stopIntegrity:ref.stopIntegrity||null,startSequence:ref.startSequence??null,finalExpectedSeq:ref.finalExpectedSeq??null,stopCommandAcknowledged:!!ref.stopAckSeen,stopButtonPressedAt:ref.stopButtonPressedAt||null,stopAcknowledgementTimedOut:!!ref.stopAckTimedOut,emergencyStop:!!ref.emergencyStop,quantization:'ACC 0.001g, GYRO 0.1deg/s; nominal 2.5ms; not hardware SensorTime'};}
+function smallManifest(ref){return {id:ref.id,schema:'gazela.continuous.v65',version:'V65.6.8_TX_POWER_CONTROL',gestureV3Shadow:{...GAZELA_GESTURE_V3_SHADOW,audioEnabled:!!ui.sound?.checked&&!!ui.v3Audio?.checked},classPipeline:{...GAZELA_CLASS_PIPELINE_POLICY,version:GAZELA_CLASS_PIPELINE_VERSION},doubleTapAudioGate:{version:GAZELA_DOUBLE_TAP_AUDIO_GATE_VERSION,enabled:true,validated:false,configuration:GAZELA_MULTICLASS_PILOT},multiclassShadow:{...(ref.multiclass?.summary(ref.events)||ref.multiclassShadow||{version:GAZELA_MULTICLASS_SHADOW_VERSION,validated:false}),pairs:ref.multiclass?.pairs||ref.multiclassShadow?.pairs||[],thresholds:GAZELA_MULTICLASS_PILOT},gestureDetectorV2:{version:GAZELA_GESTURE_V2_VERSION,mode:'REFERENCE_SCORE_USED_BY_EXPERIMENTAL_AUDIO_GATE_NO_ACCEPT',thresholdValidated:false},contactDetectorV2:{mode:'IMPULSE_ROLE_DIAGNOSTICS',ballContactClassification:'NOT_VALIDATED'},rawSamplesPerFrame:ref.rawSamplesPerFrame||8,mtuProbe:ref.mtuProbe||null,mode:ref.mode,state:ref.state,startedAt:ref.startedAt,endedAt:ref.endedAt,stopReason:ref.stopReason,source:ref.sourceName,firstSeq:ref.firstSeq,lastSeq:ref.lastSeq,sampleCount:ref.samples,frames:ref.frames,parts:ref.parts,gaps:ref.gaps,missingSamples:ref.missingSamples,crcErrors:ref.crcErrors,decoderErrors:ref.decoderErrors,referenceId:ref.referenceId,referenceName:ref.referenceName,events:ref.multiclass?.cleanupForExport(ref.events)||ref.events,manual:ref.manual,diagnostics:ref.diagnostics.slice(-400),storageError:ref.storageError,retransmissionEnabled:!!ref.retransmissionEnabled,replayRequests:ref.replayRequests||0,recoveredFrames:ref.recoveredFrames||0,duplicates:ref.duplicates||0,receiverFrames:ref.rxFrames||0,transportOnly:!!ref.transportOnly,firmwareStop:ref.firmwareStop||null,drainStatus:ref.drainStatus||null,stopIntegrity:ref.stopIntegrity||null,startSequence:ref.startSequence??null,finalExpectedSeq:ref.finalExpectedSeq??null,stopCommandAcknowledged:!!ref.stopAckSeen,stopButtonPressedAt:ref.stopButtonPressedAt||null,stopAcknowledgementTimedOut:!!ref.stopAckTimedOut,emergencyStop:!!ref.emergencyStop,quantization:'ACC 0.001g, GYRO 0.1deg/s; nominal 2.5ms; not hardware SensorTime'};}
 function saveManifest(ref){if(ref.mode!=='ble400')return;queueWrite(()=>dbPut('sessions',smallManifest(ref)));}
 function flushPackets(ref){if(ref.mode!=='ble400'||!ref.pending.length)return;const packets=ref.pending;ref.pending=[];const part=ref.parts++;
  queueWrite(async()=>{await dbPut('chunks',{sessionId:ref.id,part,packets});await dbPut('sessions',smallManifest(ref));});}
@@ -5189,6 +5266,7 @@ function updateAudioVolume(){
  try{localStorage.setItem('gazela_v655_audio_level',String(level));}catch(e){}
 }
 function controls(){const run=s?.state==='recording',stopping=s?.state==='stopping',busy=run||stopping||rawPreflightBusy,connected=!!(bleTransport?.running&&bleTransport.raw400Characteristic);
+ gazelaTxUi.rawBusy=busy;gazelaTxRefresh();
  ui.start.disabled=busy||(ui.mode.value==='ble400'&&!connected)||(ui.mode.value==='replay'&&!source);
  // The second press is an explicit emergency STOP, never a disabled control.
  ui.stop.disabled=!busy;ui.stop.textContent=stopping?'AWARYJNY STOP / ROZŁĄCZ BLE':'STOP SESSION';
@@ -5755,11 +5833,12 @@ function pressLabel(type){if(!s||s.state!=='recording')return;const perf=perform
 async function start(){const mode=ui.mode.value;
  if(mode==='ble400'&&!(bleTransport?.raw400Characteristic&&bleTransport.running)){say('Połącz Arduino V29.2.8 przez BLE. Wymagana charakterystyka RAW400 (0004).','error');return;}
  if(mode==='replay'&&!source){say('Wczytaj prawdziwy CSV 400 Hz.','error');return;}
+ if(gazelaTxUi.pending){say('Poczekaj na potwierdzenie TX.','warn');return;}
  if(s?.state==='recording'||rawPreflightBusy)return;
  if(ui.sound.checked)try{initSessionAudio();}catch(e){console.warn(e);}
  let preflightInfo=null;
  if(mode==='ble400'&&Number(ui.packetMode?.value)===12){
-   rawPreflightBusy=true;ui.start.disabled=true;ui.packetMode.disabled=true;
+   rawPreflightBusy=true;gazelaTxUi.rawBusy=true;gazelaTxRefresh();ui.start.disabled=true;ui.packetMode.disabled=true;
    say('RAW12: weryfikuję pełną notyfikację 158 B (MTU >= 161)…','warn');
    try{preflightInfo=await verifyRaw12Mtu();}
    catch(e){say('Nie uruchomiono RAW12: '+String(e.message||e),'error');return;}
@@ -6091,3 +6170,9 @@ if(ui.retransmission)ui.retransmission.checked=false; // Enforce OFF even if Chr
 if(ui.packetMode)ui.packetMode.value='12'; // RAW12 passed 120-second continuity test; MTU probe still mandatory.
 void references();say('V65.6.7: opcjonalny trzeci dźwięk V3 SHADOW — tylko hipoteza. Oryginalny CONTACT/JACKPOT i ACCEPT bez zmian.','info');render(true);
 })();
+// V65.6.8 — attach only the new TX controls. No automatic set on connect.
+for(const el of document.querySelectorAll('#gazelaTxPanel [data-tx-level]')){
+    el.addEventListener('click',()=>void gazelaTxSend(el.dataset.txLevel));
+}
+document.getElementById('gazelaTxRead')?.addEventListener('click',()=>void gazelaTxSend('?'));
+gazelaTxRefresh();
